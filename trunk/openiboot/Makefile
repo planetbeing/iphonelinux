@@ -1,4 +1,3 @@
-
 AS = arm-elf-as
 LD = arm-elf-ld
 CC = arm-elf-gcc
