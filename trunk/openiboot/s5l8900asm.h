@@ -1,0 +1,19 @@
+#
+#	Devices
+#
+
+.equ VIC0, 0x38E00000
+.equ VIC1, 0x38E01000
+.equ EDGEIC, 0x38E02000
+
+#
+#	Registers
+#
+
+#VIC
+.equ VICIRQSTATUS, 0x000
+.equ VICADDRESS, 0xF00
+
+#EDGEIC
+.equ EDGEICLOWSTATUS, 0x8
+.equ EDGEICHIGHSTATUS, 0xC
