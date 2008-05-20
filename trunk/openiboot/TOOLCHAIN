@@ -1,0 +1,115 @@
+How to build the toolchain
+--------------------------
+
+We are using GNU ARM as the toolchain. It is important to build your own 
+version of the toolchain, because we require libgcc to be compiled with the 
+mthumb-interwork option. The rest of our project is also built with 
+mthumb-interwork, and it is nice to be able to make use of libgcc's integer 
+arithmetic library.
+
+Here is how we build our toolchain, and some of the problems we ran into (and 
+their solutions). We can't guarantee you won't run into your own unique 
+problems, however.
+
+## Step one: Grab the sources
+
+We use the sources linked to from the GNU ARM website for the GCC-4.1 
+toolchain (http://www.gnuarm.com/files.html). Use the following URLs:
+
+- binutils: http://www.gnuarm.com/binutils-2.17.tar.bz2
+- gcc: http://www.gnuarm.com/gcc-4.1.1.tar.bz2
+- newlib: http://www.gnuarm.com/newlib-1.14.0.tar.gz
+
+You can just (I'm going to give code examples optimized for copy and pasting 
+rather than flexibility) :
+
+	wget http://www.gnuarm.com/binutils-2.17.tar.bz2
+	wget http://www.gnuarm.com/gcc-4.1.1.tar.bz2
+	wget http://www.gnuarm.com/newlib-1.14.0.tar.gz
+
+	tar jxvf binutils-2.17.tar.bz2
+	tar jxvf http://www.gnuarm.com/gcc-4.1.1.tar.bz2
+	tar zxvf http://www.gnuarm.com/newlib-1.14.0.tar.gz
+
+## Step two: Build and install binutils
+
+This step is fairly straightforward. We mostly stuck to the instructions that 
+were listed on the bottom of the GNU ARM support for building from source 
+(http://www.gnuarm.com/support.html)
+
+Please note that specifying the prefix is **not optional** in some of these 
+steps (there are problems with configuring GCC without an explicit prefix), 
+so go ahead and just specify it for all configures. We use /usr/local, 
+because that's the default location and already is in the path.
+
+	mkdir binutils-build
+	cd binutils-build
+	../binutils-2.17/configure --target=arm-elf --prefix=/usr/local \ 
+		--enable-interwork --enable-multilib
+	make -j2 all
+	sudo make install
+	cd ..
+
+## Step three: Build and install first stage of GCC
+
+This step was the trickiest to get right. You first have to edit 
+gcc/config/arm/t-arm-elf to enable the building of the interwork multi-lib.
+
+	nano gcc-4.1.1/gcc/config/arm/t-arm-elf
+
+(Yeah, I use nano. Suck it). Uncomment these lines:
+
+	MULTILIB_OPTIONS    += mno-thumb-interwork/mthumb-interwork
+	MULTILIB_DIRNAMES   += normal interwork
+
+Now you can configure and build. Note that the configure (and thus build) 
+must be run as root because configure wants to copy some headers into 
+/usr/local. Annoying.
+
+	mkdir gcc-build
+	cd gcc-build
+	sudo ../gcc-4.1.1/configure --target=arm-elf --prefix=/usr/local \ 
+		--enable-interwork --enable-multilib \ 
+		--enable-languages="c,c++" --with-newlib
+		--with-headers=../newlib-1.14.0/newlib/libc/include
+	sudo make -j2 all-gcc
+	sudo make install-gcc
+	cd ..
+
+## Step four: Build and install newlib
+
+Pretty easy after the GCC step. However, I personally ran into problems with 
+the generated Makefile barfing over makeinfo. Even though I had it installed 
+in /usr/bin/makeinfo, "missing makeinfo" was put into the Makefile. What's 
+worse is that it was even CALLED. I'll address it after we configure.
+
+	mkdir newlib-build
+	../newlib-1.14.0/configure --target=arm-elf --prefix=/usr/local \ 
+		--enable-interwork --enable-multilib
+
+Okay. Now, for the makeinfo problem:
+
+	nano Makefile
+
+Search for the string "missing makeinfo". It'll be on a line that's like:
+
+	MAKEINFO = somepath/missing makeinfo otherstuff
+
+Change it to:
+
+	MAKEINFO = /usr/bin/makeinfo
+
+Or wherever your makeinfo lives. If you don't have it, install GNU's texinfo. 
+Now, you should be able to build.
+
+	make -j2 all
+	sudo make install
+	cd ..
+
+## Step five: Building the rest of GCC
+
+	cd gcc-build
+	sudo make -j2 all
+	sudo make install
+
+And you're done.
