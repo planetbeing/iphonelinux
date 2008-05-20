@@ -1,3 +1,6 @@
+#ifndef OPENIBOOT_H
+#define OPENIBOOT_H
+
 #include <stdint.h>
 
 typedef void (*TaskRoutineFunction)(void* opaque);
@@ -58,3 +61,5 @@ typedef struct TaskDescriptor {
 } __attribute__ ((packed)) TaskDescriptor;
 
 extern TaskDescriptor* CurrentRunning;
+
+#endif

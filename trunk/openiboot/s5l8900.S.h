@@ -1,3 +1,6 @@
+#ifndef S5L8900_S_H
+#define S5L8900_S_H
+
 #
 #	Devices
 #
@@ -17,3 +20,5 @@
 #EDGEIC
 .equ EDGEICLOWSTATUS, 0x8
 .equ EDGEICHIGHSTATUS, 0xC
+
+#endif

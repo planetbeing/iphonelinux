@@ -1,4 +1,5 @@
 #include "openiboot.h"
+#include "openiboot-asmhelpers.h"
 
 static void setup_processor();
 static void setup_tasks();

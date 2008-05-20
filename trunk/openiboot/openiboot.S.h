@@ -1,3 +1,6 @@
+#ifndef OPENIBOOT_S_H
+#define OPENIBOOT_S_H
+
 #
 #	Structures
 #
@@ -34,3 +37,5 @@
 .equ OpenIBootEnd, 0x18021980
 .equ HeapStart, 0x18026000
 .equ PageTable, 0x180FC000
+
+#endif

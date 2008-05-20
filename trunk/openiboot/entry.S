@@ -1,5 +1,5 @@
-.include "openibootasm.h"
-.include "s5l8900asm.h"
+.include "openiboot.S.h"
+.include "s5l8900.S.h"
 
 .global _start
 

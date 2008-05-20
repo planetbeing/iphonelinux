@@ -44,7 +44,7 @@ because that's the default location and already is in the path.
 
 	mkdir binutils-build
 	cd binutils-build
-	../binutils-2.17/configure --target=arm-elf --prefix=/usr/local \ 
+	../binutils-2.17/configure --target=arm-elf --prefix=/usr/local \
 		--enable-interwork --enable-multilib
 	make -j2 all
 	sudo make install
@@ -68,9 +68,9 @@ must be run as root because configure wants to copy some headers into
 
 	mkdir gcc-build
 	cd gcc-build
-	sudo ../gcc-4.1.1/configure --target=arm-elf --prefix=/usr/local \ 
-		--enable-interwork --enable-multilib \ 
-		--enable-languages="c,c++" --with-newlib
+	sudo ../gcc-4.1.1/configure --target=arm-elf --prefix=/usr/local \
+		--enable-interwork --enable-multilib \
+		--enable-languages="c,c++" --with-newlib \
 		--with-headers=../newlib-1.14.0/newlib/libc/include
 	sudo make -j2 all-gcc
 	sudo make install-gcc
@@ -84,7 +84,7 @@ in /usr/bin/makeinfo, "missing makeinfo" was put into the Makefile. What's
 worse is that it was even CALLED. I'll address it after we configure.
 
 	mkdir newlib-build
-	../newlib-1.14.0/configure --target=arm-elf --prefix=/usr/local \ 
+	../newlib-1.14.0/configure --target=arm-elf --prefix=/usr/local \
 		--enable-interwork --enable-multilib
 
 Okay. Now, for the makeinfo problem:
