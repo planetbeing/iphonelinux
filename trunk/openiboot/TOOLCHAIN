@@ -53,7 +53,8 @@ because that's the default location and already is in the path.
 ## Step three: Build and install first stage of GCC
 
 This step was the trickiest to get right. You first have to edit 
-gcc/config/arm/t-arm-elf to enable the building of the interwork multi-lib.
+gcc/config/arm/t-arm-elf to enable the building of the interwork and
+VFP multi-libs.
 
 	nano gcc-4.1.1/gcc/config/arm/t-arm-elf
 
@@ -61,6 +62,11 @@ gcc/config/arm/t-arm-elf to enable the building of the interwork multi-lib.
 
 	MULTILIB_OPTIONS    += mno-thumb-interwork/mthumb-interwork
 	MULTILIB_DIRNAMES   += normal interwork
+
+Also add these two lines afterwards:
+
+	MULTILIB_OPTIONS    += mfpu=vfp/mfpu=fpa
+	MULTILIB_DIRNAMES   += vfp fpa
 
 Now you can configure and build. Note that the configure (and thus build) 
 must be run as root because configure wants to copy some headers into 
