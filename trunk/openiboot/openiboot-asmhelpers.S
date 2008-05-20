@@ -174,9 +174,9 @@ GiveFullAccessCP10CP11:
 	BX	LR
 
 EnableVFP:					@ FIXME: Not working yet without VFP
-	@FMRX	R2, FPEXC
-	@ORR	R2, R2,	#0x40000000
-	@FMXR	FPEXC, R2
+	FMRX	R2, FPEXC
+	ORR	R2, R2,	#0x40000000
+	FMXR	FPEXC, R2
 	BX	LR
 
 WaitForInterrupt:
