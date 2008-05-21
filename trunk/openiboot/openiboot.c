@@ -42,8 +42,8 @@ static void setup_processor() {
 	CleanAndInvalidateCPUDataCache();
 	ClearCPUInstructionCache();
 
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() & ~(0x1000));	// Disable instruction cache
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() & ~(0x4));	// Disable data cache
+	WriteControlRegisterConfigData(ReadControlRegisterConfigData() & ~(ARM11_Control_INSTRUCTIONCACHE));	// Disable instruction cache
+	WriteControlRegisterConfigData(ReadControlRegisterConfigData() & ~(ARM11_Control_DATACACHE));		// Disable data cache
 
 	GiveFullAccessCP10CP11();
 	EnableVFP();
@@ -53,19 +53,21 @@ static void setup_processor() {
 	InvalidateCPUDataCache();
 	ClearCPUInstructionCache();
 
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | 0x1000);	// Enable instruction cache
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | 0x4);		// Enable data cache
+	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | ARM11_Control_INSTRUCTIONCACHE);	// Enable instruction cache
+	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | ARM11_Control_DATACACHE);		// Enable data cache
 
 	WriteControlRegisterConfigData(ReadControlRegisterConfigData()
-		& ~(0x2)								// Disable strict alignment fault checking
-		| 0x400000);								// Enable unaligned data access operations
+		& ~(ARM11_Control_STRICTALIGNMENTCHECKING)				// Disable strict alignment fault checking
+		| ARM11_Control_UNALIGNEDDATAACCESS);					// Enable unaligned data access operations
 
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | 0x4);
 
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | 0x800); 	// Enable branch prediction
+	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | ARM11_Control_BRANCHPREDICTION); 	// Enable branch prediction
 
 	// Enable return stack, dynamic branch prediction, static branch prediction
-	WriteAuxiliaryControlRegister(ReadAuxiliaryControlRegister() | 0x7);
+	WriteAuxiliaryControlRegister(ReadAuxiliaryControlRegister()
+		| ARM11_AuxControl_RETURNSTACK
+		| ARM11_AuxControl_DYNAMICBRANCHPREDICTION
+		| ARM11_AuxControl_STATICBRANCHPREDICTION);
 }
 
 static void setup_tasks() {

@@ -9,7 +9,10 @@
 #define OpenIBootEnd 0x18021980
 #define HeapStart 0x18026000
 #define PageTable 0x180FC000
-#define ROMLocation 0x20000000
+#define MemoryStart 0x00000000
+#define MemoryEnd 0xFFFFFFFF
+#define MemoryHigher 0x80000000
+#define ExceptionVector MemoryStart
 
 /*
  *	Devices
@@ -49,6 +52,17 @@
 #define ARM11_CPSR_UNDEFINEDMODE 0x1B
 #define ARM11_CPSR_SUPERVISORMODE 0x13
 
+#define ARM11_Control_INSTRUCTIONCACHE 0x1000
+#define ARM11_Control_DATACACHE 0x4
+#define ARM11_Control_BRANCHPREDICTION 0x800
+#define ARM11_Control_RETURNSTACK 0x1
+#define ARM11_Control_STRICTALIGNMENTCHECKING 0x2
+#define ARM11_Control_UNALIGNEDDATAACCESS 0x400000
+
+#define ARM11_AuxControl_RETURNSTACK 0x1
+#define ARM11_AuxControl_DYNAMICBRANCHPREDICTION 0x2
+#define ARM11_AuxControl_STATICBRANCHPREDICTION 0x4
+
 #define ARM11_AccessControl_CP0_PRIVILEGED (0x01 << 0)
 #define ARM11_AccessControl_CP0_ALL (0x11 << 0)
 #define ARM11_AccessControl_CP1_PRIVILEGED (0x01 << 2)
@@ -77,6 +91,39 @@
 #define ARM11_AccessControl_CP12_ALL (0x11 << 24)
 #define ARM11_AccessControl_CP13_PRIVILEGED (0x01 << 26)
 #define ARM11_AccessControl_CP13_ALL (0x11 << 26)
+
+#define ARM11_DomainAccessControl_D0_PRIVILEGED (0x01 << 0)
+#define ARM11_DomainAccessControl_D0_ALL (0x11 << 0)
+#define ARM11_DomainAccessControl_D1_PRIVILEGED (0x01 << 2)
+#define ARM11_DomainAccessControl_D1_ALL (0x11 << 2)
+#define ARM11_DomainAccessControl_D2_PRIVILEGED (0x01 << 4)
+#define ARM11_DomainAccessControl_D2_ALL (0x11 << 4)
+#define ARM11_DomainAccessControl_D3_PRIVILEGED (0x01 << 6)
+#define ARM11_DomainAccessControl_D3_ALL (0x11 << 6)
+#define ARM11_DomainAccessControl_D4_PRIVILEGED (0x01 << 8)
+#define ARM11_DomainAccessControl_D4_ALL (0x11 << 8)
+#define ARM11_DomainAccessControl_D5_PRIVILEGED (0x01 << 10)
+#define ARM11_DomainAccessControl_D5_ALL (0x11 << 10)
+#define ARM11_DomainAccessControl_D6_PRIVILEGED (0x01 << 12)
+#define ARM11_DomainAccessControl_D6_ALL (0x11 << 12)
+#define ARM11_DomainAccessControl_D7_PRIVILEGED (0x01 << 14)
+#define ARM11_DomainAccessControl_D7_ALL (0x11 << 14)
+#define ARM11_DomainAccessControl_D8_PRIVILEGED (0x01 << 16)
+#define ARM11_DomainAccessControl_D8_ALL (0x11 << 16)
+#define ARM11_DomainAccessControl_D9_PRIVILEGED (0x01 << 18)
+#define ARM11_DomainAccessControl_D9_ALL (0x11 << 18)
+#define ARM11_DomainAccessControl_D10_PRIVILEGED (0x01 << 20)
+#define ARM11_DomainAccessControl_D10_ALL (0x11 << 20)
+#define ARM11_DomainAccessControl_D11_PRIVILEGED (0x01 << 22)
+#define ARM11_DomainAccessControl_D11_ALL (0x11 << 22)
+#define ARM11_DomainAccessControl_D12_PRIVILEGED (0x01 << 24)
+#define ARM11_DomainAccessControl_D12_ALL (0x11 << 24)
+#define ARM11_DomainAccessControl_D13_PRIVILEGED (0x01 << 26)
+#define ARM11_DomainAccessControl_D13_ALL (0x11 << 26)
+#define ARM11_DomainAccessControl_D14_PRIVILEGED (0x01 << 28)
+#define ARM11_DomainAccessControl_D14_ALL (0x11 << 28)
+#define ARM11_DomainAccessControl_D15_PRIVILEGED (0x01 << 28)
+#define ARM11_DomainAccessControl_D15_ALL (0x11 << 28)
 
 #define ARM11_VFP_Enable #0x40000000
 
