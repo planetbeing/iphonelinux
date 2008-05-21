@@ -71,25 +71,25 @@ ArmReset_zeroHeap_loop:
 	BLT	ArmReset_zeroHeap_loop
 
 	MRS	R0, CPSR				@ setup the stack for mode:
-	BIC	R0, R0,	#0x1F
+	BIC	R0, R0,	#ARM11_CPSR_MODEMASK
 
-	ORR	R1, R0,	#0x12
+	ORR	R1, R0,	#ARM11_CPSR_IRQMODE
 	MSR	CPSR_c,	R1				@ set mode to b10010 (IRQ mode)
 	LDR	SP, =ExceptionStack			@ set the stack to the ExceptionStack
 
-	ORR	R1, R0,	#0x11
+	ORR	R1, R0,	#ARM11_CPSR_FIQMODE
 	MSR	CPSR_c,	R1				@ set mode to b10001 (FIQ mode)
 	LDR	SP, =ExceptionStack			@ set the stack to the ExceptionStack
 
-	ORR	R1, R0,	#0x17
+	ORR	R1, R0,	#ARM11_CPSR_ABORTMODE
 	MSR	CPSR_c,	R1				@ set mode to b10111 (abort mode)
 	LDR	SP, =ExceptionStack			@ set the stack to the ExceptionStack
 
-	ORR	R1, R0,	#0x1B	
+	ORR	R1, R0,	#ARM11_CPSR_UNDEFINEDMODE	
 	MSR	CPSR_c,	R1				@ set mode to b11011 (Undefined)
 	LDR	SP, =ExceptionStack			@ set the stack to the ExceptionStack
 
-	ORR	R1, R0,	#0x13
+	ORR	R1, R0,	#ARM11_CPSR_SUPERVISORMODE
 	MSR	CPSR_c,	R1				@ set mode to b10011 (supervisor mode)
 	LDR	SP, =GeneralStack			@ set the stack to the GeneralStack
 
@@ -156,7 +156,7 @@ HandleIRQ_checkVIC1:
 
 HandleIRQ_lookupHandler:
 	LDR	R2, [R5]			@ Read VICADDRESS. Note that this indicates to the VIC hardware the interrupt is being serviced
-	CMP	R2, #0x40
+	CMP	R2, #VIC_MaxInterrupt
 	BHI	HandleIRQ_callHandler		@ Directly call what's in the VICADDRESS if it is an actual ISR address
 
 	LDR	R1, =InterruptHandlerTable
@@ -169,7 +169,7 @@ HandleIRQ_lookupHandler:
 	CMP	R3, #0
 	BEQ	HandleIRQ_prepareHandler	@ Just call the handler if we aren't using the edge IC
 
-	CMP	R2, #0x20			@ Figure out which edge IC register to write to
+	CMP	R2, #VIC_InterruptSeparator	@ Figure out which edge IC register to write to
 						@ We never should get here, because we don't use the edge IC. This is included for completeness
 	BHI	HandleIRQ_edgeICHighInterrupt
 	LDR	R4, =(EDGEIC + EDGEICLOWSTATUS)
@@ -179,7 +179,7 @@ HandleIRQ_lookupHandler:
 	
 HandleIRQ_edgeICHighInterrupt:
 	LDR	R4, =(EDGEIC + EDGEICHIGHSTATUS)
-	SUB	R2, #0x20
+	SUB	R2, #VIC_InterruptSeparator
 	MOV	R3, #1
 	LSL	R3, R2				@ write 1 << (irq_no - 0x20)
 	
@@ -219,7 +219,7 @@ HandleFIQ_checkVIC1:
 	LDR	R0, [R0]
 	CMP	R0, #0
 	BEQ	HandleFIQ_return
-	MOV	R4, #0x20
+	MOV	R4, #VIC_InterruptSeparator
 
 HandleFIQ_callHandler:
 	BLX	__ctzsi2			@ Get correct bit in the status flag

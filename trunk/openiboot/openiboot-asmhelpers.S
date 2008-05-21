@@ -107,27 +107,25 @@ LeaveCriticalSection_return:
 
 EnableCPUIRQ:
 	MRS	R0, CPSR
-	BIC	R1, R0,	#0x80
+	BIC	R1, R0,	#ARM11_CPSR_IRQDISABLE
 	MSR	CPSR_c,	R1
-	AND	R0, R0,	#0x80
 	BX	LR
 
 EnableCPUFIQ:
 	MRS	R0, CPSR
-	BIC	R0, R0,	#0x40
+	BIC	R0, R0,	#ARM11_CPSR_FIQDISABLE
 	MSR	CPSR_c,	R0
 	BX	LR
 
 DisableCPUIRQ:
 	MRS	R0, CPSR
-	ORR	R1, R0,	#0x80
+	ORR	R1, R0,	#ARM11_CPSR_IRQDISABLE
 	MSR	CPSR_c,	R1
-	AND	R0, R0,	#0x80
 	BX	LR
 
 DisableCPUFIQ:
 	MRS	R0, CPSR
-	ORR	R0, R0,	#0x40
+	ORR	R0, R0,	#ARM11_CPSR_FIQDISABLE
 	MSR	CPSR_c,	R0
 	BX	LR
 
@@ -169,14 +167,14 @@ WritePeripheralPortMemoryRemapRegister:
 
 GiveFullAccessCP10CP11:
 	MRC	p15, 0,	R0, c1, c0, 2
-	MOV	R1, #0xF
-	ORR	R0, R0,	R1, LSL#20
+	MOV	R1, #(ARM11_AccessControl_CP10_ALL | ARM11_AccessControl_CP11_ALL)
+	ORR	R0, R0,	R1
 	MCR	p15, 0,	R0, c1, c0, 2
 	BX	LR
 
 EnableVFP:					@ FIXME: Not working yet without VFP
 	FMRX	R2, FPEXC
-	ORR	R2, R2,	#0x40000000
+	ORR	R2, R2,	ARM11_VFP_Enable
 	FMXR	FPEXC, R2
 	BX	LR
 
