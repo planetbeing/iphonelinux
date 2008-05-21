@@ -1,7 +1,7 @@
 AS = arm-elf-as
 LD = arm-elf-ld
 CC = arm-elf-gcc
-OPENIBOOT_OBJS=entry.o openiboot.o openiboot-asmhelpers.o
+OPENIBOOT_OBJS=entry.o openiboot.o openiboot-asmhelpers.o mmu.o
 
 ASFLAGS += -mcpu=arm11
 ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
@@ -10,7 +10,7 @@ LIBRARIES += -lgcc
 LIBRARY_PATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
 
 %.o:	%.S
-	$(AS) $(ASFLAGS) $(ARCHFLAGS) $< -o $@
+	$(CC) -E -x c $< | $(AS) $(ASFLAGS) $(ARCHFLAGS) -o $@
 
 %.o:	%.c
 	$(CC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@

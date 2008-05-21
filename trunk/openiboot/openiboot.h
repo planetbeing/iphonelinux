@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+typedef enum Boolean {
+	FALSE = 0,
+	TRUE = 1
+} Boolean;
+
 typedef void (*TaskRoutineFunction)(void* opaque);
 typedef void (*EventFunction)(void* opaque);
 

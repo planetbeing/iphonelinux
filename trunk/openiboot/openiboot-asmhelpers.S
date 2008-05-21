@@ -1,5 +1,6 @@
+#include "s5l8900.h"
+
 .include "openiboot.S.h"
-.include "s5l8900.S.h"
 
 .global IncrementCriticalLock
 .global DecrementCriticalLock
@@ -11,9 +12,9 @@
 .global DisableCPUIRQ
 .global DisableCPUFIQ
 
-#
-#	Coprocessor manipulation
-#
+@
+@	Coprocessor manipulation
+@
 
 .global ReadControlRegisterConfigData
 .global WriteControlRegisterConfigData
@@ -41,9 +42,9 @@
 
 .text
 
-#
-#	Utility functions
-#
+@
+@	Utility functions
+@
 
 .code 16
  .thumb_func
@@ -100,9 +101,9 @@ LeaveCriticalSection_return:
 
 .code 32
 
-#
-#	FIQ/IRQ Control
-#
+@
+@	FIQ/IRQ Control
+@
 
 EnableCPUIRQ:
 	MRS	R0, CPSR
@@ -130,9 +131,9 @@ DisableCPUFIQ:
 	MSR	CPSR_c,	R0
 	BX	LR
 
-#
-#	Coprocessor manipulation
-#
+@
+@	Coprocessor manipulation
+@
 
 ReadControlRegisterConfigData:
 	MRC	p15, 0,	R0, c1, c0
@@ -184,9 +185,9 @@ WaitForInterrupt:
 	MCR	p15, 0,	R0, c7, c0, 4
 	BX	LR
 
-#
-#	MMU management
-#
+@
+@	MMU management
+@
 
 WriteTranslationTableBaseRegister0:
 	MCR	p15, 0,	R0, c2, c0
@@ -197,9 +198,9 @@ InvalidateUnifiedTLBUnlockedEntries:
 	MCR	p15, 0,	R0, c8, c7
 	BX	LR
 
-#
-#	Cache management
-#
+@
+@	Cache management
+@
 
 ClearCPUInstructionCache:
 	MOV	R0, #0

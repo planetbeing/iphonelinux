@@ -1,5 +1,6 @@
+#include "s5l8900.h"
+
 .include "openiboot.S.h"
-.include "s5l8900.S.h"
 
 .global _start
 
@@ -11,9 +12,9 @@
 
 .text
 
-#
-#	Exception vector
-#
+@
+@	Exception vector
+@
 
 .code 32
 _start:
@@ -26,9 +27,9 @@ _start:
 	LDR	PC, =ArmIRQHandler
 	LDR	PC, =ArmFIQHandler
 
-#
-#	Exception handlers (ArmReset: starts the boot sequence)
-#
+@
+@	Exception handlers (ArmReset: starts the boot sequence)
+@
 
 .equ ArmResetDifferenceFromEntry, (ArmReset + 0x8 - OpenIBootLoad)
 
@@ -100,9 +101,9 @@ ArmReset_loopForever:					@ shouldn't reach here
 	B	ArmReset_loopForever
 
 
-#
-#	Exception handlers (IRQ handlers)
-#
+@
+@	Exception handlers (IRQ handlers)
+@
 
 .code 32
 ArmIRQHandler:
@@ -239,9 +240,9 @@ HandleFIQ_return:
 	POP	{R4,PC}
 
 
-#
-#	Exception handlers (unexpected: something's wrong!)
-#
+@
+@	Exception handlers (unexpected: something's wrong!)
+@
 
 .code 32
 ArmUndefinedHandler:

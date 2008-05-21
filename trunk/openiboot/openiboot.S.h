@@ -29,13 +29,4 @@
 .equ TaskDescriptorIdentifier1, 0x7461736b
 .equ TaskDescriptorIdentifier2,	0x74736b32
 
-#
-#	Constants
-#
-
-.equ OpenIBootLoad, 0x18000000
-.equ OpenIBootEnd, 0x18021980
-.equ HeapStart, 0x18026000
-.equ PageTable, 0x180FC000
-
 #endif
