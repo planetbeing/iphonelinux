@@ -1,0 +1,23 @@
+Using build-toolchain
+--------------------------
+
+This script will build the GNU ARM toolchain from scratch. It must be ran as root
+due to the fact that it installs the bins in /usr/local.
+
+It will use /tmp/ipl-toolchain for temporary storage. If you would like to override
+this path you can set the environment variable $TOOLCHAIN_PATH to the location of 
+your temporary storage directory.
+
+It's important to note that the files are not cleaned up after the install. You will
+have to run clean for it to cleanup the packages/src directories.
+
+The commands are as follows:
+
+## Make toolchain
+./build-toolchain.sh make
+## Clean toolchain
+./build-toolchain.sh clean
+
+Logs are stored in $TOOLCHAIN_PATH/build.log ( by default /tmp/ipl-toolchain/build.log )
+
+
