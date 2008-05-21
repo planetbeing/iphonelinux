@@ -16,11 +16,18 @@ LIBRARY_PATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
 	$(CC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
 
 
-all:	openiboot
+all:	openiboot.img2
 
 openiboot:	$(OPENIBOOT_OBJS)
 	$(LD) $(LDFLAGS) $(OPENIBOOT_OBJS) $(LIBRARIES) $(LIBRARY_PATH) -o $@
 
+mk8900image/mk8900image:
+	cd mk8900image/; make
+
+openiboot.img2:	openiboot mk8900image/mk8900image
+	mk8900image/mk8900image openiboot openiboot.img2 mk8900image/template.img2
 clean:
-	rm *.o
-	rm openiboot
+	-rm *.o
+	-rm openiboot
+	-rm openiboot.img2
+
