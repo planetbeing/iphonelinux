@@ -98,22 +98,30 @@ echo "- $OIBOOT_PATH/src"
 echo -en "Downloading packages\n"
 # BinUtils
 checkFile $OIBOOT_PATH/$PKG_BINUTILS
-checkRet $? "- $PKG_BINUTILS complete" $EXIT_FALSE
-wget $PKG_MIRROR/$PKG_BINUTILS -O $OIBOOT_PATH/src/$PKG_BINUTILS >> $OIBOOT_PATH/$BUILDLOG 2>&1
+if [ $? -eq 0 ];
+then
+	wget $PKG_MIRROR/$PKG_BINUTILS -O $OIBOOT_PATH/src/$PKG_BINUTILS >> $OIBOOT_PATH/$BUILDLOG 2>&1
+	checkRet $? "Failed to retrive $PKG_BINUTILS" $EXIT_TRUE
+fi
 echo "- $PKG_BINUTILS complete"
 # GCC
 checkFile $OIBOOT_PATH/$PKG_GCC411
-checkRet $? "Failed to retrive $PKG_GCC411" $EXIT_TRUE
-wget $PKG_MIRROR/$PKG_GCC411 -O $OIBOOT_PATH/src/$PKG_GCC411 >> $OIBOOT_PATH/$BUILDLOG 2>&1
+if [ $? -eq 0 ];
+then
+  wget $PKG_MIRROR/$PKG_GCC411 -O $OIBOOT_PATH/src/$PKG_GCC411 >> $OIBOOT_PATH/$BUILDLOG 2>&1
+  checkRet $? "Failed to retrive $PKG_GCC411" $EXIT_TRUE
+fi
 echo "- $PKG_GCC411 complete"
 # NewLib
 checkFile $OIBOOT_PATH/$PKG_NEWLIB
-checkRet $? "Failed to retrive $PKG_NEWLIB" $EXIT_TRUE
-wget $PKG_MIRROR/$PKG_NEWLIB -O $OIBOOT_PATH/src/$PKG_NEWLIB >> $OIBOOT_PATH/$BUILDLOG 2>&1
+if [ $? -eq 0 ];
+then
+  wget $PKG_MIRROR/$PKG_NEWLIB -O $OIBOOT_PATH/src/$PKG_NEWLIB >> $OIBOOT_PATH/$BUILDLOG 2>&1
+  checkRet $? "Failed to retrive $PKG_NEWLIB" $EXIT_TRUE
+fi
 echo "- $PKG_NEWLIB complete"
 
 echo -en "Starting package build/install\n"
-
 echo -en "- Extracting binutils\n"
 cd $OIBOOT_PATH
 tar -jxvf $OIBOOT_PATH/src/$PKG_BINUTILS >> $OIBOOT_PATH/$BUILDLOG 2>&1
