@@ -104,6 +104,8 @@ mkdir -p $TOOLCHAIN_PATH/src/
 checkRet $? "failed to create $TOOLCHAIN_PATH/src" $EXIT_TRUE
 echo "- $TOOLCHAIN_PATH/src"
 
+# Create log file
+echo "" > $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 echo -en "Downloading packages\n"
 # BinUtils
 echo -en "- Downloading $PKG_BINUTILS\n"
@@ -196,12 +198,14 @@ echo -en "- Installing NewLib\n"
 make install >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 cd ../
 echo -en "- NewLib Completed\n"
+
 echo "- Doing part 2 of GCC build"
 cd gcc-build
 echo "- Making all GCC"
 make all >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 echo "- Installing GCC"
 make install >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+
 echo "- GCC part 2 complete"
 echo -en "Toolchain install successful\n"
 echo -en "=======================================\n"

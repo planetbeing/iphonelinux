@@ -19,5 +19,3 @@ The commands are as follows:
 ./build-toolchain.sh clean
 
 Logs are stored in $TOOLCHAIN_PATH/build.log ( by default /tmp/ipl-toolchain/build.log )
-
-
