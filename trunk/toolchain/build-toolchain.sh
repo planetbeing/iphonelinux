@@ -15,7 +15,7 @@ PKG_NEWLIB="newlib-1.14.0.tar.gz"
 
 # Package Patches
 PATCH_MIRROR="http://www.iphonelinux.org"
-PATCH_GCC411_ARMELF="t-arm-elf"
+PATCH_GCC411_ARMELF="t-arm-elf.patch"
 
 
 #LOG FILE
@@ -163,8 +163,10 @@ tar -zxvf $TOOLCHAIN_PATH/src/$PKG_NEWLIB >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to extract package $PKG_NEWLIB" $EXIT_TRUE
 
 echo -en "- Downloading t-arm-elf patch\n" 
-wget -r $PATCH_MIRROR/$PATCH_GCC411_ARMELF -O $TOOLCHAIN_PATH/gcc-4.1.1/gcc/config/arm/t-arm-elf >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+wget -r $PATCH_MIRROR/$PATCH_GCC411_ARMELF -O $TOOLCHAIN_PATH/t-arm-elf.patch >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to download patch $PATCH_GCC411_ARMELF" $EXIT_TRUE
+patch -p0 < $PATCH_GCC411_ARMELF >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to apply patch for t-arm-elf" $EXIT_TRUE
 echo -en "- Doing GCC configure\n"
 cd gcc-build
 ../gcc-4.1.1/configure --target=arm-elf --prefix=/usr/local \
@@ -198,9 +200,8 @@ echo "- Doing part 2 of GCC build"
 cd gcc-build
 echo "- Making all GCC"
 make all >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-echo "- Installing GCC\n"
+echo "- Installing GCC"
 make install >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-echo "- GCC part 2 comlete"
-echo -en "Cleaning up sources\n"
+echo "- GCC part 2 complete"
 echo -en "Toolchain install successful\n"
 echo -en "=======================================\n"
