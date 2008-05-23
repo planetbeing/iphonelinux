@@ -8,6 +8,8 @@ typedef enum Boolean {
 	TRUE = 1
 } Boolean;
 
+#define NULL 0
+
 typedef void (*TaskRoutineFunction)(void* opaque);
 typedef void (*EventFunction)(void* opaque);
 

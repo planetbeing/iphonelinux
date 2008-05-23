@@ -80,6 +80,7 @@ static int setup_tasks() {
 static int setup_devices() {
 	miu_setup();
 	power_setup();
+	clock_setup();
 
 	return 0;
 }

@@ -15,6 +15,8 @@
 #define MMU_CACHEABLE 0x8
 #define MMU_BUFFERABLE 0x4
 
+extern uint32_t* CurrentPageTable;
+
 int mmu_setup();
 void mmu_enable();
 void mmu_map_section(uint32_t section, uint32_t target, Boolean cacheable, Boolean bufferable);
