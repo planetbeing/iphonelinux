@@ -197,7 +197,7 @@
 #define VIC_MaxInterrupt 0x40
 #define VIC_InterruptSeparator 0x20
 
-#define POWER_ID_EPOCH(x) GET_BITS((x), 24, 8)
+#define POWER_ID_EPOCH(x) ((x) >> 24)
 
 // Clock0
 
@@ -240,7 +240,6 @@
 #define CLOCK1_MDIV(x) (((x) >> 8) & 0x3FF)
 #define CLOCK1_PDIV(x) (((x) >> 24) & 0x3F)
 #define CLOCK1_SDIV(x) ((x) & 0x3)
-
 
 // Power
 #define POWER_DEFAULT_DEVICES 0xEC
