@@ -4,7 +4,7 @@
 #include "s5l8900.h"
 
 int miu_setup() {
-	if(SYSCTRL_POWERID_EPOCH(*((uint8_t*)(SYSCTRL_POWER + SYSCTRL_POWERID))) != 3) {
+	if(POWER_ID_EPOCH(*((uint8_t*)(POWER + POWER_ID))) != 3) {
 		// Epoch mismatch
 		return -1;
 	}

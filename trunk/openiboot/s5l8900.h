@@ -30,10 +30,10 @@
 #define VIC0 0x38E00000
 #define VIC1 0x38E01000
 #define EDGEIC 0x38E02000
-#define SYSCTRL_POWER 0x39000000
+#define POWER 0x39A00000	/* probably a part of the system controller */
 #define AMC0 0x22000000
 #define ROM 0x20000000
-#define CLOCK0 0x38100000
+#define CLOCK0 0x38100000	/* the clocks are probably also parts of the system controller */
 #define CLOCK1 0x3C500000
 
 /*
@@ -48,8 +48,15 @@
 #define EDGEICLOWSTATUS 0x8
 #define EDGEICHIGHSTATUS 0xC
 
-// SYSCTRL_PWR
-#define SYSCTRL_POWERID 0x44
+// POWER
+#define POWER_CONFIG0 0x0
+#define POWER_CONFIG1 0x20
+#define POWER_CONFIG2 0x6C
+#define POWER_ONCTRL 0xC
+#define POWER_OFFCTRL 0x10
+#define POWER_SETSTATE 0x8
+#define POWER_STATE 0x14
+#define POWER_ID 0x44
 
 // CLOCK0
 #define CLOCK0_CONFIG 0x0
@@ -169,7 +176,7 @@
 #define VIC_MaxInterrupt 0x40
 #define VIC_InterruptSeparator 0x20
 
-#define SYSCTRL_POWERID_EPOCH(x) ((x) >> 24)
+#define POWER_ID_EPOCH(x) ((x) >> 24)
 
 // Clock0
 
@@ -177,5 +184,15 @@
 #define CLOCK0_CONFIG_C1VALUE 0x1
 #define CLOCK0_CONFIG_C2VALUE 0x3
 #define CLOCK0_CONFIG_C3VALUE 0x5
+
+// Power
+#define POWER_DEFAULT_DEVICES 0xEC
+#define POWER_LCD 0x100
+#define POWER_USB 0x200
+#define POWER_VROM 0x1000
+
+#define POWER_CONFIG0_RESET 0x1123009
+#define POWER_CONFIG1_RESET 0x20
+#define POWER_CONFIG2_RESET 0x0
 
 #endif

@@ -79,6 +79,7 @@ static int setup_tasks() {
 
 static int setup_devices() {
 	miu_setup();
+	power_setup();
 
 	return 0;
 }

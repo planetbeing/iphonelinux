@@ -1,5 +1,5 @@
-#ifndef MIU_H
-#define MIU_H
+#ifndef CLOCK_H
+#define CLOCK_H
 
 #include "openiboot.h"
 
