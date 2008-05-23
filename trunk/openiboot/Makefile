@@ -1,7 +1,7 @@
 AS = arm-elf-as
 LD = arm-elf-ld
 CC = arm-elf-gcc
-OPENIBOOT_OBJS=entry.o openiboot.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o
+OPENIBOOT_OBJS=entry.o openiboot.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o
 
 ASFLAGS += -mcpu=arm11
 ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
