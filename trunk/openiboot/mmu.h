@@ -15,7 +15,7 @@
 #define MMU_CACHEABLE 0x8
 #define MMU_BUFFERABLE 0x4
 
-void mmu_setup();
+int mmu_setup();
 void mmu_enable();
 void mmu_map_section(uint32_t section, uint32_t target, Boolean cacheable, Boolean bufferable);
 void mmu_map_section_range(uint32_t rangeStart, uint32_t rangeEnd, uint32_t target, Boolean cacheable, Boolean bufferable);

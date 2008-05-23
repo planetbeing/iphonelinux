@@ -2,10 +2,10 @@
 #include "s5l8900.h"
 #include "openiboot-asmhelpers.h"
 
-static void setup_processor();
-static void setup_mmu();
-static void setup_tasks();
-static void setup_devices();
+static int setup_processor();
+static int setup_mmu();
+static int setup_tasks();
+static int setup_devices();
 
 TaskDescriptor bootstrapTask = {
 	TaskDescriptorIdentifier1,
@@ -37,7 +37,7 @@ void OpenIBootStart() {
 	while(1);
 }
 
-static void setup_processor() {
+static int setup_processor() {
 
 	CleanAndInvalidateCPUDataCache();
 	ClearCPUInstructionCache();
@@ -68,12 +68,17 @@ static void setup_processor() {
 		| ARM11_AuxControl_RETURNSTACK
 		| ARM11_AuxControl_DYNAMICBRANCHPREDICTION
 		| ARM11_AuxControl_STATICBRANCHPREDICTION);
+
+	return 0;
 }
 
-static void setup_tasks() {
+static int setup_tasks() {
 	CurrentRunning = &bootstrapTask;
+	return 0;
 }
 
-static void setup_devices() {
+static int setup_devices() {
+	miu_setup();
 
+	return 0;
 }

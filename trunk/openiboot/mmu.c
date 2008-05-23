@@ -6,7 +6,7 @@ uint32_t* CurrentPageTable;
 
 static void initialize_pagetable();
 
-void mmu_setup() {
+int mmu_setup() {
 	CurrentPageTable = (uint32_t*) PageTable;
 
 	// Initialize the page table

@@ -2,6 +2,13 @@
 #define S5L8900_H
 
 /*
+ *	Macros
+ */
+
+#define GET_REG(x) (*((uint32_t*)(x)))
+#define SET_REG(x, y) (*((uint32_t*)(x)) = (y))
+
+/*
  *	Constants
  */
 
@@ -23,8 +30,11 @@
 #define VIC0 0x38E00000
 #define VIC1 0x38E01000
 #define EDGEIC 0x38E02000
+#define SYSCTRL_POWER 0x39000000
 #define AMC0 0x22000000
 #define ROM 0x20000000
+#define CLOCK0 0x38100000
+#define CLOCK1 0x3C500000
 
 /*
  *	Registers
@@ -37,6 +47,12 @@
 // EDGEIC
 #define EDGEICLOWSTATUS 0x8
 #define EDGEICHIGHSTATUS 0xC
+
+// SYSCTRL_PWR
+#define SYSCTRL_POWERID 0x44
+
+// CLOCK0
+#define CLOCK0_CONFIG 0x0
 
 /*
  *	Register values
@@ -149,7 +165,17 @@
 #define ARM11_PeripheralPortSize1GB 20
 #define ARM11_PeripheralPortSize2GB 21
 
+// VIC
 #define VIC_MaxInterrupt 0x40
 #define VIC_InterruptSeparator 0x20
+
+#define SYSCTRL_POWERID_EPOCH(x) ((x) >> 24)
+
+// Clock0
+
+#define CLOCK0_CONFIG_BOTTOMMASK 0x7
+#define CLOCK0_CONFIG_C1VALUE 0x1
+#define CLOCK0_CONFIG_C2VALUE 0x3
+#define CLOCK0_CONFIG_C3VALUE 0x5
 
 #endif
