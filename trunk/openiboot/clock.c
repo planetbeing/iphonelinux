@@ -2,6 +2,11 @@
 #include "clock.h"
 #include "s5l8900.h"
 
+int clock_setup() {
+	
+	return 0;
+}
+
 int clock_set_bottom_bits_38100000(Clock0ConfigCode code) {
 	int bottomValue;
 

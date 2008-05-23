@@ -7,6 +7,7 @@
 
 #define GET_REG(x) (*((uint32_t*)(x)))
 #define SET_REG(x, y) (*((uint32_t*)(x)) = (y))
+#define GET_BITS(x, start, length) ((x << (32 - ((start) + (length)))) >> (32 - (length)))
 
 /*
  *	Constants
@@ -60,6 +61,10 @@
 
 // CLOCK0
 #define CLOCK0_CONFIG 0x0
+
+// CLOCK1
+#define CLOCK1_CONFIG0 0x0
+#define CLOCK1_CONFIG1 0x4
 
 /*
  *	Register values
@@ -176,7 +181,7 @@
 #define VIC_MaxInterrupt 0x40
 #define VIC_InterruptSeparator 0x20
 
-#define POWER_ID_EPOCH(x) ((x) >> 24)
+#define POWER_ID_EPOCH(x) GET_BITS((x), 24, 8)
 
 // Clock0
 
@@ -184,6 +189,10 @@
 #define CLOCK0_CONFIG_C1VALUE 0x1
 #define CLOCK0_CONFIG_C2VALUE 0x3
 #define CLOCK0_CONFIG_C3VALUE 0x5
+
+// Clock1
+#define CLOCK1_CONFIG0_0x2000
+
 
 // Power
 #define POWER_DEFAULT_DEVICES 0xEC

@@ -11,5 +11,6 @@ typedef enum Clock0ConfigCode {
 } Clock0ConfigCode;
 
 int clock_set_bottom_bits_38100000(Clock0ConfigCode code);
+int clock_setup();
 
 #endif
