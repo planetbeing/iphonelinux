@@ -193,7 +193,6 @@
 // Clock1
 #define CLOCK1_CONFIG0_0x2000
 
-
 // Power
 #define POWER_DEFAULT_DEVICES 0xEC
 #define POWER_LCD 0x100
