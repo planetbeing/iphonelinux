@@ -5,5 +5,6 @@
 
 int interrupt_setup();
 int interrupt_install(int irq_no, InterruptServiceRoutine handler, uint32_t token);
+int interrupt_enable(int irq_no);
 
 #endif

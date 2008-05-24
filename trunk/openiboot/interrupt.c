@@ -48,4 +48,22 @@ int interrupt_install(int irq_no, InterruptServiceRoutine handler, uint32_t toke
 	InterruptHandlerTable[irq_no].token = token;
 	InterruptHandlerTable[irq_no].useEdgeIC = 0;
 	LeaveCriticalSection();
+
+	return 0;
+}
+
+int interrupt_enable(int irq_no) {
+	if(irq_no >= VIC_MaxInterrupt) {
+		return -1;
+	}
+
+	EnterCriticalSection();
+	if(irq_no < VIC_InterruptSeparator) {
+		SET_REG(VIC0 + VICINTENABLE, GET_REG(VIC0 + VICINTENABLE) | (1 << irq_no));
+	} else {
+		SET_REG(VIC1 + VICINTENABLE, GET_REG(VIC1 + VICINTENABLE) | (1 << (irq_no - VIC_InterruptSeparator)));
+	}
+	LeaveCriticalSection();
+
+	return 0;
 }
