@@ -19,10 +19,13 @@ typedef struct TimerRegisters {
 
 typedef struct TimerInfo {
 	Boolean		option0x40;
-	uint32_t	divider;
+	uint32_t	dividerField;
 	uint32_t	unknown1;
 } TimerInfo;
 
+int timer_setup_clk(int timer_id, int type, int divider, uint32_t unknown1);
+
 extern TimerRegisters HWTimers[];
+extern TimerInfo Timers[7];
 
 #endif

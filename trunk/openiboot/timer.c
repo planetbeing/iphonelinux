@@ -19,6 +19,8 @@ TimerRegisters HWTimers[] = {
 			TIMER + TIMER_6 + TIMER_UNKNOWN1, TIMER + TIMER_6 + TIMER_UNKNOWN2, TIMER + TIMER_6 + TIMER_UNKNOWN3 }
 	};
 
+TimerInfo Timers[7];
+
 int timer_setup() {
 	/* timer needs clock signal */
 	clock_gate_switch(TIMER_CLOCKGATE, ON);
@@ -33,6 +35,11 @@ int timer_setup() {
 	SET_REG(TIMER + TIMER_UNKREG3, TIMER_UNKREG3_RESET);
 	SET_REG(TIMER + TIMER_UNKREG4, TIMER_UNKREG4_RESET);
 
+	int i;
+	for(i = 0; i < NUM_TIMERS; i++) {
+		timer_setup_clk(i, 2, 0);
+	}
+
 	/* now it's time to set up the main event dispatch timer */
 
 	// In our implementation, we set TicksPerSec when we setup the clock
@@ -41,6 +48,20 @@ int timer_setup() {
 
 
 	return 0;
+}
+
+int timer_setup_clk(int timer_id, int type, int divider, uint32_t unknown1) {
+	if(type == 2) {
+		Timers[timer_id].type = 0;
+		Timers[timer_id].divider = 6;	// actually just set the bit 3 to 1, and divider
+						// bits to 0 in the config reg
+	} else {
+		switch(divider) {
+
+		}
+	}
+
+	Timers[timer_id].unknown1 = unknown1;
 }
 
 int timer_stop_all() {
