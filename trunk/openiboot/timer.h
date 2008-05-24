@@ -17,6 +17,12 @@ typedef struct TimerRegisters {
 	uint32_t	unknown3;
 } TimerRegisters;
 
-extern TimerRegisters Timers[];
+typedef struct TimerInfo {
+	Boolean		option0x40;
+	uint32_t	divider;
+	uint32_t	unknown1;
+} TimerInfo;
+
+extern TimerRegisters HWTimers[];
 
 #endif

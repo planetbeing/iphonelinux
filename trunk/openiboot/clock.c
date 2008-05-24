@@ -16,6 +16,8 @@ uint32_t TimebaseFrequency;
 
 uint32_t ClockSDiv;
 
+uint32_t TicksPerSec;
+
 int clock_setup() {
 	uint32_t config;
 
@@ -143,6 +145,8 @@ int clock_setup() {
 	Unknown2Frequency = PLLFrequencies[unknown2PLL] / unknown2Divisor;
 	FixedFrequency = FREQUENCY_BASE * 2;
 	TimebaseFrequency = FREQUENCY_BASE / 2;
+
+	TicksPerSec = FREQUENCY_BASE;
 
 	return 0;
 }

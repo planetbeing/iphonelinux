@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 	}
 
 
-	AbstractFile* inFile = createAbstractFileFromFile(fopen(argv[1], "rb"));
+	AbstractFile* inFile = openAbstractFile(createAbstractFileFromFile(fopen(argv[1], "rb")));
 	if(!inFile) {
 		fprintf(stderr, "error: cannot open infile\n");
 		return 2;
@@ -77,11 +77,11 @@ int main(int argc, char* argv[]) {
 	inFile->close(inFile);
 
 	if(!createImage(inElf, inElfSize, &outImage, &outImageSize)) {
-		fprintf(stderr, "error: not a valid image\n");
-		return 5;
+		outImage = inElf;
+		outImageSize = inElfSize;
+	} else {
+		free(inElf);
 	}
-
-	free(inElf);
 
 	newFile->write(newFile, outImage, outImageSize);
 	newFile->close(newFile);
