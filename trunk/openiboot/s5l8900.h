@@ -92,6 +92,9 @@
 #define CLOCK1_PLL1CON 0x24
 #define CLOCK1_PLL2CON 0x28
 #define CLOCK1_PLL3CON 0x2C
+#define CLOCK1_PLLMODE 0x44
+#define CLOCK1_CL2_GATES 0x48
+#define CLOCK1_CL3_GATES 0x4C
 
 /*
  *	Register values
@@ -222,6 +225,8 @@
 #define CLOCK0_CONFIG_C3VALUE 0x5
 
 // Clock1
+#define CLOCK1_Separator 0x20
+
 #define CLOCK1_CLOCKPLL(x) GET_BITS((x), 12, 2)
 #define CLOCK1_CLOCKDIVIDER(x) (GET_BITS((x), 0, 4) + 1)
 #define CLOCK1_CLOCKHASDIVIDER(x) GET_BITS((x), 8, 1)
@@ -246,7 +251,6 @@
 #define CLOCK1_UNKNOWN2DIVIDER(x) GET_BITS((x), 16, 4)
 #define CLOCK1_UNKNOWN2HASDIVIDER(x) GET_BITS((x), 24, 1)
 
-#define CLOCK1_PLLMODE 0x44
 #define CLOCK1_PLLMODE_ONOFF(x, y) (((x) >> (y)) & 0x1)
 #define CLOCK1_PLLMODE_DIVIDERMODE(x, y) (((x) >> (y + 4)) & 0x1)
 #define CLOCK1_PLLMODE_DIVIDE 0

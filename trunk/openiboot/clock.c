@@ -147,6 +147,30 @@ int clock_setup() {
 	return 0;
 }
 
+void clock_gate_switch(uint32_t gate, int on_off) {
+	uint32_t gate_register;
+	uint32_t gate_flag;
+
+	if(gate < CLOCK1_Separator) {
+		gate_register = CLOCK1 + CLOCK1_CL2_GATES;
+		gate_flag = gate;
+	} else {
+		gate_register = CLOCK1 + CLOCK1_CL3_GATES;
+		gate_flag = gate - CLOCK1_Separator;
+	}
+
+	uint32_t gates = GET_REG(gate_register);
+
+	if(on_off) {
+		gates &= ~(1 << gate_flag);
+	} else {
+		gates |= 1 << gate_flag;
+	}
+
+	SET_REG(gate_register, gates);
+
+}
+
 int clock_set_bottom_bits_38100000(Clock0ConfigCode code) {
 	int bottomValue;
 
