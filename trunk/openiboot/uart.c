@@ -7,17 +7,17 @@ int uart_setup() {
 	uart_settings u_set[5];
 
 	// Set word size to 8bits
-	SET_REG(UCON4, 0x01)
-	SET_REG(UCON3, 0x01)
-	SET_REG(UCON2, 0x01)
-	SET_REG(UCON1, 0x01)
-	SET_REG(UCON0, 0x01)
+	SET_REG(UCON4, 0x01);
+	SET_REG(UCON3, 0x01);
+	SET_REG(UCON2, 0x01);
+	SET_REG(UCON1, 0x01);
+	SET_REG(UCON0, 0x01);
 	// Set parity to even
-  SET_REG(UCON4+4, 0x05)
-  SET_REG(UCON3+4, 0x05)
-  SET_REG(UCON2+4, 0x05)
-  SET_REG(UCON1+4, 0x05)
-  SET_REG(UCON0+4, 0x05)
+  SET_REG(UCON4+4, 0x05);
+  SET_REG(UCON3+4, 0x05);
+  SET_REG(UCON2+4, 0x05);
+  SET_REG(UCON1+4, 0x05);
+  SET_REG(UCON0+4, 0x05);
 	// Set ureg values
 	u_set[0].ureg = 0x00;
 	u_set[1].ureg = 0x01;

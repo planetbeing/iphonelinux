@@ -288,11 +288,11 @@
 #define POWER_CONFIG2_RESET 0x0
 
 // Uart
-#define UCON0  (*(volatile unsigned short *)0x3CC00000)
-#define UCON1  (*(volatile unsigned short *)0x3CC04000)
-#define UCON2  (*(volatile unsigned short *)0x3CC08000)
-#define UCON3  (*(volatile unsigned short *)0x3CC0C000)
-#define UCON4  (*(volatile unsigned short *)0x3CC10000)
+#define UCON0 0x3CC00000
+#define UCON1 0x3CC04000
+#define UCON2 0x3CC08000
+#define UCON3 0x3CC0C000
+#define UCON4 0x3CC10000
 
 // Timer
 #define NUM_TIMERS 7
