@@ -3,7 +3,21 @@
 #include "s5l8900.h"
 
 int uart_setup() {
+	
+	// Set word size to 8bits
+	SET_REG(UCON4, 0x01)
+	SET_REG(UCON3, 0x01)
+	SET_REG(UCON2, 0x01)
+	SET_REG(UCON1, 0x01)
+	SET_REG(UCON0, 0x01)
 
+	// Set parity to even
+  SET_REG(UCON4+4, 0x05)
+  SET_REG(UCON3+4, 0x05)
+  SET_REG(UCON2+4, 0x05)
+  SET_REG(UCON1+4, 0x05)
+  SET_REG(UCON0+4, 0x05)
+	
 	return 0;
 }
 
