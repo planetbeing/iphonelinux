@@ -8,6 +8,11 @@ typedef enum Boolean {
 	TRUE = 1
 } Boolean;
 
+typedef enum OnOff {
+	OFF = 0,
+	ON = 1
+} OnOff;
+
 #define NULL 0
 
 #include "s5l8900.h"

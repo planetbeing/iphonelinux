@@ -47,6 +47,7 @@
 #define ROM 0x20000000
 #define CLOCK0 0x38100000	/* the clocks are probably also parts of the system controller */
 #define CLOCK1 0x3C500000
+#define TIMER 0x3E200000
 
 /*
  *	Registers
@@ -95,6 +96,22 @@
 #define CLOCK1_PLLMODE 0x44
 #define CLOCK1_CL2_GATES 0x48
 #define CLOCK1_CL3_GATES 0x4C
+
+// TIMER
+
+#define TIMER_0 0x0
+#define TIMER_1 0x20
+#define TIMER_2 0x40
+#define TIMER_3 0x60
+#define TIMER_4 0xA0
+#define TIMER_5 0xC0
+#define TIMER_6 0xE0
+#define TIMER_CONFIG 0
+#define TIMER_STATE 0x4
+#define TIMER_COUNT_BUFFER 0x8
+#define TIMER_UNKNOWN1 0xC
+#define TIMER_UNKNOWN2 0x10
+#define TIMER_UNKNOWN3 0x14
 
 /*
  *	Register values
@@ -269,5 +286,11 @@
 #define POWER_CONFIG0_RESET 0x1123009
 #define POWER_CONFIG1_RESET 0x20
 #define POWER_CONFIG2_RESET 0x0
+
+// Timer
+#define NUM_TIMERS 7
+#define TIMER_CLOCKGATE 0x25
+#define TIMER_STATE_START 1
+#define TIMER_STATE_STOP 0
 
 #endif

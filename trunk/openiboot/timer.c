@@ -1,0 +1,55 @@
+#include "openiboot.h"
+#include "timer.h"
+#include "s5l8900.h"
+
+TimerRegisters Timers[] = {
+		{	TIMER + TIMER_0 + TIMER_CONFIG, TIMER + TIMER_0 + TIMER_STATE, TIMER + TIMER_0 + TIMER_COUNT_BUFFER, 
+			TIMER + TIMER_0 + TIMER_UNKNOWN1, TIMER + TIMER_0 + TIMER_UNKNOWN2, TIMER + TIMER_0 + TIMER_UNKNOWN3 },
+		{	TIMER + TIMER_1 + TIMER_CONFIG, TIMER + TIMER_1 + TIMER_STATE, TIMER + TIMER_1 + TIMER_COUNT_BUFFER,
+			TIMER + TIMER_1 + TIMER_UNKNOWN1, TIMER + TIMER_1 + TIMER_UNKNOWN2, TIMER + TIMER_1 + TIMER_UNKNOWN3 },
+		{	TIMER + TIMER_2 + TIMER_CONFIG, TIMER + TIMER_2 + TIMER_STATE, TIMER + TIMER_2 + TIMER_COUNT_BUFFER,
+			TIMER + TIMER_2 + TIMER_UNKNOWN1, TIMER + TIMER_2 + TIMER_UNKNOWN2, TIMER + TIMER_2 + TIMER_UNKNOWN3 },
+		{	TIMER + TIMER_3 + TIMER_CONFIG, TIMER + TIMER_3 + TIMER_STATE, TIMER + TIMER_3 + TIMER_COUNT_BUFFER,
+			TIMER + TIMER_3 + TIMER_UNKNOWN1, TIMER + TIMER_3 + TIMER_UNKNOWN2, TIMER + TIMER_3 + TIMER_UNKNOWN3 },
+		{	TIMER + TIMER_4 + TIMER_CONFIG, TIMER + TIMER_4 + TIMER_STATE, TIMER + TIMER_4 + TIMER_COUNT_BUFFER,
+			TIMER + TIMER_4 + TIMER_UNKNOWN1, TIMER + TIMER_4 + TIMER_UNKNOWN2, TIMER + TIMER_4 + TIMER_UNKNOWN3 },
+		{	TIMER + TIMER_5 + TIMER_CONFIG, TIMER + TIMER_5 + TIMER_STATE, TIMER + TIMER_5 + TIMER_COUNT_BUFFER,
+			TIMER + TIMER_5 + TIMER_UNKNOWN1, TIMER + TIMER_5 + TIMER_UNKNOWN2, TIMER + TIMER_5 + TIMER_UNKNOWN3 },
+		{	TIMER + TIMER_6 + TIMER_CONFIG, TIMER + TIMER_6 + TIMER_STATE, TIMER + TIMER_6 + TIMER_COUNT_BUFFER,
+			TIMER + TIMER_6 + TIMER_UNKNOWN1, TIMER + TIMER_6 + TIMER_UNKNOWN2, TIMER + TIMER_6 + TIMER_UNKNOWN3 }
+	};
+
+int timer_setup() {
+	/* timer needs clock signal */
+	clock_gate_switch(TIMER_CLOCKGATE, ON);
+
+	/* stop/cleanup any existing timers */
+	timer_stop_all();
+
+	return 0;
+}
+
+int timer_stop_all() {
+	int i;
+	for(i = 0; i < NUM_TIMERS; i++) {
+		timer_on_off(i, OFF);
+	}
+	timer_on_off(NUM_TIMERS, OFF);
+}
+
+int timer_on_off(int timer_id, OnOff on_off) {
+	if(timer_id < NUM_TIMERS) {
+		if(on_off == ON) {
+			SET_REG(Timers[timer_id].state, TIMER_STATE_START);
+		} else {
+			SET_REG(Timers[timer_id].state, TIMER_STATE_STOP);
+		}
+
+		return 0;
+	} else if(timer_id == NUM_TIMERS) {
+
+	} else {
+		/* invalid timer id */
+		return -1;
+	}
+}

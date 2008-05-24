@@ -27,6 +27,6 @@ extern uint32_t ClockSDiv;
 
 int clock_set_bottom_bits_38100000(Clock0ConfigCode code);
 int clock_setup();
-void clock_gate_switch(uint32_t gate, int on_off);
+void clock_gate_switch(uint32_t gate, OnOff on_off);
 
 #endif

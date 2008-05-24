@@ -147,7 +147,7 @@ int clock_setup() {
 	return 0;
 }
 
-void clock_gate_switch(uint32_t gate, int on_off) {
+void clock_gate_switch(uint32_t gate, OnOff on_off) {
 	uint32_t gate_register;
 	uint32_t gate_flag;
 
@@ -161,7 +161,7 @@ void clock_gate_switch(uint32_t gate, int on_off) {
 
 	uint32_t gates = GET_REG(gate_register);
 
-	if(on_off) {
+	if(on_off == ON) {
 		gates &= ~(1 << gate_flag);
 	} else {
 		gates |= 1 << gate_flag;
