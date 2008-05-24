@@ -27,7 +27,6 @@ int uart_set_mode(int ureg, int mode) {
 }
 int uart_write(int ureg, char *buffer) {
 
-
 	if(ureg > 4)
 		return -1; // Invalid ureg
 
