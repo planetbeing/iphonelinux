@@ -71,9 +71,11 @@ typedef struct TaskDescriptor {
 
 extern TaskDescriptor* CurrentRunning;
 
+typedef void (*InterruptServiceRoutine)(uint32_t token);
+
 typedef struct InterruptHandler {
-	uint32_t handler;
-	void* token;
+	InterruptServiceRoutine handler;
+	uint32_t token;
 	uint32_t useEdgeIC;
 } InterruptHandler;
 
