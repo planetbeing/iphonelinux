@@ -81,6 +81,9 @@ static int setup_devices() {
 	miu_setup();
 	power_setup();
 	clock_setup();
+	interrupt_setup();
+
+	uart_setup();
 
 	return 0;
 }

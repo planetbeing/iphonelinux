@@ -10,6 +10,8 @@ typedef enum Boolean {
 
 #define NULL 0
 
+#include "s5l8900.h"
+
 typedef void (*TaskRoutineFunction)(void* opaque);
 typedef void (*EventFunction)(void* opaque);
 
@@ -68,5 +70,13 @@ typedef struct TaskDescriptor {
 } __attribute__ ((packed)) TaskDescriptor;
 
 extern TaskDescriptor* CurrentRunning;
+
+typedef struct InterruptHandler {
+	uint32_t handler;
+	void* token;
+	uint32_t useEdgeIC;
+} InterruptHandler;
+
+extern InterruptHandler InterruptHandlerTable[VIC_MaxInterrupt];
 
 #endif
