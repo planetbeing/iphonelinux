@@ -47,12 +47,15 @@ static void eventTimerHandler() {
 		event = event->list.next;
 
 		if(curTime >= event->deadline) {
+			// take it off the list and dispatch it
 			((Event*)(event->list.next))->list.prev = event->list.prev;
 			((Event*)(event->list.prev))->list.next = event->list.next;
 			event->list.next = NULL;
 			event->list.prev = NULL;
 			event->handler(event, event->opaque);
 		} else {
+			// The event queue is sorted, so we can just stop looping on the first
+			// event that hasn't been triggered
 			break;
 		}
 	}
@@ -60,6 +63,41 @@ static void eventTimerHandler() {
 
 void event_add(Event* newEvent, uint64_t timeout, EventHandler handler, void* opaque) {
 	EnterCriticalSection();
+
+	// If this item is already on a list, take it off
+	if(newEvent->list.prev != NULL || newEvent->list.next != NULL) {
+		if(newEvent->list.next != NULL) {
+			((Event*)(newEvent->list.next))->list.prev = newEvent->list.prev;
+		}
+		if(newEvent->list.prev != NULL) {
+			((Event*)(newEvent->list.prev))->list.next = newEvent->list.next;
+		}
+		newEvent->list.next = NULL;
+		newEvent->list.prev = NULL;
+	}
+
+	newEvent->interval = timeout;
+	newEvent->deadline = timer_get_system_microtime() + timeout;
+
+	Event* insertAt = &EventList;
+
+	while(insertAt != insertAt->list.next) {
+		// Find the event that this occurs after
+		if(insertAt->deadline > newEvent->deadline) {
+			break;
+		}
+		insertAt = insertAt->list.next;
+		if(insertAt == &EventList) {
+			// We're after the whole list, so just insert after everyone else (after head)
+			break;
+		}
+	}
+
+	// Insert before insertAt
+	newEvent->list.next = insertAt;
+	newEvent->list.prev = insertAt->list.prev;
+	((Event*)insertAt->list.prev)->list.next = newEvent;
+	insertAt->list.prev = newEvent;
 
 	LeaveCriticalSection();
 }
