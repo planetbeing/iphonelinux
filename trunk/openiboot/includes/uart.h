@@ -3,10 +3,6 @@
 
 #include "openiboot.h"
 
-#define BAUD_115200 0x1C200
-#define FLOW_CONTROL_ON	 0x01
-#define FLOW_CONTROL_OFF 0x00
-
 typedef struct UARTSettings {
 	uint32_t ureg;
 	uint32_t baud;

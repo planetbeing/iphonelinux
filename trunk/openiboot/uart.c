@@ -7,48 +7,37 @@ UARTRegisters HWUarts[5];
 UARTSettings UARTs[5];
 
 int uart_setup() {
-	// Set word size to 8bits
-	SET_REG(UCON4, 0x01);
-	SET_REG(UCON3, 0x01);
-	SET_REG(UCON2, 0x01);
-	SET_REG(UCON1, 0x01);
-	SET_REG(UCON0, 0x01);
-	// Set parity to even
-	SET_REG(UCON4+4, 0x05);
-	SET_REG(UCON3+4, 0x05);
-	SET_REG(UCON2+4, 0x05);
-	SET_REG(UCON1+4, 0x05);
-	SET_REG(UCON0+4, 0x05);
-	// Set ureg values
-	UARTs[0].ureg = 0x00;
-	UARTs[1].ureg = 0x01;
-	UARTs[2].ureg = 0x02;
-	UARTs[3].ureg = 0x03;
-	UARTs[4].ureg = 0x04;
-	// Set baud rate	
-	UARTs[0].ureg = BAUD_115200;
-	UARTs[1].ureg = BAUD_115200;
-	UARTs[2].ureg = BAUD_115200;
-	UARTs[3].ureg = BAUD_115200;
-	UARTs[4].ureg = BAUD_115200;
-	// Set clock
-	uart_set_clk(0x00, 0x01);
-	uart_set_clk(0x01, 0x01);
-	uart_set_clk(0x02, 0x01);
-	uart_set_clk(0x03, 0x01);
-	uart_set_clk(0x04, 0x01);
-	// Set sample rates
-	uart_set_sample_rate(0x00, 0x10);
-	uart_set_sample_rate(0x01, 0x10);
-	uart_set_sample_rate(0x02, 0x10);
-	uart_set_sample_rate(0x03, 0x10);
-	uart_set_sample_rate(0x04, 0x10);
-	// Set flow control 
-	uart_set_flow_control(0x00, FLOW_CONTROL_OFF);
-	uart_set_flow_control(0x01, FLOW_CONTROL_ON);
-	uart_set_flow_control(0x02, FLOW_CONTROL_ON);
-	uart_set_flow_control(0x03, FLOW_CONTROL_ON);
-	uart_set_flow_control(0x04, FLOW_CONTROL_OFF);
+	int i;
+
+	for(i = 0; i < NUM_UARTS; i++) {
+		// set all uarts to transmit 8 bit frames, one stop bit per frame, no parity, no infrared mode
+		SET_REG(HWUarts[i].ULCON, UART_8BITS);
+
+		// set all uarts to use polling for rx/tx, no breaks, no loopback, no error status interrupts,
+		// no timeouts, pulse interrupts for rx/tx, peripheral clock. Basically, the defaults.
+		SET_REG(HWUarts[i].UCON, (UART_UCON_MODE_IRQORPOLL << UART_UCON_RXMODE_SHIFT)
+			| (UART_UCON_MODE_IRQORPOLL << UART_UCON_TXMODE_SHIFT));
+
+		// Initialize the settings array a bit so the helper functions can be used properly
+		UARTs[i].ureg = i;
+		UARTs[i].baud = 115200;
+
+		uart_set_clk(i, UART_CLOCK_EXT_UCLK0);
+		uart_set_sample_rate(i, 16);
+	}
+
+	// Set flow control
+	uart_set_flow_control(0, OFF);
+	uart_set_flow_control(1, ON);
+	uart_set_flow_control(2, ON);
+	uart_set_flow_control(3, ON);
+	uart_set_flow_control(4, OFF);
+
+	for(i = 0; i < NUM_UARTS; i++) {
+		uart_set_mode(i, UART_POLL_MODE);
+	}
+
+	uart_set_mode(0, UART_POLL_MODE);
 
 	return 0;
 }
@@ -138,7 +127,7 @@ int uart_set_mode(int ureg, uint32_t mode) {
 
 	UARTs[ureg].mode = mode;
 
-	if(mode == 0) {
+	if(mode == UART_POLL_MODE) {
 		// Setup some defaults, like no loopback mode
 		SET_REG(HWUarts[ureg].UCON, 
 			GET_REG(HWUarts[ureg].UCON) & (~UART_UCON_UNKMASK) & (~UART_UCON_UNKMASK) & (~UART_UCON_LOOPBACKMODE));

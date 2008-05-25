@@ -4,11 +4,9 @@
 #include "hardware/s5l8900.h"
 
 // Registers
-#define UCON0 0x3CC00000
-#define UCON1 0x3CC04000
-#define UCON2 0x3CC08000
-#define UCON3 0x3CC0C000
-#define UCON4 0x3CC10000
+#define NUM_UARTS 5
+
+#define UART_POLL_MODE 0
 
 #define UART_CLOCK_SELECTION_MASK (0x3 << 10) // Bit 10-11
 #define UART_CLOCK_SELECTION_SHIFT 10 // Bit 10-11
@@ -38,6 +36,11 @@
 
 #define UART_UMCON_AFC_BIT 0x10
 #define UART_UMCON_NRTS_BIT 0x1
+
+#define UART_5BITS 0
+#define UART_6BITS 1
+#define UART_7BITS 2
+#define UART_8BITS 3
 
 #endif
 
