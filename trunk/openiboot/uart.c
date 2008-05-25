@@ -2,6 +2,7 @@
 #include "uart.h"
 #include "clock.h"
 #include "hardware/uart.h"
+#include "timer.h"
 
 UARTRegisters HWUarts[5];
 UARTSettings UARTs[5];
@@ -181,8 +182,48 @@ int uart_write(int ureg, char *buffer, uint32_t length) {
 		buffer++;
 		written++;
 	}
+
+	return written;
 }
 
 int uart_read(int ureg, char *buffer, uint32_t length, uint64_t timeout) {
+	if(ureg > 4)
+		return -1; // Invalid ureg
 
+	UARTRegisters* uart = &HWUarts[ureg];
+	UARTSettings* settings = &UARTs[ureg];
+
+	if(settings->mode != UART_POLL_MODE)
+		return -1; // unhandled uart mode
+
+	uint64_t startTime = timer_get_system_microtime();
+	int written = 0;
+	uint32_t discard;
+
+	while(written < length) {
+		register int canRead = 0;
+		if(settings->fifo) {
+			uint32_t ufstat = GET_REG(uart->UFSTAT);
+			canRead = (ufstat & UART_UFSTAT_RXFIFO_FULL) | (ufstat & UART_UFSTAT_RXCOUNT_MASK);
+		} else {
+			canRead = GET_REG(uart->UTRSTAT) & UART_UTRSTAT_RECEIVEDATAREADY;
+		}
+
+		if(canRead) {
+			if(GET_REG(uart->UERSTAT)) {
+				discard = GET_REG(uart->URXH);
+			} else {
+				*buffer = GET_REG(uart->URXH);
+				written++;
+				buffer++;
+			}
+		} else {
+			if((timer_get_system_microtime() - startTime) >= timeout) {
+				break;
+			}
+		}
+	}
+
+	return written;
 }
+

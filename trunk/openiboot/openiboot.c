@@ -2,6 +2,7 @@
 #include "hardware/s5l8900.h"
 #include "hardware/arm.h"
 #include "openiboot-asmhelpers.h"
+#include "uart.h"
 
 static int setup_processor();
 static int setup_mmu();
@@ -35,7 +36,10 @@ void OpenIBootStart() {
 
 	LeaveCriticalSection();
 
-	while(1);
+	while(1) {
+		char buf[] = { 0xaa };
+		uart_write(0, buf, 1);
+	}
 }
 
 static int setup_processor() {
@@ -90,3 +94,4 @@ static int setup_devices() {
 
 	return 0;
 }
+
