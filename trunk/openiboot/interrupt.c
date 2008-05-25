@@ -1,6 +1,7 @@
 #include "openiboot.h"
 #include "interrupt.h"
-#include "s5l8900.h"
+#include "hardware/interrupt.h"
+#include "hardware/edgeic.h"
 #include "util.h"
 
 int interrupt_setup() {

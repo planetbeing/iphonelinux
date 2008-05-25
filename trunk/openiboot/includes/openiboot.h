@@ -15,8 +15,6 @@ typedef enum OnOff {
 
 #define NULL 0
 
-#include "s5l8900.h"
-
 typedef struct Event Event;
 
 typedef void (*TaskRoutineFunction)(void* opaque);

@@ -1,4 +1,7 @@
-#include "s5l8900.h"
+#include "hardware/s5l8900.h"
+#include "hardware/interrupt.h"
+#include "hardware/edgeic.h"
+#include "hardware/arm.h"
 
 .include "openiboot.S.h"
 

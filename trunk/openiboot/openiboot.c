@@ -1,5 +1,6 @@
 #include "openiboot.h"
-#include "s5l8900.h"
+#include "hardware/s5l8900.h"
+#include "hardware/arm.h"
 #include "openiboot-asmhelpers.h"
 
 static int setup_processor();

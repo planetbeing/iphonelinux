@@ -2,6 +2,7 @@
 #define INTERRUPT_H
 
 #include "openiboot.h"
+#include "hardware/interrupt.h"
 
 typedef void (*InterruptServiceRoutine)(uint32_t token);
 

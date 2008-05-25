@@ -2,7 +2,7 @@
 #include "timer.h"
 #include "event.h"
 #include "clock.h"
-#include "s5l8900.h"
+#include "hardware/timer.h"
 
 Event EventList = {{&EventList, &EventList}, 0, 0, NULL, 0};
 

@@ -1,6 +1,7 @@
 #include "openiboot.h"
 #include "clock.h"
-#include "s5l8900.h"
+#include "hardware/clock0.h"
+#include "hardware/clock1.h"
 
 uint32_t ClockPLL;
 uint32_t PLLFrequencies[4];

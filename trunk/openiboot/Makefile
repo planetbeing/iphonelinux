@@ -7,12 +7,13 @@ ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
 LDFLAGS += -Ttext 0x18000000 -Tdata 0x18021000
 LIBRARIES += -lgcc
 LIBRARY_PATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
+INC += -Iincludes
 
 %.o:	%.S
-	$(CC) -E -x c $< | $(AS) $(ASFLAGS) $(ARCHFLAGS) -o $@
+	$(CC) $(INC) -E -x c $< | $(AS) $(ASFLAGS) $(ARCHFLAGS) -o $@
 
 %.o:	%.c
-	$(CC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
+	$(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
 
 
 all:	openiboot.img2

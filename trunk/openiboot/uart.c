@@ -1,6 +1,6 @@
 #include "openiboot.h"
 #include "uart.h"
-#include "s5l8900.h"
+#include "hardware/uart.h"
 
 int uart_setup() {
 	

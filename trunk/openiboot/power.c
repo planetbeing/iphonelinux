@@ -1,6 +1,6 @@
 #include "openiboot.h"
 #include "power.h"
-#include "s5l8900.h"
+#include "hardware/power.h"
 
 int power_setup() {
 

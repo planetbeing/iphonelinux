@@ -1,6 +1,7 @@
 #include "openiboot.h"
 #include "mmu.h"
-#include "s5l8900.h"
+#include "hardware/s5l8900.h"
+#include "hardware/arm.h"
 
 uint32_t* CurrentPageTable;
 

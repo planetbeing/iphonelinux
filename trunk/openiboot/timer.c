@@ -1,8 +1,8 @@
 #include "openiboot.h"
 #include "timer.h"
 #include "clock.h"
-#include "s5l8900.h"
 #include "interrupt.h"
+#include "hardware/timer.h"
 
 TimerRegisters HWTimers[] = {
 		{	TIMER + TIMER_0 + TIMER_CONFIG, TIMER + TIMER_0 + TIMER_STATE, TIMER + TIMER_0 + TIMER_COUNT_BUFFER, 
