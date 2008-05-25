@@ -6,5 +6,6 @@
 extern Event EventList;
 
 int event_setup();
+void event_add(Event* newEvent, uint64_t timeout, EventHandler handler, void* opaque);
 
 #endif

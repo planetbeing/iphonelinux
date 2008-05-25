@@ -40,6 +40,12 @@ static void eventTimerHandler() {
 	curTime = timer_get_system_microtime();
 
 	while(event->list.next != event) {
+		if(event->list.next == NULL) {
+			break;
+		}
+
+		event = event->list.next;
+
 		if(curTime >= event->deadline) {
 			((Event*)(event->list.next))->list.prev = event->list.prev;
 			((Event*)(event->list.prev))->list.next = event->list.next;
@@ -50,4 +56,10 @@ static void eventTimerHandler() {
 			break;
 		}
 	}
+}
+
+void event_add(Event* newEvent, uint64_t timeout, EventHandler handler, void* opaque) {
+	EnterCriticalSection();
+
+	LeaveCriticalSection();
 }
