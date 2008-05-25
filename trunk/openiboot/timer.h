@@ -3,10 +3,7 @@
 
 #include "openiboot.h"
 
-int timer_setup();
-int timer_stop_all();
-int timer_on_off(int timer_id, OnOff on_off);
-
+typedef void (*TimerHandler)(void);
 
 typedef struct TimerRegisters {
 	uint32_t	config;
@@ -18,14 +15,21 @@ typedef struct TimerRegisters {
 } TimerRegisters;
 
 typedef struct TimerInfo {
-	Boolean		option0x40;
+	Boolean		option6;
 	uint32_t	divider;
 	uint32_t	unknown1;
+	TimerHandler	handler1;
+	TimerHandler	handler2;
+	TimerHandler	handler3;
 } TimerInfo;
-
-int timer_setup_clk(int timer_id, int type, int divider, uint32_t unknown1);
 
 extern TimerRegisters HWTimers[];
 extern TimerInfo Timers[7];
+
+int timer_setup();
+int timer_stop_all();
+int timer_on_off(int timer_id, OnOff on_off);
+int timer_setup_clk(int timer_id, int type, int divider, uint32_t unknown1);
+int timer_init(int timer_id, uint32_t interval, uint32_t unknown2, uint32_t z, Boolean option24, Boolean option28, Boolean option11);
 
 #endif

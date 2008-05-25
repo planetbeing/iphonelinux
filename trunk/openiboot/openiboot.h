@@ -76,15 +76,4 @@ typedef struct TaskDescriptor {
 
 extern TaskDescriptor* CurrentRunning;
 
-typedef void (*InterruptServiceRoutine)(uint32_t token);
-
-typedef struct InterruptHandler {
-	InterruptServiceRoutine handler;
-	uint32_t token;
-	uint32_t useEdgeIC;
-} InterruptHandler;
-
-extern InterruptHandler InterruptHandlerTable[VIC_MaxInterrupt];
-
-
 #endif

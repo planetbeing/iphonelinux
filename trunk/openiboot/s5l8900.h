@@ -21,6 +21,7 @@
 #define MemoryEnd 0xFFFFFFFF
 #define MemoryHigher 0x80000000
 #define ExceptionVector MemoryStart
+#define EventTimer 4
 
 #define NUM_PLL 4
 #define FREQUENCY_BASE 12000000
@@ -81,6 +82,13 @@
 #define POWER_SETSTATE 0x8
 #define POWER_STATE 0x14
 #define POWER_ID 0x44
+
+// Uart
+#define UCON0 0x3CC00000
+#define UCON1 0x3CC04000
+#define UCON2 0x3CC08000
+#define UCON3 0x3CC0C000
+#define UCON4 0x3CC10000
 
 // CLOCK0
 #define CLOCK0_CONFIG 0x0
@@ -292,22 +300,23 @@
 #define POWER_CONFIG1_RESET 0x20
 #define POWER_CONFIG2_RESET 0x0
 
-// Uart
-#define UCON0 0x3CC00000
-#define UCON1 0x3CC04000
-#define UCON2 0x3CC08000
-#define UCON3 0x3CC0C000
-#define UCON4 0x3CC10000
-
 // Timer
 #define NUM_TIMERS 7
 #define TIMER_CLOCKGATE 0x25
+#define TIMER_IRQ 0x7
 #define TIMER_STATE_START 1
 #define TIMER_STATE_STOP 0
+#define TIMER_STATE_INIT 2
 #define TIMER_UNKREG0_RESET 0x18010
 #define TIMER_UNKREG1_RESET 0xFFFFFFFF
 #define TIMER_UNKREG2_RESET 0xFFFFFFFF
 #define TIMER_UNKREG3_RESET 0xFFFFFFFF
 #define TIMER_UNKREG4_RESET 0xFFFFFFFF
+#define TIMER_DIVIDER1 4
+#define TIMER_DIVIDER2 0
+#define TIMER_DIVIDER4 1
+#define TIMER_DIVIDER16 2
+#define TIMER_DIVIDER64 3
+#define TIMER_Separator 4
 
 #endif
