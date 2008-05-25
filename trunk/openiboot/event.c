@@ -61,7 +61,7 @@ static void eventTimerHandler() {
 	}
 }
 
-void event_add(Event* newEvent, uint64_t timeout, EventHandler handler, void* opaque) {
+int event_add(Event* newEvent, uint64_t timeout, EventHandler handler, void* opaque) {
 	EnterCriticalSection();
 
 	// If this item is already on a list, take it off
@@ -99,5 +99,38 @@ void event_add(Event* newEvent, uint64_t timeout, EventHandler handler, void* op
 	((Event*)insertAt->list.prev)->list.next = newEvent;
 	insertAt->list.prev = newEvent;
 
+	LeaveCriticalSection();
+
+	return 0;
+}
+
+int event_readd(Event* event, uint64_t new_interval) {
+	EnterCriticalSection();
+
+	// If this item is already on a list, take it off
+	if(event->list.prev != NULL || event->list.next != NULL) {
+		if(event->list.next != NULL) {
+			((Event*)(event->list.next))->list.prev = event->list.prev;
+		}
+		if(event->list.prev != NULL) {
+			((Event*)(event->list.prev))->list.next = event->list.next;
+		}
+		event->list.next = NULL;
+		event->list.prev = NULL;
+	}
+
+	uint64_t interval;
+	if(new_interval == 0) {
+		if(event->interval == 0) {
+			LeaveCriticalSection();
+			return -1;
+		} else {
+			interval = event->interval;
+		}
+	} else {
+		interval = new_interval;
+	}
+
+	event_add(event, interval, event->handler, event->opaque);
 	LeaveCriticalSection();
 }
