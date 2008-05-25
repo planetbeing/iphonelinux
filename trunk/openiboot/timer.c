@@ -25,6 +25,7 @@ TimerInfo Timers[7];
 
 static void eventTimerHandler();
 static void timerIRQHandler(uint32_t token);
+static void callTimerHandler(int timer_id, uint32_t flags);
 
 int timer_setup() {
 	/* timer needs clock signal */
@@ -45,20 +46,7 @@ int timer_setup() {
 		timer_setup_clk(i, 1, 2, 0);
 	}
 
-	/* now it's time to set up the main event dispatch timer */
-
-	// In our implementation, we set TicksPerSec when we setup the clock
-	// so we don't have to do it here
-
-	// Set the handler
-	Timers[EventTimer].handler2 = eventTimerHandler;
-
-	// Initialize the timer hardware for something that goes off once every 100 Hz.
-	// The handler for the timer will reset it so it's periodic
-	timer_init(EventTimer, TicksPerSec/100, 0, 0, FALSE, FALSE, FALSE);
-
-	// Turn the timer on
-	timer_on_off(EventTimer, ON);
+	// In our implementation, event dispatch timer setup is handled by a subsequent function
 
 	// Install the timer interrupt
 	interrupt_install(TIMER_IRQ, timerIRQHandler, 1);
@@ -170,11 +158,64 @@ int timer_on_off(int timer_id, OnOff on_off) {
 	}
 }
 
-void eventTimerHandler() {
+static void timerIRQHandler(uint32_t token) {
+	/* this function does not implement incrementing a counter at dword_18022B28 like Apple's */
 
+	uint32_t stat = GET_REG(TIMER + TIMER_IRQSTAT);
+
+	/* signal timer is being handled */
+	uint32_t discard = GET_REG(TIMER + TIMER_IRQLATCH);
+
+	if(stat & TIMER_SPECIALTIMER_BIT0) {
+		SET_REG(TIMER + TIMER_UNKREG0, GET_REG(TIMER + TIMER_UNKREG0) | TIMER_SPECIALTIMER_BIT0);
+	}
+
+	if(stat & TIMER_SPECIALTIMER_BIT1) {
+		SET_REG(TIMER + TIMER_UNKREG0, GET_REG(TIMER + TIMER_UNKREG0) | TIMER_SPECIALTIMER_BIT1);
+	}
+
+	int i;
+	for(i = TIMER_Separator; i < NUM_TIMERS; NUM_TIMERS) {
+		callTimerHandler(i, stat << (8 * (NUM_TIMERS - i - 1)));
+	}
+
+	/* signal timer has been handled */
+	SET_REG(TIMER + TIMER_IRQLATCH, stat);
 }
 
-void timerIRQHandler(uint32_t token) {
+static void callTimerHandler(int timer_id, uint32_t flags) {
+	if(flags & (1 << 2) != 0) {
+		Timers[timer_id].handler1();
+	}
 
+	if(flags & (1 << 1) != 0) {
+		Timers[timer_id].handler3();
+	}
+
+	if(flags & (1 << 0) != 0) {
+		Timers[timer_id].handler2();
+	}
+}
+
+uint64_t timer_get_system_microtime() {
+        uint64_t ticks;
+        uint64_t sec_divisor;
+
+        timer_get_rtc_ticks(&ticks, &sec_divisor);          
+        return (ticks * 1000000)/sec_divisor;
+}
+
+void timer_get_rtc_ticks(uint64_t* ticks, uint64_t* sec_divisor) {
+	register uint32_t ticksHigh;
+	register uint32_t ticksLow;
+
+	/* try to get a good read where the lower bits remain the same after reading the higher bits */
+	do {
+		ticksLow = GET_REG(TIMER + TIMER_TICKSLOW);
+		ticksHigh = GET_REG(TIMER + TIMER_TICKSHIGH);
+	} while(ticksLow != GET_REG(TIMER + TIMER_TICKSLOW));
+
+	*ticks = (((uint64_t)ticksHigh) << 32) | ticksLow;
+	*sec_divisor = TicksPerSec;
 }
 

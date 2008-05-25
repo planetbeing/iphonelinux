@@ -82,6 +82,8 @@ static int setup_devices() {
 	power_setup();
 	clock_setup();
 	interrupt_setup();
+	timer_setup();
+	event_setup();
 
 	uart_setup();
 

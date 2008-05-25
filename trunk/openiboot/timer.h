@@ -32,4 +32,7 @@ int timer_on_off(int timer_id, OnOff on_off);
 int timer_setup_clk(int timer_id, int type, int divider, uint32_t unknown1);
 int timer_init(int timer_id, uint32_t interval, uint32_t unknown2, uint32_t z, Boolean option24, Boolean option28, Boolean option11);
 
+uint64_t timer_get_system_microtime();
+void timer_get_rtc_ticks(uint64_t* ticks, uint64_t* sec_divisor);
+
 #endif

@@ -17,12 +17,14 @@ typedef enum OnOff {
 
 #include "s5l8900.h"
 
+typedef struct Event Event;
+
 typedef void (*TaskRoutineFunction)(void* opaque);
-typedef void (*EventFunction)(void* opaque);
+typedef void (*EventHandler)(Event* event, void* opaque);
 
 typedef struct LinkedList {
-	struct LinkedList* prev;
-	struct LinkedList* next;
+	void* prev;
+	void* next;
 } __attribute__ ((packed)) LinkedList;
 
 typedef struct TaskRegisterState {
@@ -38,14 +40,6 @@ typedef struct TaskRegisterState {
 	uint32_t	lr;
 } __attribute__ ((packed)) TaskRegisterState;
 
-typedef struct EventListItem {
-	LinkedList	linkedList;
-	uint64_t	startTime;
-	uint64_t	interval;
-	EventFunction	handler;
-	void*		opaque;	
-} __attribute__ ((packed)) EventListItem;
-
 typedef enum TaskState {
 	TASK_READY = 1,
 	TASK_RUNNING = 2,
@@ -56,6 +50,14 @@ typedef enum TaskState {
 #define TaskDescriptorIdentifier1 0x7461736b
 #define TaskDescriptorIdentifier2 0x74736b32
 
+struct Event {
+	LinkedList	list;
+	uint64_t	deadline;
+	uint64_t	interval;
+	EventHandler	handler;
+	void*		opaque;
+};
+
 typedef struct TaskDescriptor {
 	uint32_t		identifier1;
 	LinkedList		taskList;
@@ -63,7 +65,7 @@ typedef struct TaskDescriptor {
 	TaskState		state;
 	uint32_t		criticalSectionNestCount;
 	TaskRegisterState	savedRegisters;
-	EventListItem		sleepEvent;
+	Event			sleepEvent;
 	LinkedList		linked_list_3;
 	uint32_t		exitState;
 	TaskRoutineFunction	taskRoutine;
