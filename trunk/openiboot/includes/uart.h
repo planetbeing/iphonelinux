@@ -10,7 +10,7 @@ typedef struct UARTSettings {
 	OnOff flow_control;
 	uint32_t mode;
 	uint32_t clock;
-	uint32_t fifo;
+	OnOff fifo;
 } UARTSettings;
 
 typedef struct UARTRegisters {

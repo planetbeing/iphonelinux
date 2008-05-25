@@ -37,6 +37,7 @@ int uart_setup() {
 	for(i = 0; i < NUM_UARTS; i++) {
 		SET_REG(HWUarts[i].UFCON, UART_FIFO_RESET_TX | UART_FIFO_RESET_RX);
 		SET_REG(HWUarts[i].UFCON, UART_FIFO_ENABLE);
+		UARTs[i].fifo = ON;
 	}
 
 	for(i = 0; i < NUM_UARTS; i++) {
