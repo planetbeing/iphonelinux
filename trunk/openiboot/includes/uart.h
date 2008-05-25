@@ -8,9 +8,9 @@ typedef struct UARTSettings {
 	uint32_t baud;
 	uint32_t sample_rate;
 	OnOff flow_control;
+	OnOff fifo;
 	uint32_t mode;
 	uint32_t clock;
-	OnOff fifo;
 } UARTSettings;
 
 typedef struct UARTRegisters {
@@ -22,8 +22,8 @@ typedef struct UARTRegisters {
 	uint32_t UERSTAT;
 	uint32_t UFSTAT;
 	uint32_t UMSTAT;
-	uint32_t UTXH2;
-	uint32_t URXH2;
+	uint32_t UTXH;
+	uint32_t URXH;
 	uint32_t UBAUD;
 	uint32_t UINTP;
 } UARTRegisters;
@@ -35,4 +35,8 @@ int uart_set_flow_control(int ureg, OnOff flow_control);
 int uart_set_mode(int ureg, uint32_t mode);
 int uart_set_baud_rate(int ureg, uint32_t baud);
 
+int uart_write(int ureg, char *buffer, uint32_t length);
+int uart_read(int ureg, char *buffer, uint32_t length, uint64_t timeout);
+
 #endif
+

@@ -149,9 +149,40 @@ int uart_set_mode(int ureg, uint32_t mode) {
 	return 0;
 }
 
-int uart_write(int ureg, char *buffer) {
-
+int uart_write(int ureg, char *buffer, uint32_t length) {
 	if(ureg > 4)
 		return -1; // Invalid ureg
+
+	UARTRegisters* uart = &HWUarts[ureg];
+	UARTSettings* settings = &UARTs[ureg];
+
+	if(settings->mode != UART_POLL_MODE)
+		return -1; // unhandled uart mode
+
+	int written = 0;
+	while(written < length) {
+		if(settings->fifo) {
+			// spin until the tx fifo buffer is no longer full
+			while((GET_REG(uart->UFSTAT) & UART_UFSTAT_TXFIFO_FULL) == 1);
+		} else {
+			// spin while not Transmitter Empty
+			while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) != 1);
+		}
+
+		if(!settings->flow_control) {		// only need to do this when there's no flow control
+			// spin while not Transmitter Empty
+			while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) != 1);
+
+			// spin while not Clear To Send
+			while((GET_REG(uart->UMSTAT) & UART_UMSTAT_CTS) != 1);
+		}
+
+		SET_REG(uart->UTXH, *buffer); 
+		buffer++;
+		written++;
+	}
+}
+
+int uart_read(int ureg, char *buffer, uint32_t length, uint64_t timeout) {
 
 }
