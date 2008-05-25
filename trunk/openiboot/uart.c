@@ -33,6 +33,12 @@ int uart_setup() {
 	uart_set_flow_control(3, ON);
 	uart_set_flow_control(4, OFF);
 
+	// Reset and enable fifo
+	for(i = 0; i < NUM_UARTS; i++) {
+		SET_REG(HWUarts[i].UFCON, UART_FIFO_RESET_TX | UART_FIFO_RESET_RX);
+		SET_REG(HWUarts[i].UFCON, UART_FIFO_ENABLE);
+	}
+
 	for(i = 0; i < NUM_UARTS; i++) {
 		uart_set_mode(i, UART_POLL_MODE);
 	}
