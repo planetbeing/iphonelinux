@@ -37,7 +37,7 @@ int timer_setup() {
 
 	int i;
 	for(i = 0; i < NUM_TIMERS; i++) {
-		timer_setup_clk(i, 2, 0);
+		timer_setup_clk(i, 1, 2, 0);
 	}
 
 	/* now it's time to set up the main event dispatch timer */
@@ -52,12 +52,34 @@ int timer_setup() {
 
 int timer_setup_clk(int timer_id, int type, int divider, uint32_t unknown1) {
 	if(type == 2) {
-		Timers[timer_id].type = 0;
-		Timers[timer_id].divider = 6;	// actually just set the bit 3 to 1, and divider
-						// bits to 0 in the config reg
+		Timers[timer_id].option0x40 = FALSE;
+		Timers[timer_id].divider = 6;
 	} else {
-		switch(divider) {
+		if(type == 1) {
+			Timers[timer_id].option0x40 = TRUE;
+		} else {
+			Timers[timer_id].option0x40 = FALSE;
+		}
 
+		switch(divider) {
+			case 1:
+				Timers[timer_id].divider = 4;
+				break;
+			case 2:
+				Timers[timer_id].divider = 0;
+				break;
+			case 4:
+				Timers[timer_id].divider = 1;
+				break;
+			case 16:
+				Timers[timer_id].divider = 2;
+				break;
+			case 64:
+				Timers[timer_id].divider = 3;
+				break;
+			default:
+				/* invalid divider */
+				return -1;
 		}
 	}
 
