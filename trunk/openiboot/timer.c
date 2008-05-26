@@ -219,8 +219,8 @@ void timer_get_rtc_ticks(uint64_t* ticks, uint64_t* sec_divisor) {
 		"	BNE timeloop\n"
 		"	MOV %0, R0\n"
 		"	MOV %1, R1\n"
-		: "=r" (ticksLow), "=r" (ticksHigh)
-		: "r" (TIMER + TIMER_TICKSLOW), "r" (TIMER + TIMER_TICKSHIGH)
+		: "=r" (ticksHigh), "=r" (ticksLow)
+		: "r" (TIMER + TIMER_TICKSHIGH), "r" (TIMER + TIMER_TICKSLOW)
 		: "r0", "r1", "r2"
 	);
 
