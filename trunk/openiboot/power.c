@@ -17,3 +17,14 @@ int power_setup() {
 
 	return 0;
 }
+
+int power_ctrl(uint32_t device, OnOff on_off) {
+	if(on_off == ON) {
+		SET_REG(POWER + POWER_ONCTRL, device);
+	} else {
+		SET_REG(POWER + POWER_OFFCTRL, device);
+	}
+
+	/* wait for the new state to take effect */
+	while((GET_REG(POWER + POWER_SETSTATE) & device) != (GET_REG(POWER + POWER_STATE) & device));
+}

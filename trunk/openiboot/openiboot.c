@@ -3,6 +3,7 @@
 #include "hardware/arm.h"
 #include "openiboot-asmhelpers.h"
 #include "uart.h"
+#include "usb.h"
 
 static int setup_processor();
 static int setup_mmu();
@@ -83,13 +84,20 @@ static int setup_tasks() {
 }
 
 static int setup_devices() {
+	// Basic prerequisites for everything else
 	miu_setup();
 	power_setup();
 	clock_setup();
+
+	// Need interrupts for everything afterwards
 	interrupt_setup();
+
+	// For scheduling/sleeping niceties
 	timer_setup();
 	event_setup();
 
+	// Other devices
+	usb_shutdown();
 	uart_setup();
 
 	return 0;
