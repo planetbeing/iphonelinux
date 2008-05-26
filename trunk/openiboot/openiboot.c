@@ -31,13 +31,13 @@ TaskDescriptor bootstrapTask = {
 void OpenIBootStart() {
 	setup_processor();
 	mmu_setup();
-
 	setup_tasks();
 	setup_devices();
 
 	LeaveCriticalSection();
 
-	while(1) {
+	int i;
+	for(i = 0; i < 1000000; i++) {
 		char buf[] = { 0xaa };
 		uart_write(0, buf, 1);
 	}
@@ -98,6 +98,7 @@ static int setup_devices() {
 
 	// Other devices
 	usb_shutdown();
+
 	uart_setup();
 
 	return 0;

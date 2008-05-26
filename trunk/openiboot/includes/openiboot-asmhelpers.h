@@ -36,4 +36,7 @@ void InvalidateCPUDataCache();
 void CleanAndInvalidateCPUDataCache();
 void ClearCPUCaches();
 
+void DebugReboot();
+
 #endif
+

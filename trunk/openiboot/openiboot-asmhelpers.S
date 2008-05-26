@@ -38,6 +38,7 @@
 .global CleanAndInvalidateCPUDataCache
 .global ClearCPUCaches
 
+.global DebugReboot
 
 .global CurrentRunning
 
@@ -237,6 +238,10 @@ ClearCPUCaches:
 	BL	ClearCPUInstructionCache
 	LDMFD	SP!, {LR}
 	BX	LR
+
+DebugReboot:
+	LDR	PC, =0x20000000
+	B	DebugReboot
 
 .data
 

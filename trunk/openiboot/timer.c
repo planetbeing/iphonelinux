@@ -175,7 +175,7 @@ static void timerIRQHandler(uint32_t token) {
 	}
 
 	int i;
-	for(i = TIMER_Separator; i < NUM_TIMERS; NUM_TIMERS) {
+	for(i = TIMER_Separator; i < NUM_TIMERS; i++) {
 		callTimerHandler(i, stat << (8 * (NUM_TIMERS - i - 1)));
 	}
 
@@ -210,10 +210,19 @@ void timer_get_rtc_ticks(uint64_t* ticks, uint64_t* sec_divisor) {
 	register uint32_t ticksLow;
 
 	/* try to get a good read where the lower bits remain the same after reading the higher bits */
-	do {
-		ticksLow = GET_REG(TIMER + TIMER_TICKSLOW);
-		ticksHigh = GET_REG(TIMER + TIMER_TICKSHIGH);
-	} while(ticksLow != GET_REG(TIMER + TIMER_TICKSLOW));
+	asm(
+		"timeloop:\n"
+		"	LDR R0, [%2]\n"
+		"	LDR R1, [%3]\n"
+		"	LDR R2, [%2]\n"
+		"	CMP R2, R0\n"
+		"	BNE timeloop\n"
+		"	MOV %0, R0\n"
+		"	MOV %1, R1\n"
+		: "=r" (ticksLow), "=r" (ticksHigh)
+		: "r" (TIMER + TIMER_TICKSLOW), "r" (TIMER + TIMER_TICKSHIGH)
+		: "r0", "r1", "r2"
+	);
 
 	*ticks = (((uint64_t)ticksHigh) << 32) | ticksLow;
 	*sec_divisor = TicksPerSec;

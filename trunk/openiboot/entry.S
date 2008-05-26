@@ -21,7 +21,7 @@
 
 .code 32
 _start:
-	LDR	PC, =ArmReset
+	B	ArmReset
 	LDR	PC, =ArmUndefinedHandler
 	LDR	PC, =ArmSyscall
 	LDR	PC, =ArmPrefetchAbortHandler

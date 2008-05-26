@@ -7,7 +7,7 @@ typedef enum USBState {
 	USBDefault = 2,
 	USBAddress = 3,
 	USBConfigured = 4
-};
+} USBState;
 
 int usb_setup();
 int usb_shutdown();

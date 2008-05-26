@@ -16,7 +16,6 @@ int mmu_setup() {
 
 	// Implement the page table
 
-
 	// Disable checking TLB permissions for domain 0, which is the only domain we're using so anyone can access
 	// anywhere in memory, since we trust ourselves.
 	WriteDomainAccessControlRegister(ARM11_DomainAccessControl_D0_ALL);
@@ -70,8 +69,17 @@ void mmu_map_section(uint32_t section, uint32_t target, Boolean cacheable, Boole
 void mmu_map_section_range(uint32_t rangeStart, uint32_t rangeEnd, uint32_t target, Boolean bufferable, Boolean cacheable) {
 	uint32_t currentSection;
 	uint32_t curTargetSection = target;
+	Boolean started = FALSE;
+
 	for(currentSection = 0; currentSection < rangeEnd; currentSection += MMU_SECTION_SIZE) {
+		if(started && currentSection == 0) {
+			// We need this check because if rangeEnd is 0xFFFFFFFF, currentSection
+			// will always be < rangeEnd, since we overflow the uint32.
+			break;
+		}
+		started = TRUE;
 		mmu_map_section(currentSection, curTargetSection, bufferable, cacheable);
 		curTargetSection += MMU_SECTION_SIZE;
 	}
 }
+
