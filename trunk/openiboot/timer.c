@@ -219,3 +219,10 @@ void timer_get_rtc_ticks(uint64_t* ticks, uint64_t* sec_divisor) {
 	*sec_divisor = TicksPerSec;
 }
 
+void udelay(uint64_t delay) {
+	uint64_t startTime = timer_get_system_microtime();
+
+	// loop while elapsed time is less than requested delay
+	while((timer_get_system_microtime() - startTime) < delay);
+}
+

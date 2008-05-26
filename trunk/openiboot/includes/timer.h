@@ -35,5 +35,7 @@ int timer_init(int timer_id, uint32_t interval, uint32_t unknown2, uint32_t z, B
 uint64_t timer_get_system_microtime();
 void timer_get_rtc_ticks(uint64_t* ticks, uint64_t* sec_divisor);
 
+void udelay(uint64_t delay);
+
 #endif
 
