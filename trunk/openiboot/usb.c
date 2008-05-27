@@ -4,6 +4,7 @@
 #include "util.h"
 #include "hardware/power.h"
 #include "hardware/usb.h"
+#include "timer.h"
 
 static void change_state(USBState new_state);
 

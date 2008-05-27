@@ -91,14 +91,14 @@ static int setup_devices() {
 	// Need interrupts for everything afterwards
 	interrupt_setup();
 
+	gpio_setup();
+
 	// For scheduling/sleeping niceties
 	timer_setup();
 	event_setup();
 
 	// Other devices
 	usb_shutdown();
-
-	uart_setup();
 
 	return 0;
 }

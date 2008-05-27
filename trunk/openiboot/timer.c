@@ -28,6 +28,7 @@ static void timerIRQHandler(uint32_t token);
 static void callTimerHandler(int timer_id, uint32_t flags);
 
 int timer_setup() {
+
 	/* timer needs clock signal */
 	clock_gate_switch(TIMER_CLOCKGATE, ON);
 
@@ -161,7 +162,6 @@ int timer_on_off(int timer_id, OnOff on_off) {
 
 static void timerIRQHandler(uint32_t token) {
 	/* this function does not implement incrementing a counter at dword_18022B28 like Apple's */
-
 	uint32_t stat = GET_REG(TIMER + TIMER_IRQSTAT);
 
 	/* signal timer is being handled */
