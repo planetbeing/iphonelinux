@@ -36,6 +36,8 @@ static void eventTimerHandler() {
 	uint64_t curTime;
 	Event* event;
 
+	DebugReboot();
+
 	event = &EventList;
 	curTime = timer_get_system_microtime();
 

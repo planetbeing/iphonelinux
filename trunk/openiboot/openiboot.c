@@ -36,8 +36,7 @@ void OpenIBootStart() {
 
 	LeaveCriticalSection();
 
-	int i;
-	for(i = 0; i < 1000000; i++) {
+	while(TRUE) {
 		char buf[] = { 0xaa };
 		uart_write(0, buf, 1);
 	}

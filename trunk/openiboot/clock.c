@@ -196,7 +196,7 @@ int clock_set_bottom_bits_38100000(Clock0ConfigCode code) {
 			return -1;
 	}
 
-	SET_REG(CLOCK0 + CLOCK0_CONFIG, (GET_REG(CLOCK0 + CLOCK0_CONFIG) & CLOCK0_CONFIG_BOTTOMMASK) | bottomValue);
+	SET_REG(CLOCK0 + CLOCK0_CONFIG, (GET_REG(CLOCK0 + CLOCK0_CONFIG) & (~CLOCK0_CONFIG_BOTTOMMASK)) | bottomValue);
 
 	return 0;
 }
