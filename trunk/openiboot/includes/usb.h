@@ -9,6 +9,24 @@ typedef enum USBState {
 	USBConfigured = 4
 } USBState;
 
+typedef enum USBDirection {
+	USBOut = 0,
+	USBIn = 1,
+	USBBiDir = 2
+} USBDirection;
+
+typedef void (*USBEndpointHandler)(uint32_t token);
+
+typedef struct USBEndpointHandlerInfo {
+	USBEndpointHandler	handler;
+	uint32_t		token;
+} USBEndpointHandlerInfo;
+
+typedef struct USBEndpointBidirHandlerInfo {
+	USBEndpointHandlerInfo in;
+	USBEndpointHandlerInfo out;
+} USBEndpointBidirHandlerInfo;
+
 int usb_setup();
 int usb_shutdown();
 

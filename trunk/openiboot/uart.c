@@ -5,25 +5,25 @@
 #include "timer.h"
 
 UARTRegisters HWUarts[] = {
-	{UART + UART0 + UART_ULCON, UART + UART0 + UART_UCON, UART + UART0 + UART_UFCON, UART + UART0 + UART_UMCON,
+	{UART + UART0 + UART_ULCON, UART + UART0 + UART_UCON, UART + UART0 + UART_UFCON, 0,
 		UART + UART0 + UART_UTRSTAT, UART + UART0 + UART_UERSTAT, UART + UART0 + UART_UFSTAT,
-		UART + UART0 + UART_UMSTAT, UART + UART0 + UART_UTXH, UART + UART0 + UART_URXH, UART + UART0 + UART_UBAUD,
+		0, UART + UART0 + UART_UTXH, UART + UART0 + UART_URXH, UART + UART0 + UART_UBAUD,
 		UART + UART0 + UART_UINTP},
 	{UART + UART1 + UART_ULCON, UART + UART1 + UART_UCON, UART + UART1 + UART_UFCON, UART + UART1 + UART_UMCON,
 		UART + UART1 + UART_UTRSTAT, UART + UART1 + UART_UERSTAT, UART + UART1 + UART_UFSTAT,
-		UART + UART0 + UART_UMSTAT, UART + UART1 + UART_UTXH, UART + UART1 + UART_URXH, UART + UART1 + UART_UBAUD,
+		UART + UART1 + UART_UMSTAT, UART + UART1 + UART_UTXH, UART + UART1 + UART_URXH, UART + UART1 + UART_UBAUD,
 		UART + UART1 + UART_UINTP},
 	{UART + UART2 + UART_ULCON, UART + UART2 + UART_UCON, UART + UART2 + UART_UFCON, UART + UART2 + UART_UMCON,
 		UART + UART2 + UART_UTRSTAT, UART + UART2 + UART_UERSTAT, UART + UART2 + UART_UFSTAT,
-		UART + UART0 + UART_UMSTAT, UART + UART2 + UART_UTXH, UART + UART2 + UART_URXH, UART + UART2 + UART_UBAUD,
+		UART + UART2 + UART_UMSTAT, UART + UART2 + UART_UTXH, UART + UART2 + UART_URXH, UART + UART2 + UART_UBAUD,
 		UART + UART2 + UART_UINTP},
 	{UART + UART3 + UART_ULCON, UART + UART3 + UART_UCON, UART + UART3 + UART_UFCON, UART + UART3 + UART_UMCON,
 		UART + UART3 + UART_UTRSTAT, UART + UART3 + UART_UERSTAT, UART + UART3 + UART_UFSTAT,
-		UART + UART0 + UART_UMSTAT, UART + UART3 + UART_UTXH, UART + UART3 + UART_URXH, UART + UART3 + UART_UBAUD,
+		UART + UART3 + UART_UMSTAT, UART + UART3 + UART_UTXH, UART + UART3 + UART_URXH, UART + UART3 + UART_UBAUD,
 		UART + UART3 + UART_UINTP},
 	{UART + UART4 + UART_ULCON, UART + UART4 + UART_UCON, UART + UART4 + UART_UFCON, UART + UART4 + UART_UMCON,
 		UART + UART4 + UART_UTRSTAT, UART + UART4 + UART_UERSTAT, UART + UART4 + UART_UFSTAT,
-		UART + UART0 + UART_UMSTAT, UART + UART4 + UART_UTXH, UART + UART4 + UART_URXH, UART + UART4 + UART_UBAUD,
+		UART + UART4 + UART_UMSTAT, UART + UART4 + UART_UTXH, UART + UART4 + UART_URXH, UART + UART4 + UART_UBAUD,
 		UART + UART4 + UART_UINTP}};
 
 UARTSettings UARTs[5];
@@ -93,7 +93,7 @@ int uart_set_baud_rate(int ureg, uint32_t baud) {
 	if(ureg > 4)
 		return -1; // Invalid ureg
 
-	uint32_t clockFrequency = (UARTs[ureg].clock == 0) ? PeripheralFrequency : FixedFrequency;
+	uint32_t clockFrequency = (UARTs[ureg].clock == UART_CLOCK_PCLK) ? PeripheralFrequency : FixedFrequency;
 	uint32_t div_val = clockFrequency / (baud * UARTs[ureg].sample_rate) - 1;
 
 	SET_REG(HWUarts[ureg].UBAUD, GET_REG(HWUarts[ureg].UBAUD) & (~UART_DIVVAL_MASK) | div_val);
@@ -128,7 +128,7 @@ int uart_set_sample_rate(int ureg, int rate) {
 	SET_REG(HWUarts[ureg].UBAUD,
 		GET_REG(HWUarts[ureg].UBAUD) & (~UART_SAMPLERATE_MASK) | (newSampleRate << UART_SAMPLERATE_SHIFT));
 
-	UARTs[ureg].clock = rate;
+	UARTs[ureg].sample_rate = rate;
 	uart_set_baud_rate(ureg, UARTs[ureg].baud);
 
 	return 0;
@@ -138,16 +138,20 @@ int uart_set_flow_control(int ureg, OnOff flow_control) {
 	if(ureg > 4)
 		return -1; // Invalid ureg
 
-	if(ureg == 0)
-		return -1; // uart0 does not support flow control
-
 	if(flow_control == ON) {
+		if(ureg == 0)
+			return -1; // uart0 does not support flow control
+
 		SET_REG(HWUarts[ureg].UMCON, UART_UMCON_AFC_BIT);
 	} else {
-		SET_REG(HWUarts[ureg].UMCON, UART_UMCON_NRTS_BIT);
+		if(ureg != 0) {
+			SET_REG(HWUarts[ureg].UMCON, UART_UMCON_NRTS_BIT);
+		}
 	}
 
 	UARTs[ureg].flow_control = flow_control;
+
+	return 0;
 }
 
 int uart_set_mode(int ureg, uint32_t mode) {
@@ -185,18 +189,18 @@ int uart_write(int ureg, char *buffer, uint32_t length) {
 	while(written < length) {
 		if(settings->fifo) {
 			// spin until the tx fifo buffer is no longer full
-			while((GET_REG(uart->UFSTAT) & UART_UFSTAT_TXFIFO_FULL) == 1);
+			while((GET_REG(uart->UFSTAT) & UART_UFSTAT_TXFIFO_FULL) != 0);
 		} else {
 			// spin while not Transmitter Empty
-			while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) != 1);
+			while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) == 0);
 		}
 
-		if(!settings->flow_control) {		// only need to do this when there's no flow control
+		if(settings->flow_control) {		// only need to do this when there is flow control
 			// spin while not Transmitter Empty
-			while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) != 1);
+			while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) == 0);
 
 			// spin while not Clear To Send
-			while((GET_REG(uart->UMSTAT) & UART_UMSTAT_CTS) != 1);
+			while((GET_REG(uart->UMSTAT) & UART_UMSTAT_CTS) == 0);
 		}
 
 		SET_REG(uart->UTXH, *buffer); 

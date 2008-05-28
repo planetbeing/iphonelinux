@@ -32,5 +32,11 @@
 #define AMC0 0x22000000
 #define ROM 0x20000000
 
+/*
+ *	Values
+ */
+
+#define EDRAM_CLOCKGATE 0x1B
+
 #endif
 

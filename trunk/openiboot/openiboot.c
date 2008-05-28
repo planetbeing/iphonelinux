@@ -36,7 +36,8 @@ void OpenIBootStart() {
 
 	LeaveCriticalSection();
 
-	while(TRUE) {
+	int i;
+	for(i = 0; i < 1152000; i++) {
 		char buf[] = { 0xaa };
 		uart_write(0, buf, 1);
 	}
@@ -99,6 +100,7 @@ static int setup_devices() {
 
 	// Other devices
 	usb_shutdown();
+	uart_setup();
 
 	return 0;
 }
