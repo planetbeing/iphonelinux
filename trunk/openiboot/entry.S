@@ -44,7 +44,7 @@ ArmReset:						@ This function will setup the processor and kick off execution
 	SUB	R0, R0,	R1
 	LDR	R1, =_start
 	CMP	R0, R1
-	BEQ	ArmReset_zeroHeap
+	BEQ	ArmReset_zeroBSS
 	LDR	R1, =_start				@ OMG, we're not in the right place! Copy us to the right place
 	LDR	R2, =(OpenIBootEnd - OpenIBootLoad)	@ This is the size of OpenIBoot
 
@@ -63,15 +63,15 @@ ArmReset_relocate:
 	LDR	R1, =_start				@ jump to the right place!
 	BX	R1
 
-ArmReset_zeroHeap:					@ Zero out the heap section
-	LDR	R0, =OpenIBootEnd
- 	LDR	R1, =HeapStart
+ArmReset_zeroBSS:					@ Zero out the BSS/.data section
+	LDR	R0, =OpenIBootEnd			@ everything between text and heap
+	LDR	R1, =HeapStart
 	MOV	R2, #0
 
-ArmReset_zeroHeap_loop:
+ArmReset_zeroBSS_loop:
 	CMP	R0, R1
 	STRLT	R2, [R0],#4
-	BLT	ArmReset_zeroHeap_loop
+	BLT	ArmReset_zeroBSS_loop
 
 	MRS	R0, CPSR				@ setup the stack for mode:
 	BIC	R0, R0,	#ARM11_CPSR_MODEMASK

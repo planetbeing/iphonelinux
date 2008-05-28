@@ -4,7 +4,7 @@
 #include "hardware/uart.h"
 #include "timer.h"
 
-UARTRegisters HWUarts[] = {
+const UARTRegisters HWUarts[] = {
 	{UART + UART0 + UART_ULCON, UART + UART0 + UART_UCON, UART + UART0 + UART_UFCON, 0,
 		UART + UART0 + UART_UTRSTAT, UART + UART0 + UART_UERSTAT, UART + UART0 + UART_UFSTAT,
 		0, UART + UART0 + UART_UTXH, UART + UART0 + UART_URXH, UART + UART0 + UART_UBAUD,
@@ -175,11 +175,11 @@ int uart_set_mode(int ureg, uint32_t mode) {
 	return 0;
 }
 
-int uart_write(int ureg, char *buffer, uint32_t length) {
+int uart_write(int ureg, const char *buffer, uint32_t length) {
 	if(ureg > 4)
 		return -1; // Invalid ureg
 
-	UARTRegisters* uart = &HWUarts[ureg];
+	const UARTRegisters* uart = &HWUarts[ureg];
 	UARTSettings* settings = &UARTs[ureg];
 
 	if(settings->mode != UART_POLL_MODE)
@@ -215,7 +215,7 @@ int uart_read(int ureg, char *buffer, uint32_t length, uint64_t timeout) {
 	if(ureg > 4)
 		return -1; // Invalid ureg
 
-	UARTRegisters* uart = &HWUarts[ureg];
+	const UARTRegisters* uart = &HWUarts[ureg];
 	UARTSettings* settings = &UARTs[ureg];
 
 	if(settings->mode != UART_POLL_MODE)

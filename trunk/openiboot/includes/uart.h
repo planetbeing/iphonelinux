@@ -18,10 +18,12 @@ typedef struct UARTRegisters {
 	uint32_t UCON;
 	uint32_t UFCON;
 	uint32_t UMCON;
+
 	uint32_t UTRSTAT;
 	uint32_t UERSTAT;
 	uint32_t UFSTAT;
 	uint32_t UMSTAT;
+
 	uint32_t UTXH;
 	uint32_t URXH;
 	uint32_t UBAUD;
@@ -35,7 +37,7 @@ int uart_set_flow_control(int ureg, OnOff flow_control);
 int uart_set_mode(int ureg, uint32_t mode);
 int uart_set_baud_rate(int ureg, uint32_t baud);
 
-int uart_write(int ureg, char *buffer, uint32_t length);
+int uart_write(int ureg, const char *buffer, uint32_t length);
 int uart_read(int ureg, char *buffer, uint32_t length, uint64_t timeout);
 
 #endif

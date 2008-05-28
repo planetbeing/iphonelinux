@@ -4,13 +4,14 @@
 #include "openiboot-asmhelpers.h"
 #include "uart.h"
 #include "usb.h"
+#include "util.h"
 
 static int setup_processor();
 static int setup_mmu();
 static int setup_tasks();
 static int setup_devices();
 
-TaskDescriptor bootstrapTask = {
+static TaskDescriptor bootstrapTaskInit = {
 	TaskDescriptorIdentifier1,
 	{0, 0},
 	{0, 0},
@@ -28,6 +29,9 @@ TaskDescriptor bootstrapTask = {
 	TaskDescriptorIdentifier2
 	};
 
+TaskDescriptor bootstrapTask;
+
+
 void OpenIBootStart() {
 	setup_processor();
 	mmu_setup();
@@ -36,11 +40,10 @@ void OpenIBootStart() {
 
 	LeaveCriticalSection();
 
-	int i;
-	for(i = 0; i < 1152000; i++) {
-		char buf[] = { 0xaa };
-		uart_write(0, buf, 1);
-	}
+	const char buf[] = "Hello iBoot!";
+	uart_write(0, buf, sizeof("Hello iBoot") - 1);
+
+	DebugReboot();
 }
 
 static int setup_processor() {
@@ -79,6 +82,7 @@ static int setup_processor() {
 }
 
 static int setup_tasks() {
+	memcpy(&bootstrapTask, &bootstrapTaskInit, sizeof(TaskDescriptor));
 	CurrentRunning = &bootstrapTask;
 	return 0;
 }

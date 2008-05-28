@@ -23,7 +23,7 @@ typedef struct TimerInfo {
 	TimerHandler	handler3;
 } TimerInfo;
 
-extern TimerRegisters HWTimers[];
+extern const TimerRegisters HWTimers[];
 extern TimerInfo Timers[7];
 
 int timer_setup();

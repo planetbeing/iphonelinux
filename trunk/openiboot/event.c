@@ -4,7 +4,7 @@
 #include "clock.h"
 #include "hardware/timer.h"
 
-Event EventList = {{&EventList, &EventList}, 0, 0, NULL, 0};
+Event EventList;
 
 static void init_event_list();
 static void eventTimerHandler();

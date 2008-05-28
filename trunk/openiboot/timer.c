@@ -4,7 +4,7 @@
 #include "interrupt.h"
 #include "hardware/timer.h"
 
-TimerRegisters HWTimers[] = {
+const TimerRegisters HWTimers[] = {
 		{	TIMER + TIMER_0 + TIMER_CONFIG, TIMER + TIMER_0 + TIMER_STATE, TIMER + TIMER_0 + TIMER_COUNT_BUFFER, 
 			TIMER + TIMER_0 + TIMER_UNKNOWN1, TIMER + TIMER_0 + TIMER_UNKNOWN2, TIMER + TIMER_0 + TIMER_UNKNOWN3 },
 		{	TIMER + TIMER_1 + TIMER_CONFIG, TIMER + TIMER_1 + TIMER_STATE, TIMER + TIMER_1 + TIMER_COUNT_BUFFER,
