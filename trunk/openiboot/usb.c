@@ -8,11 +8,14 @@
 
 static void change_state(USBState new_state);
 
-static Boolean usb_inited = FALSE;
+static Boolean usb_inited;
 
 static USBState usb_state;
 static USBDirection endpoint_directions[USB_NUM_ENDPOINTS];
 static USBEndpointBidirHandlerInfo endpoint_handlers[USB_NUM_ENDPOINTS];
+
+volatile USBEPRegisters* InEPRegs;
+volatile USBEPRegisters* OutEPRegs;
 
 int usb_setup() {
 	int i;
@@ -20,6 +23,9 @@ int usb_setup() {
 	if(usb_inited) {
 		return 0;
 	}
+
+	InEPRegs = (USBEPRegisters*)(USB + USB_INREGS);
+	OutEPRegs = (USBEPRegisters*)(USB + USB_OUTREGS);
 
 	change_state(USBStart);
 
@@ -84,7 +90,27 @@ int usb_setup() {
 	SET_REG(USB + DCTL, GET_REG(USB + DCTL) & (~DCTL_SFTDISCONNECT));
 	udelay(USB_SFTCONNECT_DELAYUS);
 
-	
+	// flag all interrupts as positive, maybe to disable them
+
+	// Set 7th EP? This is what iBoot does
+	InEPRegs[USB_NUM_ENDPOINTS].interrupt = USB_EPINT_INEPNakEff | USB_EPINT_INTknEPMis | USB_EPINT_INTknTXFEmp
+		| USB_EPINT_TimeOUT | USB_EPINT_AHBErr | USB_EPINT_EPDisbld | USB_EPINT_XferCompl;
+	OutEPRegs[USB_NUM_ENDPOINTS].interrupt = USB_EPINT_OUTTknEPDis
+		| USB_EPINT_SetUp | USB_EPINT_AHBErr | USB_EPINT_EPDisbld | USB_EPINT_XferCompl;
+
+	for(i = 0; i < USB_NUM_ENDPOINTS; i++) {
+		InEPRegs[i].interrupt = USB_EPINT_INEPNakEff | USB_EPINT_INTknEPMis | USB_EPINT_INTknTXFEmp
+			| USB_EPINT_TimeOUT | USB_EPINT_AHBErr | USB_EPINT_EPDisbld | USB_EPINT_XferCompl;
+		OutEPRegs[i].interrupt = USB_EPINT_OUTTknEPDis
+			| USB_EPINT_SetUp | USB_EPINT_AHBErr | USB_EPINT_EPDisbld | USB_EPINT_XferCompl;
+	}
+
+	// disable all interrupts until endpoint descriptors and configuration structures have been setup
+	SET_REG(USB + GINTMSK, GINTMSK_NONE);
+	SET_REG(USB + DIEPMSK, DIEPMSK_NONE);
+	SET_REG(USB + DOEPMSK, DOEPMSK_NONE);
+
+	return (GET_REG(USB + GOTGCTL) & GOTGCTL_BSESSIONVALID);
 
 	return 0;
 }

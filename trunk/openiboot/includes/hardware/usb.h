@@ -11,13 +11,18 @@
 #define OPHYPWR 0
 #define OPHYCLK 0x4
 #define ORSTCON 0x8
+#define GOTGCTL 0x0
 #define GRSTCTL 0x10
 #define GINTSTS 0x14
 #define GINTMSK 0x18
+#define DIEPMSK 0x810
+#define DOEPMSK 0x814
+#define USB_INREGS 0x900
+#define USB_OUTREGS 0xB00
 
-#define DCFG 0x0
-#define DCTL 0x4
-#define DSTS 0x8
+#define DCFG 0x800
+#define DCTL 0x804
+#define DSTS 0x808
 
 #define USB_ENDPOINT_DIRECTIONS 0x44
 #define USB_ONOFF 0xE00
@@ -39,11 +44,17 @@
 #define OPHYCLK_CLKSEL_12MHZ 0x2
 #define OPHYCLK_CLKSEL_24MHZ 0x3
 
+#define GOTGCTL_BSESSIONVALID (1 << 19)
+
 #define ORSTCON_PHYSWRESET 0x1
 #define ORSTCON_LINKSWRESET 0x2
 #define ORSTCON_PHYLINKSWRESET 0x4
 
 #define GRSTCTL_CORESOFTRESET 0x1
+
+#define GINTMSK_NONE 0x0
+#define DIEPMSK_NONE 0x0
+#define DOEPMSK_NONE 0x0
 
 #define DCTL_SFTDISCONNECT 0x2
 
@@ -61,6 +72,18 @@
 #define USB_RESET2_DELAYUS 20
 #define USB_RESETWAITFINISH_DELAYUS 1000
 #define USB_SFTCONNECT_DELAYUS 250
+
+#define USB_EPINT_INEPNakEff 0x40
+#define USB_EPINT_INTknEPMis 0x20
+#define USB_EPINT_INTknTXFEmp 0x10
+#define USB_EPINT_TimeOUT 0x8
+#define USB_EPINT_AHBErr 0x4
+#define USB_EPINT_EPDisbld 0x2
+#define USB_EPINT_XferCompl 0x1
+
+#define USB_EPINT_Back2BackSETup 0x40
+#define USB_EPINT_OUTTknEPDis 0x10
+#define USB_EPINT_SetUp 0x8
 
 #define USB_NUM_ENDPOINTS 6
 
