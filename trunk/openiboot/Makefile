@@ -16,7 +16,7 @@ INC += -Iincludes
 	$(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
 
 
-all:	openiboot.img2
+all:	openiboot.img2	openiboot.img3
 
 openiboot:	$(OPENIBOOT_OBJS)
 	$(LD) $(LDFLAGS) $(OPENIBOOT_OBJS) $(LIBRARIES) $(LIBRARY_PATH) -o $@
@@ -26,6 +26,10 @@ mk8900image/mk8900image:
 
 openiboot.img2:	openiboot mk8900image/mk8900image
 	mk8900image/mk8900image openiboot openiboot.img2 mk8900image/template.img2
+
+openiboot.img3:	openiboot mk8900image/mk8900image
+	mk8900image/mk8900image openiboot openiboot.img3 mk8900image/template.img3
+
 clean:
 	-rm *.o
 	-rm openiboot
