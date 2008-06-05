@@ -52,6 +52,7 @@
 #define ARM11_AccessControl_CP12_ALL (0x11 << 24)
 #define ARM11_AccessControl_CP13_PRIVILEGED (0x01 << 26)
 #define ARM11_AccessControl_CP13_ALL (0x11 << 26)
+#define ARM11_AccessControl_CP14_ALL (0x11 << 28)
 
 #define ARM11_DomainAccessControl_D0_PRIVILEGED (0x01 << 0)
 #define ARM11_DomainAccessControl_D0_ALL (0x11 << 0)

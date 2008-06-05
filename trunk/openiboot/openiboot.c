@@ -40,9 +40,11 @@ void OpenIBootStart() {
 
 	LeaveCriticalSection();
 
-	const char buf[] = "Hello iBoot!";
-	uart_write(0, buf, sizeof("Hello iBoot") - 1);
-
+    while(TRUE) {
+    	const char buf[] = "Hello iBoot!";
+	    uart_write(0, buf, sizeof(buf) - 1);
+    }
+  
 	DebugReboot();
 }
 
