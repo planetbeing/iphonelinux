@@ -174,6 +174,13 @@ GiveFullAccessCP10CP11:
 	MCR	p15, 0,	R0, c1, c0, 2
 	BX	LR
 
+GiveFullAccessCP14:
+    MRC p14, 0, R0, c1, c0, 2
+    MOV R1, #ARM11_AccessControl_CP14_ALL
+    ORR R0, R0, R1
+    MCR p14, 0, R0, c1, c0, 2
+    BX  LR
+
 EnableVFP:					@ FIXME: Not working yet without VFP
 	FMRX	R2, FPEXC
 	ORR	R2, R2,	ARM11_VFP_Enable
