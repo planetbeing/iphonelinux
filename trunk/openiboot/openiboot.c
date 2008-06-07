@@ -6,6 +6,7 @@
 #include "usb.h"
 #include "util.h"
 #include "clock.h"
+#include "timer.h"
 
 static int setup_processor();
 static int setup_mmu();
@@ -41,19 +42,21 @@ void OpenIBootStart() {
 	LeaveCriticalSection();
 
 	while(TRUE) {
-		printf("Hello iBoot!\r\n");
-		printf("ClockFrequency: %x\r\n", ClockFrequency);
-		printf("MemoryFrequency: %x\r\n", MemoryFrequency);
-		printf("BusFrequency: %x\r\n", BusFrequency);
-		printf("UnknownFrequency: %x\r\n", UnknownFrequency);
-		printf("PeripheralFrequency: %x\r\n", PeripheralFrequency);
-		printf("Unknown2Frequency: %x\r\n", Unknown2Frequency);
-		printf("FixedFrequency: %x\r\n", FixedFrequency);
-		printf("TimebaseFrequency: %x\r\n", TimebaseFrequency);
-		printf("PLL0 Frequency: %u\r\n", PLLFrequencies[0]);
-		printf("PLL1 Frequency: %u\r\n", PLLFrequencies[1]);
-		printf("PLL2 Frequency: %u\r\n", PLLFrequencies[2]);
-		printf("PLL3 Frequency: %u\r\n", PLLFrequencies[3]);
+		printf("Hello iBoot! Up time: %d seconds\r\n", timer_get_system_microtime() / 1000000);
+		printf("ClockFrequency: %u Hz\r\n", ClockFrequency);
+		printf("MemoryFrequency: %u Hz\r\n", MemoryFrequency);
+		printf("BusFrequency: %u Hz\r\n", BusFrequency);
+		printf("UnknownFrequency: %u Hz\r\n", UnknownFrequency);
+		printf("PeripheralFrequency: %u Hz\r\n", PeripheralFrequency);
+		printf("Unknown2Frequency: %u Hz\r\n", Unknown2Frequency);
+		printf("FixedFrequency: %u Hz\r\n", FixedFrequency);
+		printf("TimebaseFrequency: %u Hz\r\n", TimebaseFrequency);
+		printf("PLL0 Frequency: %u Hz\r\n", PLLFrequencies[0]);
+		printf("PLL1 Frequency: %u Hz\r\n", PLLFrequencies[1]);
+		printf("PLL2 Frequency: %u Hz\r\n", PLLFrequencies[2]);
+		printf("PLL3 Frequency: %u Hz\r\n", PLLFrequencies[3]);
+		printf("\n\n");
+		udelay(1000000);
 	}
   
 	DebugReboot();
