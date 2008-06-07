@@ -5,7 +5,7 @@
 #include "uart.h"
 #include "usb.h"
 #include "util.h"
-#include <stdio.h>
+#include "clock.h"
 
 static int setup_processor();
 static int setup_mmu();
@@ -42,7 +42,15 @@ void OpenIBootStart() {
 	LeaveCriticalSection();
 
 	while(TRUE) {
-		printf("Hello iBoot! %d\r\n", 5);
+		printf("Hello iBoot!\r\n", 5);
+		printf("ClockFrequency: %d\r\n", ClockFrequency);
+		printf("MemoryFrequency: %d\r\n", MemoryFrequency);
+		printf("BusFrequency: %d\r\n", BusFrequency);
+		printf("PeripheralFrequency: %d\r\n", PeripheralFrequency);
+		printf("UnknownFrequency: %d\r\n", UnknownFrequency);
+		printf("Unknown2Frequency: %d\r\n", Unknown2Frequency);
+		printf("FixedFrequency: %d\r\n", FixedFrequency);
+		printf("TimebaseFrequency: %d\r\n", TimebaseFrequency);
 	}
   
 	DebugReboot();
