@@ -177,7 +177,7 @@ static void timerIRQHandler(uint32_t token) {
 
 	int i;
 	for(i = TIMER_Separator; i < NUM_TIMERS; i++) {
-		callTimerHandler(i, stat << (8 * (NUM_TIMERS - i - 1)));
+		callTimerHandler(i, stat >> (8 * (NUM_TIMERS - i - 1)));
 	}
 
 	/* signal timer has been handled */
@@ -186,15 +186,18 @@ static void timerIRQHandler(uint32_t token) {
 
 static void callTimerHandler(int timer_id, uint32_t flags) {
 	if(flags & (1 << 2) != 0) {
-		Timers[timer_id].handler1();
+		if(Timers[timer_id].handler1)
+			Timers[timer_id].handler1();
 	}
 
 	if(flags & (1 << 1) != 0) {
-		Timers[timer_id].handler3();
+		if(Timers[timer_id].handler3)
+			Timers[timer_id].handler3();
 	}
 
 	if(flags & (1 << 0) != 0) {
-		Timers[timer_id].handler2();
+		if(Timers[timer_id].handler2)
+			Timers[timer_id].handler2();
 	}
 }
 

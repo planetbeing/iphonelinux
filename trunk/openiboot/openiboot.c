@@ -33,6 +33,13 @@ static TaskDescriptor bootstrapTaskInit = {
 
 TaskDescriptor bootstrapTask;
 
+Event testEvent;
+
+void testEventHandler(Event* event, void* opaque) {
+	printf("omg the event fired!\r\n");
+	event_readd(event, 0);
+}
+
 void OpenIBootStart() {
 	setup_processor();
 	mmu_setup();
@@ -40,6 +47,8 @@ void OpenIBootStart() {
 	setup_devices();
 
 	LeaveCriticalSection();
+
+	event_add(&testEvent, 2000000, &testEventHandler, NULL);
 
 	while(TRUE) {
 		printf("Hello iBoot! Up time: %d seconds\r\n", timer_get_system_microtime() / 1000000);
@@ -55,12 +64,14 @@ void OpenIBootStart() {
 		printf("PLL1 Frequency: %u Hz\r\n", PLLFrequencies[1]);
 		printf("PLL2 Frequency: %u Hz\r\n", PLLFrequencies[2]);
 		printf("PLL3 Frequency: %u Hz\r\n", PLLFrequencies[3]);
+		dump_memory(0x3e200000, 0x100);
 		printf("\n\n");
 		udelay(1000000);
 	}
   
 	DebugReboot();
 }
+
 
 static int setup_processor() {
 

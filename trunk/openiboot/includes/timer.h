@@ -11,7 +11,7 @@ typedef struct TimerRegisters {
 	uint32_t	count_buffer;
 	uint32_t	unknown1;
 	uint32_t	unknown2;
-	uint32_t	unknown3;
+	uint32_t	cur_count;
 } TimerRegisters;
 
 typedef struct TimerInfo {
