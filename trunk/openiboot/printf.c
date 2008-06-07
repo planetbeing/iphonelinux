@@ -59,7 +59,7 @@ mod:	N	near ptr				DONE
 #define	PR_FP	0x80	/* pointers are far */
 /* largest number handled is 2^32-1, lowest radix handled is 8.
 2^32-1 in base 8 has 11 digits (add 5 for trailing NUL and for slop) */
-#define	PR_BUFLEN	16
+#define	PR_BUFLEN	32
 
 typedef int (*fnptr_t)(unsigned c, void **helper);
 
@@ -74,7 +74,7 @@ int do_printf(const char *fmt, va_list args, fnptr_t fn, void *ptr)
 	unsigned flags, actual_wd, count, given_wd;
 	unsigned char *where, buf[PR_BUFLEN];
 	unsigned char state, radix;
-	long num;
+	uint64_t num;
 
 	state = flags = count = given_wd = 0;
 /* begin scanning format specifier list */
@@ -140,6 +140,12 @@ int do_printf(const char *fmt, va_list args, fnptr_t fn, void *ptr)
 			}
 			if(*fmt == 'N')
 				break;
+			if(*fmt == 'L')
+			{
+				flags |= PR_FP;
+				break;
+			}
+
 			if(*fmt == 'l')
 			{
 				flags |= PR_32;
@@ -178,8 +184,14 @@ int do_printf(const char *fmt, va_list args, fnptr_t fn, void *ptr)
 			case 'o':
 				radix = 8;
 /* load the value to be printed. l=long=32 bits: */
-DO_NUM:				if(flags & PR_32)
+DO_NUM:				if(flags & PR_FP)
+				{
+					num = va_arg(args, uint64_t);
+				}
+				else if(flags & PR_32)
+				{
 					num = va_arg(args, unsigned long);
+				}
 /* h=short=16 bits (signed or unsigned) */
 				else if(flags & PR_16)
 				{
@@ -209,9 +221,9 @@ DO_NUM:				if(flags & PR_32)
 OK, I found my mistake. The math here is _always_ unsigned */
 				do
 				{
-					unsigned long temp;
+					uint64_t temp;
 
-					temp = (unsigned long)num % radix;
+					temp = (uint64_t)num % radix;
 					where--;
 					if(temp < 10)
 						*where = temp + '0';
@@ -219,7 +231,7 @@ OK, I found my mistake. The math here is _always_ unsigned */
 						*where = temp - 10 + 'A';
 					else
 						*where = temp - 10 + 'a';
-					num = (unsigned long)num / radix;
+					num = (uint64_t)num / radix;
 				}
 				while(num != 0);
 				goto EMIT;

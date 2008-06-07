@@ -80,8 +80,9 @@ int clock_setup() {
 	int pll = 0;
 	for(pll = 0; pll < NUM_PLL; pll++) {
 		uint32_t pllStates = GET_REG(CLOCK1 + CLOCK1_PLLMODE);
-		if(!CLOCK1_PLLMODE_ONOFF(pllStates, pll)) {
+		if(CLOCK1_PLLMODE_ONOFF(pllStates, pll)) {
 			int dividerMode = CLOCK1_PLLMODE_DIVIDERMODE(pllStates, pll);
+			int dividerModeInputFrequency = dividerMode;
 			uint32_t inputFrequency;
 			uint32_t inputFrequencyMult;
 			uint32_t pllConReg;
@@ -103,12 +104,13 @@ int clock_setup() {
 				inputFrequency = PLL3_INFREQ_DIV * 2;
 				pllConReg = CLOCK1 + CLOCK1_PLL3CON;
 				inputFrequencyMult = PLL3_INFREQ_MULT * 2;
+				dividerMode = CLOCK1_PLLMODE_DIVIDE;
 			} else {
 				PLLFrequencies[pll] = 0;
 				continue;
 			}
 
-			if(dividerMode == CLOCK1_PLLMODE_MULTIPLY) {
+			if(dividerModeInputFrequency == CLOCK1_PLLMODE_MULTIPLY) {
 				inputFrequency = inputFrequencyMult;
 			}
 

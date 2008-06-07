@@ -32,7 +32,6 @@ static TaskDescriptor bootstrapTaskInit = {
 
 TaskDescriptor bootstrapTask;
 
-
 void OpenIBootStart() {
 	setup_processor();
 	mmu_setup();
@@ -42,15 +41,19 @@ void OpenIBootStart() {
 	LeaveCriticalSection();
 
 	while(TRUE) {
-		printf("Hello iBoot!\r\n", 5);
-		printf("ClockFrequency: %d\r\n", ClockFrequency);
-		printf("MemoryFrequency: %d\r\n", MemoryFrequency);
-		printf("BusFrequency: %d\r\n", BusFrequency);
-		printf("PeripheralFrequency: %d\r\n", PeripheralFrequency);
-		printf("UnknownFrequency: %d\r\n", UnknownFrequency);
-		printf("Unknown2Frequency: %d\r\n", Unknown2Frequency);
-		printf("FixedFrequency: %d\r\n", FixedFrequency);
-		printf("TimebaseFrequency: %d\r\n", TimebaseFrequency);
+		printf("Hello iBoot!\r\n");
+		printf("ClockFrequency: %x\r\n", ClockFrequency);
+		printf("MemoryFrequency: %x\r\n", MemoryFrequency);
+		printf("BusFrequency: %x\r\n", BusFrequency);
+		printf("UnknownFrequency: %x\r\n", UnknownFrequency);
+		printf("PeripheralFrequency: %x\r\n", PeripheralFrequency);
+		printf("Unknown2Frequency: %x\r\n", Unknown2Frequency);
+		printf("FixedFrequency: %x\r\n", FixedFrequency);
+		printf("TimebaseFrequency: %x\r\n", TimebaseFrequency);
+		printf("PLL0 Frequency: %u\r\n", PLLFrequencies[0]);
+		printf("PLL1 Frequency: %u\r\n", PLLFrequencies[1]);
+		printf("PLL2 Frequency: %u\r\n", PLLFrequencies[2]);
+		printf("PLL3 Frequency: %u\r\n", PLLFrequencies[3]);
 	}
   
 	DebugReboot();
