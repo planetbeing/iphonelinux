@@ -5,6 +5,7 @@
 #include "uart.h"
 #include "usb.h"
 #include "util.h"
+#include <stdio.h>
 
 static int setup_processor();
 static int setup_mmu();
@@ -40,11 +41,8 @@ void OpenIBootStart() {
 
 	LeaveCriticalSection();
 
-	udelay(5000000);
-
 	while(TRUE) {
-		const char buf[] = "Hello iBoot!\r\n";
-		uart_write(0, buf, sizeof(buf) - 1);
+		printf("Hello iBoot! %d\r\n", 5);
 	}
   
 	DebugReboot();

@@ -1,10 +1,10 @@
 AS = arm-elf-as
 LD = arm-elf-ld
 CC = arm-elf-gcc
-OPENIBOOT_OBJS=entry.o openiboot.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o
+OPENIBOOT_OBJS=entry.o openiboot.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o
 ASFLAGS += -mcpu=arm11
 ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
-LDFLAGS += -Ttext 0x18000000 -Tdata 0x18021980
+LDFLAGS += -Ttext 0x18000000 -Tdata 0x18021980 --nostdlib
 LIBRARIES += -lgcc
 LIBRARY_PATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
 INC += -Iincludes

@@ -186,7 +186,7 @@ int uart_write(int ureg, const char *buffer, uint32_t length) {
 		return -1; // unhandled uart mode
 
 	int written = 0;
-	while(written < length) {
+	while(written <= length) {
 		if(settings->fifo) {
 			// spin until the tx fifo buffer is no longer full
 			while((GET_REG(uart->UFSTAT) & UART_UFSTAT_TXFIFO_FULL) != 0);
@@ -203,9 +203,15 @@ int uart_write(int ureg, const char *buffer, uint32_t length) {
 			while((GET_REG(uart->UMSTAT) & UART_UMSTAT_CTS) == 0);
 		}
 
-		SET_REG(uart->UTXH, *buffer); 
-		buffer++;
-		written++;
+		if(written == length) {
+			// flush buffer
+			SET_REG(uart->UTXH, 0);
+			break;
+		} else {
+			SET_REG(uart->UTXH, *buffer); 
+			buffer++;
+			written++;
+		}
 	}
 
 	return written;
