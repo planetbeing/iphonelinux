@@ -37,5 +37,7 @@ void timer_get_rtc_ticks(uint64_t* ticks, uint64_t* sec_divisor);
 
 void udelay(uint64_t delay);
 
+extern int RTCHasInit;
+
 #endif
 

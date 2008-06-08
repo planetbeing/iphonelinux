@@ -26,7 +26,7 @@ void WritePeripheralPortMemoryRemapRegister(uint32_t regData);
 void GiveFullAccessCP10CP11();
 void EnableVFP();
 void WaitForInterrupt();
-void WriteTranslationTableBaseRegister0(uint32_t regData);
+void WriteTranslationTableBaseRegister0(void* translationTableBase);
 
 void InvalidateUnifiedTLBUnlockedEntries();
 void ClearCPUInstructionCache();

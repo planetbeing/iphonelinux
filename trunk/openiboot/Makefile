@@ -8,6 +8,7 @@ LDFLAGS += -Ttext 0x18000000 -Tdata 0x18021980 --nostdlib
 LIBRARIES += -lgcc
 LIBRARY_PATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
 INC += -Iincludes
+CFLAGS += -Wall -O3
 
 %.o:	%.S
 	$(CC) $(INC) -E -x c $< | $(AS) $(ASFLAGS) $(ARCHFLAGS) -o $@
@@ -16,7 +17,7 @@ INC += -Iincludes
 	$(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
 
 
-all:	openiboot.img2	openiboot.img3
+all:	openiboot.img2	openiboot.img3 openiboot-iboot.img2
 
 openiboot:	$(OPENIBOOT_OBJS)
 	$(LD) $(LDFLAGS) $(OPENIBOOT_OBJS) $(LIBRARIES) $(LIBRARY_PATH) -o $@
@@ -29,6 +30,9 @@ openiboot.img2:	openiboot mk8900image/mk8900image
 
 openiboot.img3:	openiboot mk8900image/mk8900image
 	mk8900image/mk8900image openiboot openiboot.img3 mk8900image/template.img3
+
+openiboot-iboot.img2:
+	mk8900image/mk8900image openiboot openiboot-iboot.img2 mk8900image/iboot-template.img2
 
 clean:
 	-rm *.o

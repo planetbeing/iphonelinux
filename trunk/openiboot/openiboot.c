@@ -2,18 +2,25 @@
 #include "hardware/s5l8900.h"
 #include "hardware/arm.h"
 #include "openiboot-asmhelpers.h"
+
 #include "uart.h"
 #include "usb.h"
-#include "util.h"
+#include "mmu.h"
 #include "clock.h"
 #include "timer.h"
+#include "event.h"
+#include "miu.h"
+#include "power.h"
+#include "interrupt.h"
+#include "gpio.h"
+
+#include "util.h"
 
 static int setup_processor();
-static int setup_mmu();
 static int setup_tasks();
 static int setup_devices();
 
-static TaskDescriptor bootstrapTaskInit = {
+const TaskDescriptor bootstrapTaskInit = {
 	TaskDescriptorIdentifier1,
 	{0, 0},
 	{0, 0},
@@ -36,7 +43,21 @@ TaskDescriptor bootstrapTask;
 Event testEvent;
 
 void testEventHandler(Event* event, void* opaque) {
-	printf("omg the event fired!\r\n");
+	printf("Hello iBoot! Up time: %Ld seconds\r\n", timer_get_system_microtime() / 1000000);
+	printf("ClockFrequency: %u Hz\r\n", ClockFrequency);
+	printf("MemoryFrequency: %u Hz\r\n", MemoryFrequency);
+	printf("BusFrequency: %u Hz\r\n", BusFrequency);
+	printf("UnknownFrequency: %u Hz\r\n", UnknownFrequency);
+	printf("PeripheralFrequency: %u Hz\r\n", PeripheralFrequency);
+	printf("Unknown2Frequency: %u Hz\r\n", Unknown2Frequency);
+	printf("FixedFrequency: %u Hz\r\n", FixedFrequency);
+	printf("TimebaseFrequency: %u Hz\r\n", TimebaseFrequency);
+	printf("PLL0 Frequency: %u Hz\r\n", PLLFrequencies[0]);
+	printf("PLL1 Frequency: %u Hz\r\n", PLLFrequencies[1]);
+	printf("PLL2 Frequency: %u Hz\r\n", PLLFrequencies[2]);
+	printf("PLL3 Frequency: %u Hz\r\n", PLLFrequencies[3]);
+	printf("\n\n");
+
 	event_readd(event, 0);
 }
 
@@ -48,26 +69,15 @@ void OpenIBootStart() {
 
 	LeaveCriticalSection();
 
-	event_add(&testEvent, 2000000, &testEventHandler, NULL);
-
-	while(TRUE) {
-		printf("Hello iBoot! Up time: %d seconds\r\n", timer_get_system_microtime() / 1000000);
-		printf("ClockFrequency: %u Hz\r\n", ClockFrequency);
-		printf("MemoryFrequency: %u Hz\r\n", MemoryFrequency);
-		printf("BusFrequency: %u Hz\r\n", BusFrequency);
-		printf("UnknownFrequency: %u Hz\r\n", UnknownFrequency);
-		printf("PeripheralFrequency: %u Hz\r\n", PeripheralFrequency);
-		printf("Unknown2Frequency: %u Hz\r\n", Unknown2Frequency);
-		printf("FixedFrequency: %u Hz\r\n", FixedFrequency);
-		printf("TimebaseFrequency: %u Hz\r\n", TimebaseFrequency);
-		printf("PLL0 Frequency: %u Hz\r\n", PLLFrequencies[0]);
-		printf("PLL1 Frequency: %u Hz\r\n", PLLFrequencies[1]);
-		printf("PLL2 Frequency: %u Hz\r\n", PLLFrequencies[2]);
-		printf("PLL3 Frequency: %u Hz\r\n", PLLFrequencies[3]);
-		dump_memory(0x3e200000, 0x100);
-		printf("\n\n");
-		udelay(1000000);
+	int i;
+	for(i = 0; i < 5; i++) {
+		printf("Devices loaded. OpenIBoot starting in: %d\r\n", 5 - i);
+		udelay(uSecPerSec);
 	}
+
+	event_add(&testEvent, uSecPerSec, &testEventHandler, NULL);
+
+	while(TRUE);
   
 	DebugReboot();
 }
@@ -92,8 +102,8 @@ static int setup_processor() {
 	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | ARM11_Control_INSTRUCTIONCACHE);	// Enable instruction cache
 	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | ARM11_Control_DATACACHE);		// Enable data cache
 
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData()
-		& ~(ARM11_Control_STRICTALIGNMENTCHECKING)				// Disable strict alignment fault checking
+	WriteControlRegisterConfigData((ReadControlRegisterConfigData()
+		& ~(ARM11_Control_STRICTALIGNMENTCHECKING))				// Disable strict alignment fault checking
 		| ARM11_Control_UNALIGNEDDATAACCESS);					// Enable unaligned data access operations
 
 

@@ -2,6 +2,7 @@
 #include "mmu.h"
 #include "hardware/s5l8900.h"
 #include "hardware/arm.h"
+#include "openiboot-asmhelpers.h"
 
 uint32_t* CurrentPageTable;
 
@@ -24,6 +25,8 @@ int mmu_setup() {
 	InvalidateUnifiedTLBUnlockedEntries();
 	mmu_enable();
 	InvalidateUnifiedTLBUnlockedEntries();
+
+	return 0;
 }
 
 void mmu_enable() {

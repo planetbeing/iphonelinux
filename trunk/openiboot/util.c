@@ -1,6 +1,7 @@
 #include "openiboot.h"
 #include "hardware/s5l8900.h"
 #include "uart.h"
+#include "util.h"
 
 void* memset(void* x, int fill, uint32_t size) {
 	uint32_t i;
@@ -36,8 +37,7 @@ int putchar(int c) {
 }
 
 int puts(const char *str) {
-	uart_write(0, str, strlen(str));
-	return 0;
+	return uart_write(0, str, strlen(str));
 }
 
 void dump_memory(uint32_t start, int length) {

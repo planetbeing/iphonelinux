@@ -23,9 +23,20 @@ const TimerRegisters HWTimers[] = {
 
 TimerInfo Timers[7];
 
-static void eventTimerHandler();
 static void timerIRQHandler(uint32_t token);
 static void callTimerHandler(int timer_id, uint32_t flags);
+
+int RTCHasInit;
+
+static void timer_init_rtc() {
+	SET_REG(TIMER + TIMER_UNKREG0, TIMER_UNKREG0_RESET1);
+	SET_REG(TIMER + TIMER_UNKREG2, TIMER_UNKREG2_RESET);
+	SET_REG(TIMER + TIMER_UNKREG1, TIMER_UNKREG1_RESET);
+	SET_REG(TIMER + TIMER_UNKREG4, TIMER_UNKREG4_RESET);
+	SET_REG(TIMER + TIMER_UNKREG3, TIMER_UNKREG3_RESET);
+	SET_REG(TIMER + TIMER_UNKREG0, TIMER_UNKREG0_RESET2);
+	RTCHasInit = TRUE;
+}
 
 int timer_setup() {
 
@@ -36,12 +47,7 @@ int timer_setup() {
 	timer_stop_all();
 
 	/* do some voodoo */
-	SET_REG(TIMER + TIMER_UNKREG0, TIMER_UNKREG0_RESET1);
-	SET_REG(TIMER + TIMER_UNKREG1, TIMER_UNKREG1_RESET);
-	SET_REG(TIMER + TIMER_UNKREG2, TIMER_UNKREG2_RESET);
-	SET_REG(TIMER + TIMER_UNKREG3, TIMER_UNKREG3_RESET);
-	SET_REG(TIMER + TIMER_UNKREG4, TIMER_UNKREG4_RESET);
-	SET_REG(TIMER + TIMER_UNKREG0, TIMER_UNKREG0_RESET2);
+	timer_init_rtc();
 
 	int i;
 	for(i = 0; i < NUM_TIMERS; i++) {
@@ -82,7 +88,9 @@ int timer_init(int timer_id, uint32_t interval, uint32_t unknown2, uint32_t z, B
 	SET_REG(HWTimers[timer_id].count_buffer, interval);
 	SET_REG(HWTimers[timer_id].unknown1, Timers[timer_id].unknown1);
 	SET_REG(HWTimers[timer_id].unknown2, unknown2);
-	SET_REG(HWTimers[timer_id].state, TIMER_STATE_INIT);
+
+	// apply the settings
+	SET_REG(HWTimers[timer_id].state, TIMER_STATE_MANUALUPDATE);
 
 	return 0;
 }
@@ -161,11 +169,13 @@ int timer_on_off(int timer_id, OnOff on_off) {
 }
 
 static void timerIRQHandler(uint32_t token) {
+	//dump_memory(0x3e200000, 0x100);
+
 	/* this function does not implement incrementing a counter at dword_18022B28 like Apple's */
 	uint32_t stat = GET_REG(TIMER + TIMER_IRQSTAT);
 
 	/* signal timer is being handled */
-	uint32_t discard = GET_REG(TIMER + TIMER_IRQLATCH);
+	volatile register uint32_t discard = GET_REG(TIMER + TIMER_IRQLATCH); discard --;
 
 	if(stat & TIMER_SPECIALTIMER_BIT0) {
 		SET_REG(TIMER + TIMER_UNKREG0, GET_REG(TIMER + TIMER_UNKREG0) | TIMER_SPECIALTIMER_BIT0);
@@ -185,17 +195,17 @@ static void timerIRQHandler(uint32_t token) {
 }
 
 static void callTimerHandler(int timer_id, uint32_t flags) {
-	if(flags & (1 << 2) != 0) {
+	if((flags & (1 << 2)) != 0) {
 		if(Timers[timer_id].handler1)
 			Timers[timer_id].handler1();
 	}
 
-	if(flags & (1 << 1) != 0) {
+	if((flags & (1 << 1)) != 0) {
 		if(Timers[timer_id].handler3)
 			Timers[timer_id].handler3();
 	}
 
-	if(flags & (1 << 0) != 0) {
+	if((flags & (1 << 0)) != 0) {
 		if(Timers[timer_id].handler2)
 			Timers[timer_id].handler2();
 	}
@@ -206,33 +216,30 @@ uint64_t timer_get_system_microtime() {
         uint64_t sec_divisor;
 
         timer_get_rtc_ticks(&ticks, &sec_divisor);          
-        return (ticks * 1000000)/sec_divisor;
+        return (ticks * uSecPerSec)/sec_divisor;
 }
 
 void timer_get_rtc_ticks(uint64_t* ticks, uint64_t* sec_divisor) {
 	register uint32_t ticksHigh;
 	register uint32_t ticksLow;
+	register uint32_t ticksHigh2;
 
 	/* try to get a good read where the lower bits remain the same after reading the higher bits */
-	asm(
-		"timeloop:\n"
-		"	LDR R0, [%2]\n"
-		"	LDR R1, [%3]\n"
-		"	LDR R2, [%2]\n"
-		"	CMP R2, R0\n"
-		"	BNE timeloop\n"
-		"	MOV %0, R0\n"
-		"	MOV %1, R1\n"
-		: "=r" (ticksHigh), "=r" (ticksLow)
-		: "r" (TIMER + TIMER_TICKSHIGH), "r" (TIMER + TIMER_TICKSLOW)
-		: "r0", "r1", "r2"
-	);
+	do {
+		ticksHigh = GET_REG(TIMER + TIMER_TICKSHIGH);
+		ticksLow = GET_REG(TIMER + TIMER_TICKSLOW);
+		ticksHigh2 = GET_REG(TIMER + TIMER_TICKSHIGH);
+	} while(ticksHigh != ticksHigh2);
 
 	*ticks = (((uint64_t)ticksHigh) << 32) | ticksLow;
 	*sec_divisor = TicksPerSec;
 }
 
 void udelay(uint64_t delay) {
+	if(!RTCHasInit) {
+		return;
+	}
+
 	uint64_t startTime = timer_get_system_microtime();
 
 	// loop while elapsed time is less than requested delay

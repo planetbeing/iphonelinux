@@ -3,14 +3,15 @@
 #include "hardware/interrupt.h"
 #include "hardware/edgeic.h"
 #include "util.h"
+#include "openiboot-asmhelpers.h"
 
 int interrupt_setup() {
-	if(0xfff & (GET_REG(VIC0 + VICPERIPHID0) | (GET_REG(VIC0 + VICPERIPHID1) << 8) | (GET_REG(VIC0 + VICPERIPHID2) << 16) | (GET_REG(VIC0 + VICPERIPHID3) << 24)) != 0x192) {
+	if((0xfff & (GET_REG(VIC0 + VICPERIPHID0) | (GET_REG(VIC0 + VICPERIPHID1) << 8) | (GET_REG(VIC0 + VICPERIPHID2) << 16) | (GET_REG(VIC0 + VICPERIPHID3) << 24))) != 0x192) {
 		/* peripheral ID for vic0 doesn't match PL 192, which is the VIC we are expecting */
 		return -1;
 	}
 
-	if(0xfff & (GET_REG(VIC1 + VICPERIPHID0) | (GET_REG(VIC1 + VICPERIPHID1) << 8) | (GET_REG(VIC1 + VICPERIPHID2) << 16) | (GET_REG(VIC1 + VICPERIPHID3) << 24)) != 0x192) {
+	if((0xfff & (GET_REG(VIC1 + VICPERIPHID0) | (GET_REG(VIC1 + VICPERIPHID1) << 8) | (GET_REG(VIC1 + VICPERIPHID2) << 16) | (GET_REG(VIC1 + VICPERIPHID3) << 24))) != 0x192) {
 		/* peripheral ID for vic1 doesn't match PL 192, which is the VIC we are expecting */
 		return -1;
 	}

@@ -27,4 +27,6 @@ int power_ctrl(uint32_t device, OnOff on_off) {
 
 	/* wait for the new state to take effect */
 	while((GET_REG(POWER + POWER_SETSTATE) & device) != (GET_REG(POWER + POWER_STATE) & device));
+
+	return 0;
 }

@@ -72,7 +72,7 @@ returns:total number of characters output
 int do_printf(const char *fmt, va_list args, fnptr_t fn, void *ptr)
 {
 	unsigned flags, actual_wd, count, given_wd;
-	unsigned char *where, buf[PR_BUFLEN];
+	char *where, buf[PR_BUFLEN];
 	unsigned char state, radix;
 	uint64_t num;
 
@@ -239,14 +239,14 @@ OK, I found my mistake. The math here is _always_ unsigned */
 /* disallow pad-left-with-zeroes for %c */
 				flags &= ~PR_LZ;
 				where--;
-				*where = (unsigned char)va_arg(args,
+				*where = (char)va_arg(args,
 					unsigned int);
 				actual_wd = 1;
 				goto EMIT2;
 			case 's':
 /* disallow pad-left-with-zeroes for %s */
 				flags &= ~PR_LZ;
-				where = va_arg(args, unsigned char *);
+				where = va_arg(args, char *);
 EMIT:
 				actual_wd = strlen(where);
 				if(flags & PR_WS)

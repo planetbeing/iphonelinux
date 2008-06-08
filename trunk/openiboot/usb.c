@@ -5,6 +5,7 @@
 #include "hardware/power.h"
 #include "hardware/usb.h"
 #include "timer.h"
+#include "clock.h"
 
 static void change_state(USBState new_state);
 
@@ -79,7 +80,7 @@ int usb_setup() {
 	SET_REG(USB + GRSTCTL, GRSTCTL_CORESOFTRESET);
 
 	// wait until reset takes
-	while(GET_REG(USB + GRSTCTL) & GRSTCTL_CORESOFTRESET == GRSTCTL_CORESOFTRESET);
+	while((GET_REG(USB + GRSTCTL) & GRSTCTL_CORESOFTRESET) == GRSTCTL_CORESOFTRESET);
 
 	// wait until reset completes
 	while(GET_REG(USB + GRSTCTL) >= 0);

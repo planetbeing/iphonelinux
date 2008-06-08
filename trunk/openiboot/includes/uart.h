@@ -3,6 +3,8 @@
 
 #include "openiboot.h"
 
+#define UART_POLL_MODE 0
+
 typedef struct UARTSettings {
 	uint32_t ureg;
 	uint32_t baud;
@@ -39,6 +41,8 @@ int uart_set_baud_rate(int ureg, uint32_t baud);
 
 int uart_write(int ureg, const char *buffer, uint32_t length);
 int uart_read(int ureg, char *buffer, uint32_t length, uint64_t timeout);
+
+extern int UartHasInit;
 
 #endif
 

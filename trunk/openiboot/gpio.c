@@ -10,5 +10,7 @@ int gpio_setup() {
 	}
 
 	// iBoot also sets up interrupt handlers, but those are never unmasked
+
+	return 0;
 }
 

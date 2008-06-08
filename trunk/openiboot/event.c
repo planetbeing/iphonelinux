@@ -3,6 +3,7 @@
 #include "event.h"
 #include "clock.h"
 #include "hardware/timer.h"
+#include "openiboot-asmhelpers.h"
 
 Event EventList;
 
@@ -36,15 +37,16 @@ static void eventTimerHandler() {
 	uint64_t curTime;
 	Event* event;
 
-	event = &EventList;
 	curTime = timer_get_system_microtime();
 
-	while(event->list.next != event) {
-		if(event->list.next == NULL) {
+	while(EventList.list.next != &EventList) {	// Just keep checking the first event on the list until the list is empty
+							// This works because we remove events as we dispatch them
+
+		event = EventList.list.next;
+
+		if(event == NULL) {
 			break;
 		}
-
-		event = event->list.next;
 
 		if(curTime >= event->deadline) {
 			// take it off the list and dispatch it
@@ -76,6 +78,7 @@ int event_add(Event* newEvent, uint64_t timeout, EventHandler handler, void* opa
 		newEvent->list.prev = NULL;
 	}
 
+	newEvent->handler = handler;
 	newEvent->interval = timeout;
 	newEvent->deadline = timer_get_system_microtime() + timeout;
 
@@ -133,4 +136,7 @@ int event_readd(Event* event, uint64_t new_interval) {
 
 	event_add(event, interval, event->handler, event->opaque);
 	LeaveCriticalSection();
+
+	return 0;
 }
+

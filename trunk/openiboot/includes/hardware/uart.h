@@ -28,7 +28,7 @@
 
 // Values
 #define NUM_UARTS 5
-#define UART_POLL_MODE 0
+#define UART_CLOCKGATE 0x29
 
 #define UART_CLOCK_SELECTION_MASK (0x3 << 10) // Bit 10-11
 #define UART_CLOCK_SELECTION_SHIFT 10 // Bit 10-11

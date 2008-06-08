@@ -28,8 +28,16 @@ const UARTRegisters HWUarts[] = {
 
 UARTSettings UARTs[5];
 
+int UartHasInit;
+
 int uart_setup() {
 	int i;
+
+	if(UartHasInit) {
+		return 0;
+	}
+
+	clock_gate_switch(UART_CLOCKGATE, ON);
 
 	for(i = 0; i < NUM_UARTS; i++) {
 		// set all uarts to transmit 8 bit frames, one stop bit per frame, no parity, no infrared mode
@@ -68,6 +76,8 @@ int uart_setup() {
 
 	uart_set_mode(0, UART_POLL_MODE);
 
+	UartHasInit = TRUE;
+
 	return 0;
 }
 
@@ -81,7 +91,7 @@ int uart_set_clk(int ureg, int clock) {
 	}
 
 	SET_REG(HWUarts[ureg].UCON,
-		GET_REG(HWUarts[ureg].UCON) & (~UART_CLOCK_SELECTION_MASK) | (clock << UART_CLOCK_SELECTION_SHIFT));
+		(GET_REG(HWUarts[ureg].UCON) & (~UART_CLOCK_SELECTION_MASK)) | (clock << UART_CLOCK_SELECTION_SHIFT));
 
 	UARTs[ureg].clock = clock;
 	uart_set_baud_rate(ureg, UARTs[ureg].baud);
@@ -96,7 +106,7 @@ int uart_set_baud_rate(int ureg, uint32_t baud) {
 	uint32_t clockFrequency = (UARTs[ureg].clock == UART_CLOCK_PCLK) ? PeripheralFrequency : FixedFrequency;
 	uint32_t div_val = clockFrequency / (baud * UARTs[ureg].sample_rate) - 1;
 
-	SET_REG(HWUarts[ureg].UBAUD, GET_REG(HWUarts[ureg].UBAUD) & (~UART_DIVVAL_MASK) | div_val);
+	SET_REG(HWUarts[ureg].UBAUD, (GET_REG(HWUarts[ureg].UBAUD) & (~UART_DIVVAL_MASK)) | div_val);
 
 	// vanilla iBoot also does a reverse calculation from div_val and solves for baud and reports
 	// the "actual" baud rate, or what is after loss during integer division
@@ -126,7 +136,7 @@ int uart_set_sample_rate(int ureg, int rate) {
 	}
 
 	SET_REG(HWUarts[ureg].UBAUD,
-		GET_REG(HWUarts[ureg].UBAUD) & (~UART_SAMPLERATE_MASK) | (newSampleRate << UART_SAMPLERATE_SHIFT));
+		(GET_REG(HWUarts[ureg].UBAUD) & (~UART_SAMPLERATE_MASK)) | (newSampleRate << UART_SAMPLERATE_SHIFT));
 
 	UARTs[ureg].sample_rate = rate;
 	uart_set_baud_rate(ureg, UARTs[ureg].baud);
@@ -167,7 +177,7 @@ int uart_set_mode(int ureg, uint32_t mode) {
 
 		// Use polling mode
 		SET_REG(HWUarts[ureg].UCON, 
-			GET_REG(HWUarts[ureg].UCON) & (~UART_UCON_RXMODE_MASK) & (~UART_UCON_TXMODE_MASK)
+			(GET_REG(HWUarts[ureg].UCON) & (~UART_UCON_RXMODE_MASK) & (~UART_UCON_TXMODE_MASK))
 			| (UART_UCON_MODE_IRQORPOLL << UART_UCON_RXMODE_SHIFT)
 			| (UART_UCON_MODE_IRQORPOLL << UART_UCON_TXMODE_SHIFT));
 	}
@@ -176,6 +186,10 @@ int uart_set_mode(int ureg, uint32_t mode) {
 }
 
 int uart_write(int ureg, const char *buffer, uint32_t length) {
+	if(!UartHasInit) {
+		uart_setup();
+	}
+
 	if(ureg > 4)
 		return -1; // Invalid ureg
 
@@ -186,38 +200,45 @@ int uart_write(int ureg, const char *buffer, uint32_t length) {
 		return -1; // unhandled uart mode
 
 	int written = 0;
-	while(written <= length) {
-		if(settings->fifo) {
-			// spin until the tx fifo buffer is no longer full
-			while((GET_REG(uart->UFSTAT) & UART_UFSTAT_TXFIFO_FULL) != 0);
-		} else {
-			// spin while not Transmitter Empty
-			while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) == 0);
+	while(written < length) {
+		int i;
+		for(i = 0; i < 2; i++) {
+			if(settings->fifo) {
+				// spin until the tx fifo buffer is no longer full
+				while((GET_REG(uart->UFSTAT) & UART_UFSTAT_TXFIFO_FULL) != 0);
+			} else {
+				// spin while not Transmitter Empty
+				while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) == 0);
+			}
+
+			if(settings->flow_control) {		// only need to do this when there is flow control
+				// spin while not Transmitter Empty
+				while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) == 0);
+
+				// spin while not Clear To Send
+				while((GET_REG(uart->UMSTAT) & UART_UMSTAT_CTS) == 0);
+			}
+
+			if(i == 1) {
+				// flush buffer
+				SET_REG(uart->UTXH, 0);
+				break;
+			} else {
+				SET_REG(uart->UTXH, *buffer); 
+			}
 		}
 
-		if(settings->flow_control) {		// only need to do this when there is flow control
-			// spin while not Transmitter Empty
-			while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) == 0);
-
-			// spin while not Clear To Send
-			while((GET_REG(uart->UMSTAT) & UART_UMSTAT_CTS) == 0);
-		}
-
-		if(written == length) {
-			// flush buffer
-			SET_REG(uart->UTXH, 0);
-			break;
-		} else {
-			SET_REG(uart->UTXH, *buffer); 
-			buffer++;
-			written++;
-		}
+		buffer++;
+		written++;
 	}
 
 	return written;
 }
 
 int uart_read(int ureg, char *buffer, uint32_t length, uint64_t timeout) {
+	if(!UartHasInit)
+		return -1;
+
 	if(ureg > 4)
 		return -1; // Invalid ureg
 
