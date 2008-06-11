@@ -6,6 +6,7 @@
 #include "hardware/usb.h"
 #include "timer.h"
 #include "clock.h"
+#include "interrupt.h"
 
 static void change_state(USBState new_state);
 
@@ -17,6 +18,10 @@ static USBEndpointBidirHandlerInfo endpoint_handlers[USB_NUM_ENDPOINTS];
 
 volatile USBEPRegisters* InEPRegs;
 volatile USBEPRegisters* OutEPRegs;
+
+static void usbIRQHandler(uint32_t token) {
+
+}
 
 int usb_setup() {
 	int i;
@@ -111,7 +116,8 @@ int usb_setup() {
 	SET_REG(USB + DIEPMSK, DIEPMSK_NONE);
 	SET_REG(USB + DOEPMSK, DOEPMSK_NONE);
 
-	return (GET_REG(USB + GOTGCTL) & GOTGCTL_BSESSIONVALID);
+	interrupt_install(USB_INTERRUPT, usbIRQHandler, 0);
+	interrupt_enable(USB_INTERRUPT);
 
 	return 0;
 }

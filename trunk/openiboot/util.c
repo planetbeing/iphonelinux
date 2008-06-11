@@ -45,9 +45,9 @@ void dump_memory(uint32_t start, int length) {
 	int x = 0;
 	while(curPos < (start + length)) {
 		if(x == 0) {
-			printf("0x%08x:", curPos);
+			printf("0x%08x:", (unsigned int) curPos);
 		}
-		printf(" %08x", GET_REG(curPos));
+		printf(" %08x", (unsigned int) GET_REG(curPos));
 		if(x == 1) {
 			printf(" ");
 		}

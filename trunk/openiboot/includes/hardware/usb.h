@@ -28,6 +28,8 @@
 #define USB_ONOFF 0xE00
 
 // Values
+#define USB_INTERRUPT 0x13
+
 #define USB_OTGCLOCKGATE 0x2
 #define USB_PHYCLOCKGATE 0x23
 #define USB_ONOFF_OFF 3	// bits 0, 1

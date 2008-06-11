@@ -13,6 +13,7 @@
 #include "power.h"
 #include "interrupt.h"
 #include "gpio.h"
+#include "dma.h"
 
 #include "util.h"
 
@@ -44,18 +45,19 @@ Event testEvent;
 
 void testEventHandler(Event* event, void* opaque) {
 	printf("Hello iBoot! Up time: %Ld seconds\r\n", timer_get_system_microtime() / 1000000);
-	printf("ClockFrequency: %u Hz\r\n", ClockFrequency);
-	printf("MemoryFrequency: %u Hz\r\n", MemoryFrequency);
-	printf("BusFrequency: %u Hz\r\n", BusFrequency);
-	printf("UnknownFrequency: %u Hz\r\n", UnknownFrequency);
-	printf("PeripheralFrequency: %u Hz\r\n", PeripheralFrequency);
-	printf("Unknown2Frequency: %u Hz\r\n", Unknown2Frequency);
-	printf("FixedFrequency: %u Hz\r\n", FixedFrequency);
-	printf("TimebaseFrequency: %u Hz\r\n", TimebaseFrequency);
-	printf("PLL0 Frequency: %u Hz\r\n", PLLFrequencies[0]);
-	printf("PLL1 Frequency: %u Hz\r\n", PLLFrequencies[1]);
-	printf("PLL2 Frequency: %u Hz\r\n", PLLFrequencies[2]);
-	printf("PLL3 Frequency: %u Hz\r\n", PLLFrequencies[3]);
+	printf("ClockFrequency: %u Hz\r\n", (unsigned int) ClockFrequency);
+	printf("MemoryFrequency: %u Hz\r\n", (unsigned int) MemoryFrequency);
+	printf("BusFrequency: %u Hz\r\n", (unsigned int) BusFrequency);
+	printf("UnknownFrequency: %u Hz\r\n", (unsigned int) UnknownFrequency);
+	printf("PeripheralFrequency: %u Hz\r\n", (unsigned int) PeripheralFrequency);
+	printf("Unknown2Frequency: %u Hz\r\n", (unsigned int) Unknown2Frequency);
+	printf("FixedFrequency: %u Hz\r\n", (unsigned int) FixedFrequency);
+	printf("TimebaseFrequency: %u Hz\r\n", (unsigned int) TimebaseFrequency);
+	printf("PLL0 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[0]);
+	printf("PLL1 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[1]);
+	printf("PLL2 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[2]);
+	printf("PLL3 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[3]);
+
 	printf("\n\n");
 
 	event_readd(event, 0);
@@ -142,6 +144,8 @@ static int setup_devices() {
 	// Other devices
 	usb_shutdown();
 	uart_setup();
+
+	dma_setup();
 
 	return 0;
 }

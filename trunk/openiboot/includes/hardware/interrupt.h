@@ -3,6 +3,8 @@
 
 #include "hardware/s5l8900.h"
 
+// This appears to be a PL192
+
 // Constants
 
 #define VIC_MaxInterrupt 0x40
