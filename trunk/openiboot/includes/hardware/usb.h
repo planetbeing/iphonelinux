@@ -12,11 +12,17 @@
 #define OPHYCLK 0x4
 #define ORSTCON 0x8
 #define GOTGCTL 0x0
+#define GAHBCFG 0x8
+#define USB_UNKNOWNREG1 0xC
 #define GRSTCTL 0x10
 #define GINTSTS 0x14
 #define GINTMSK 0x18
+#define GRXFSIZ 0x24
+#define GNPTXFSIZ 0x28
 #define DIEPMSK 0x810
 #define DOEPMSK 0x814
+#define DAINT 0x818
+#define DAINTMSK 0x81C
 #define USB_INREGS 0x900
 #define USB_OUTREGS 0xB00
 
@@ -47,18 +53,53 @@
 #define OPHYCLK_CLKSEL_24MHZ 0x3
 
 #define GOTGCTL_BSESSIONVALID (1 << 19)
+#define GOTGCTL_SESSIONREQUEST (1 << 1)
 
 #define ORSTCON_PHYSWRESET 0x1
 #define ORSTCON_LINKSWRESET 0x2
 #define ORSTCON_PHYLINKSWRESET 0x4
 
+#define GAHBCFG_DMAEN (1 << 5)
+#define GAHBCFG_BSTLEN_SINGLE (0 << 1)
+#define GAHBCFG_BSTLEN_INCR (1 << 1)
+#define GAHBCFG_BSTLEN_INCR4 (3 << 1)
+#define GAHBCFG_BSTLEN_INCR8 (5 << 1)
+#define GAHBCFG_BSTLEN_INCR16 (7 << 1)
+#define GAHBCFG_MASKINT 0x1
+
+#define USB_UNKNOWNREG1_START 0x1708
+
 #define GRSTCTL_CORESOFTRESET 0x1
 
 #define GINTMSK_NONE 0x0
+#define GINTMSK_OTG 0x1
+#define GINTMSK_SUSPEND (1 << 11)
+#define GINTMSK_RESET (1 << 12)
+#define GINTMSK_INEP (1 << 18)
+#define GINTMSK_OEP (1 << 19)
+#define GINTMSK_DISCONNECT (1 << 29)
+
+#define RX_FIFO_DEPTH 0x1C0
+#define TX_FIFO_DEPTH 0x1C0
+#define TX_FIFO_STARTADDR 0x200
+
 #define DIEPMSK_NONE 0x0
+#define DIEPMSK_XFERCOMPL 0x1
+#define DIEPMSK_AHBERR (1 << 2)
+#define DIEPMSK_TIMEOUT (1 << 3)
 #define DOEPMSK_NONE 0x0
+#define DOEPMSK_XFERCOMPL 0x1
+#define DOEPMSK_SETUP (1 << 3)
+#define DOEPMSK_BACK2BACKSETUP (1 << 6)
+#define DAINTMSK_ALL 0xFFFFFFFF
 
 #define DCTL_SFTDISCONNECT 0x2
+#define DCTL_PROGRAMDONE (1 << 11)
+#define DCTL_CGOUTNAK (1 << 10)
+#define DCTL_CGNPINNAK (1 << 8)
+
+#define DCFG_NZSTSOUTHSHK 0x1
+#define DCFG_DEVICEADDRMSK (0x7F << 4)
 
 // ENDPOINT_DIRECTIONS register has two bits per endpoint. 0, 1 for endpoint 0. 1, 2 for end point 1, etc.
 #define USB_EP_DIRECTION(ep) ((GET_REG(USB + USB_ENDPOINT_DIRECTIONS) >> ((ep) * 2)) & 0x3)
@@ -74,6 +115,9 @@
 #define USB_RESET2_DELAYUS 20
 #define USB_RESETWAITFINISH_DELAYUS 1000
 #define USB_SFTCONNECT_DELAYUS 250
+#define USB_PROGRAMDONE_DELAYUS 10
+
+#define USB_EPCON_ACTIVE (1 << 15)
 
 #define USB_EPINT_INEPNakEff 0x40
 #define USB_EPINT_INTknEPMis 0x20
@@ -83,11 +127,20 @@
 #define USB_EPINT_EPDisbld 0x2
 #define USB_EPINT_XferCompl 0x1
 
+
 #define USB_EPINT_Back2BackSETup 0x40
 #define USB_EPINT_OUTTknEPDis 0x10
 #define USB_EPINT_SetUp 0x8
+#define USB_EPINT_ALL 0xFFFFFFFF
 
 #define USB_NUM_ENDPOINTS 6
+
+#define USB_2_0 0x0200
+
+#define USB_HIGHSPEED 0
+#define USB_FULLSPEED 1
+#define USB_LOWSPEED 2
+#define USB_FULLSPEED_48_MHZ 3
 
 #endif
 

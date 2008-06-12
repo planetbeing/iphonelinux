@@ -58,6 +58,10 @@ void testEventHandler(Event* event, void* opaque) {
 	printf("PLL2 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[2]);
 	printf("PLL3 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[3]);
 
+	void* x = malloc(32214);
+	malloc_stats();
+	free(x);
+
 	printf("\n\n");
 
 	event_readd(event, 0);
@@ -79,7 +83,11 @@ void OpenIBootStart() {
 
 	event_add(&testEvent, uSecPerSec, &testEventHandler, NULL);
 
-	while(TRUE);
+	while(TRUE) {
+		void* x = malloc(10021);
+		udelay(100000);
+		free(x);
+	}
   
 	DebugReboot();
 }
