@@ -38,5 +38,7 @@
 
 #define EDRAM_CLOCKGATE 0x1B
 
+#define DMA_ALIGN 0x40
+
 #endif
 

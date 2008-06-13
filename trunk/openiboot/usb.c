@@ -7,6 +7,7 @@
 #include "timer.h"
 #include "clock.h"
 #include "interrupt.h"
+#include "openiboot-asmhelpers.h"
 
 static void change_state(USBState new_state);
 
@@ -16,8 +17,8 @@ static USBState usb_state;
 static USBDirection endpoint_directions[USB_NUM_ENDPOINTS];
 static USBEndpointBidirHandlerInfo endpoint_handlers[USB_NUM_ENDPOINTS];
 
-volatile USBEPRegisters* InEPRegs;
-volatile USBEPRegisters* OutEPRegs;
+USBEPRegisters* InEPRegs;
+USBEPRegisters* OutEPRegs;
 
 static USBDeviceDescriptor deviceDescriptor;
 
@@ -27,8 +28,8 @@ static USBFirstStringDescriptor* firstStringDescriptor;
 
 static USBConfiguration* configurations;
 
-static uint8_t* inBuffer = NULL;
-static uint8_t* outBuffer = NULL;
+static uint8_t* sendBuffer = NULL;
+static uint8_t* recvBuffer = NULL;
 
 static void usbIRQHandler(uint32_t token);
 
@@ -47,6 +48,10 @@ static void releaseConfigurations();
 static uint8_t addStringDescriptor(const char* descriptorString);
 static void releaseStringDescriptors();
 static uint16_t packetsizeFromSpeed(uint8_t speed_id);
+
+static void receiveControl(void* buffer, int bufferLen);
+
+static void receive(int endpoint, USBTransferType transferType, void* buffer, int packetLength, int bufferLen);
 
 int usb_setup() {
 	int i;
@@ -149,11 +154,11 @@ int usb_setup() {
 
 	initializeDescriptors();
 
-	if(inBuffer == NULL)
-		inBuffer = memalign(0x40, 0x80);
+	if(sendBuffer == NULL)
+		sendBuffer = memalign(DMA_ALIGN, USB_SEND_BUFFER_LEN);
 
-	if(outBuffer == NULL)
-		outBuffer = memalign(0x40, 0x80);
+	if(recvBuffer == NULL)
+		recvBuffer = memalign(DMA_ALIGN, USB_RECV_BUFFER_LEN);
 
 	SET_REG(USB + GAHBCFG, GAHBCFG_DMAEN | GAHBCFG_BSTLEN_INCR8 | GAHBCFG_MASKINT);
 	SET_REG(USB + USB_UNKNOWNREG1, USB_UNKNOWNREG1_START);
@@ -185,11 +190,40 @@ int usb_setup() {
 	udelay(USB_PROGRAMDONE_DELAYUS);
 	SET_REG(USB + GOTGCTL, GET_REG(USB + GOTGCTL) | GOTGCTL_SESSIONREQUEST);
 
+	receiveControl(recvBuffer, 8);
+
 	change_state(USBPowered);
 
 	usb_inited = TRUE;
 
 	return 0;
+}
+
+static void receiveControl(void* buffer, int bufferLen) {
+	CleanAndInvalidateCPUDataCache();
+	receive(USB_CONTROLEP, USBControl, buffer, USB_MAX_PACKETSIZE, bufferLen);
+}
+
+static void receive(int endpoint, USBTransferType transferType, void* buffer, int packetLength, int bufferLen) {
+	if(endpoint == USB_CONTROLEP) {
+		OutEPRegs[endpoint].transferSize = ((USB_SETUP_PACKETS_AT_A_TIME & DOEPTSIZ0_SUPCNT_MASK) << DOEPTSIZ0_SUPCNT_SHIFT)
+			| ((USB_SETUP_PACKETS_AT_A_TIME & DOEPTSIZ0_PKTCNT_MASK) << DOEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DOEPTSIZ_XFERSIZ_MASK);
+	} else {
+		// divide our buffer into packets. Apple uses fancy bitwise arithmetic while we call huge libgcc integer arithmetic functions
+		// for the sake of code readability. Will this matter?
+		int packetCount = bufferLen / packetLength;
+		if((bufferLen % packetLength) != 0)
+			++packetCount;
+
+		OutEPRegs[endpoint].transferSize = ((packetCount & DOEPTSIZ_PKTCNT_MASK) << DOEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DOEPTSIZ_XFERSIZ_MASK);
+	}
+
+	SET_REG(USB + DAINTMSK, GET_REG(USB + DAINTMSK) | (1 << (DAINTMSK_OUT_SHIFT + endpoint)));
+
+	OutEPRegs[endpoint].dmaAddress = buffer;
+
+	// start the transfer
+	OutEPRegs[endpoint].control = USB_EPCON_ENABLE | USB_EPCON_CLEARNAK | USB_EPCON_ACTIVE | ((transferType & USB_EPCON_TYPE_MASK) << USB_EPCON_TYPE_SHIFT);
 }
 
 static void usbIRQHandler(uint32_t token) {

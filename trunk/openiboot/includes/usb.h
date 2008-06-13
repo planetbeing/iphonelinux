@@ -10,6 +10,9 @@
 
 // values we're using
 #define USB_MAX_PACKETSIZE 64
+#define USB_SETUP_PACKETS_AT_A_TIME 1
+#define USB_SEND_BUFFER_LEN 0x80
+#define USB_RECV_BUFFER_LEN 0x80
 
 #define OPENIBOOT_INTERFACE_CLASS 0xFF
 #define OPENIBOOT_INTERFACE_SUBCLASS 0xFF
@@ -72,14 +75,14 @@ typedef struct USBEndpointBidirHandlerInfo {
 } USBEndpointBidirHandlerInfo;
 
 typedef struct USBEPRegisters {
-	uint32_t control;
-	uint32_t field_4;
-	uint32_t interrupt;
-	uint32_t field_8;
-	uint32_t transferSize;
-	uint32_t dmaAddress;
-	uint32_t field_18;
-	uint32_t field_1C;
+	volatile uint32_t control;
+	volatile uint32_t field_4;
+	volatile uint32_t interrupt;
+	volatile uint32_t field_8;
+	volatile uint32_t transferSize;
+	volatile void* dmaAddress;
+	volatile uint32_t field_18;
+	volatile uint32_t field_1C;
 } __attribute__ ((__packed__)) USBEPRegisters;
 
 typedef struct USBDeviceDescriptor {
