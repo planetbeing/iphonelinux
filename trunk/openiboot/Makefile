@@ -26,10 +26,10 @@ mk8900image/mk8900image:
 	cd mk8900image/; make
 
 openiboot.img2:	openiboot mk8900image/mk8900image
-	mk8900image/mk8900image openiboot openiboot.img2 mk8900image/template.img2
+	mk8900image/mk8900image openiboot openiboot.img2 mk8900image/template.img2 mk8900image/iphonelinux.der
 
 openiboot.img3:	openiboot mk8900image/mk8900image
-	mk8900image/mk8900image openiboot openiboot.img3 mk8900image/template.img3
+	mk8900image/mk8900image openiboot openiboot.img3 mk8900image/template.img3 mk8900image/iphonelinux.der
 
 openiboot-iboot.img2:
 	mk8900image/mk8900image openiboot openiboot-iboot.img2 mk8900image/iboot-template.img2

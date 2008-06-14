@@ -41,17 +41,28 @@ int main(int argc, char* argv[]) {
 	size_t outImageSize;
 	init_libxpwn();
 
-	if(argc < 4) {
-		printf("usage: %s <infile> <outfile> <template>\n", argv[0]);
+	if(argc < 3) {
+		printf("usage: %s <infile> <outfile> [template] [certificate]\n", argv[0]);
 		return 0;
 	}
 
-	AbstractFile* template = createAbstractFileFromFile(fopen(argv[3], "rb"));
-	if(!template) {
-		fprintf(stderr, "error: cannot open template\n");
-		return 1;
+	AbstractFile* template = NULL;
+	if(argc >= 4) {
+		template = createAbstractFileFromFile(fopen(argv[3], "rb"));
+		if(!template) {
+			fprintf(stderr, "error: cannot open template\n");
+			return 1;
+		}
 	}
 
+	AbstractFile* certificate = NULL;
+	if(argc >= 5) {
+		certificate = createAbstractFileFromFile(fopen(argv[4], "rb"));
+		if(!certificate) {
+			fprintf(stderr, "error: cannot open certificate\n");
+			return 5;
+		}
+	}
 
 	AbstractFile* inFile = openAbstractFile(createAbstractFileFromFile(fopen(argv[1], "rb")));
 	if(!inFile) {
@@ -65,10 +76,20 @@ int main(int argc, char* argv[]) {
 		return 3;
 	}
 
-	AbstractFile* newFile = duplicateAbstractFile(template, outFile);
-	if(!newFile) {
-		fprintf(stderr, "error: cannot duplicate file from provided template\n");
-		return 4;
+	AbstractFile* newFile;
+
+	if(template) {
+		if(certificate != NULL) {
+			newFile = duplicateAbstractFileWithCertificate(template, outFile, certificate);
+		} else {
+			newFile = duplicateAbstractFile(template, outFile);
+		}
+		if(!newFile) {
+			fprintf(stderr, "error: cannot duplicate file from provided template\n");
+			return 4;
+		}
+	} else {
+		newFile = outFile;
 	}
 
 	inElfSize = (size_t) inFile->getLength(inFile);
@@ -85,6 +106,8 @@ int main(int argc, char* argv[]) {
 
 	newFile->write(newFile, outImage, outImageSize);
 	newFile->close(newFile);
+
+
 
 	free(outImage);
 

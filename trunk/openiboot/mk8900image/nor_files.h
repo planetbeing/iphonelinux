@@ -11,6 +11,7 @@ extern "C" {
 #endif
 	AbstractFile* openAbstractFile(AbstractFile* file);
 	AbstractFile* duplicateAbstractFile(AbstractFile* file, AbstractFile* backing);
+	AbstractFile* duplicateAbstractFileWithCertificate(AbstractFile* file, AbstractFile* backing, AbstractFile* certificate);
 #ifdef __cplusplus
 }
 #endif
