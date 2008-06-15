@@ -170,6 +170,15 @@ typedef struct USBSetupPacket {
 	uint16_t wLength;
 } __attribute__ ((__packed__)) USBSetupPacket;
 
+typedef struct RingBuffer {
+	int8_t* writePtr;
+	int8_t* readPtr;
+	uint32_t count;
+	uint32_t size;
+	int8_t* bufferStart;
+	int8_t* bufferEnd;
+} RingBuffer;
+
 #define USBSetupPacketRequestTypeDirection(x) GET_BITS(x, 7, 1)
 #define USBSetupPacketRequestTypeType(x) GET_BITS(x, 5, 2)
 #define USBSetupPacketRequestTypeRecpient(x) GET_BITS(x, 0, 5)

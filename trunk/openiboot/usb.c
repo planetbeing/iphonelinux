@@ -35,6 +35,8 @@ static USBConfiguration* configurations;
 static uint8_t* sendBuffer = NULL;
 static uint8_t* recvBuffer = NULL;
 
+static RingBuffer* txQueue = NULL;
+
 static void usbIRQHandler(uint32_t token);
 
 static void initializeDescriptors();
@@ -65,8 +67,14 @@ static uint32_t getConfigurationTree(int i, uint8_t speed_id, void* buffer);
 static void setConfiguration(int i);
 
 static void usbHasStarted();
-static void doTxForEndpoint(int endpoint);
-static void doRxForEndpoint(int endpoint);
+static void handleTxInterrupts(int endpoint);
+static void handleRxInterrupts(int endpoint);
+
+static int advanceTxQueue();
+
+static RingBuffer* createRingBuffer(int size);
+static int8_t ringBufferDequeue(RingBuffer* buffer);
+static int8_t ringBufferEnqueue(RingBuffer* buffer, uint8_t value);
 
 int usb_setup() {
 	int i;
@@ -158,14 +166,17 @@ int usb_setup() {
 
 	// disable all interrupts until endpoint descriptors and configuration structures have been setup
 	SET_REG(USB + GINTMSK, GINTMSK_NONE);
-	SET_REG(USB + DIEPMSK, DIEPMSK_NONE);
-	SET_REG(USB + DOEPMSK, DOEPMSK_NONE);
+	SET_REG(USB + DIEPMSK, USB_EPINT_NONE);
+	SET_REG(USB + DOEPMSK, USB_EPINT_NONE);
 
 	interrupt_install(USB_INTERRUPT, usbIRQHandler, 0);
 	interrupt_enable(USB_INTERRUPT);
 
 	// TODO: possibly initialize buffers
 	// Install endpoint handlers
+
+	if(txQueue == NULL)
+		txQueue = createRingBuffer(0x80);
 
 	initializeDescriptors();
 
@@ -194,8 +205,8 @@ int usb_setup() {
 
 	SET_REG(USB + GINTMSK, GINTMSK_OTG | GINTMSK_SUSPEND | GINTMSK_RESET | GINTMSK_INEP | GINTMSK_OEP | GINTMSK_DISCONNECT);
 	SET_REG(USB + DAINTMSK, DAINTMSK_ALL);
-	SET_REG(USB + DOEPMSK, DOEPMSK_XFERCOMPL | DOEPMSK_SETUP | DOEPMSK_BACK2BACKSETUP);
-	SET_REG(USB + DIEPMSK, DIEPMSK_XFERCOMPL | DIEPMSK_AHBERR | DIEPMSK_TIMEOUT);
+	SET_REG(USB + DOEPMSK, USB_EPINT_XferCompl | USB_EPINT_SetUp | USB_EPINT_Back2BackSetup);
+	SET_REG(USB + DIEPMSK, USB_EPINT_XferCompl | USB_EPINT_AHBErr | USB_EPINT_TimeOUT);
 
 	InEPRegs[0].interrupt = USB_EPINT_ALL;
 	OutEPRegs[0].interrupt = USB_EPINT_ALL;
@@ -251,8 +262,8 @@ static int resetUSB() {
 	// enable interrupts for endpoint 0
 	SET_REG(USB + DAINTMSK, GET_REG(USB + DAINTMSK) | ((1 << USB_CONTROLEP) << DAINTMSK_OUT_SHIFT) | ((1 << USB_CONTROLEP) << DAINTMSK_IN_SHIFT));
 
-	SET_REG(USB + DOEPMSK, DOEPMSK_XFERCOMPL | DOEPMSK_SETUP | DOEPMSK_BACK2BACKSETUP);
-	SET_REG(USB + DIEPMSK, DIEPMSK_XFERCOMPL | DIEPMSK_AHBERR | DIEPMSK_TIMEOUT);
+	SET_REG(USB + DOEPMSK, USB_EPINT_XferCompl | USB_EPINT_SetUp | USB_EPINT_Back2BackSetup);
+	SET_REG(USB + DIEPMSK, USB_EPINT_XferCompl | USB_EPINT_AHBErr | USB_EPINT_TimeOUT);
 
 	receiveControl(recvBuffer, sizeof(USBSetupPacket));
 
@@ -295,33 +306,96 @@ static void callEndpointHandlers() {
 	int endpoint;
 	for(endpoint = 0; endpoint < USB_NUM_ENDPOINTS; endpoint++) {
 		if((status & ((1 << endpoint) << DAINTMSK_OUT_SHIFT)) == ((1 << endpoint) << DAINTMSK_OUT_SHIFT)) {
-			if(endpoint_handlers[endpoint].out.handler != NULL) {
-				endpoint_handlers[endpoint].out.handler(endpoint_handlers[endpoint].out.token);
+			if((outInterruptStatus[endpoint] & USB_EPINT_XferCompl) == USB_EPINT_XferCompl) {
+				if(endpoint_handlers[endpoint].out.handler != NULL) {
+					endpoint_handlers[endpoint].out.handler(endpoint_handlers[endpoint].out.token);
+				}
 			}
 		}
 
 		if((status & ((1 << endpoint) << DAINTMSK_IN_SHIFT)) == ((1 << endpoint) << DAINTMSK_IN_SHIFT)) {
-			if(endpoint_handlers[endpoint].in.handler != NULL) {
-				endpoint_handlers[endpoint].in.handler(endpoint_handlers[endpoint].in.token);
+			if((inInterruptStatus[endpoint] & USB_EPINT_XferCompl) == USB_EPINT_XferCompl) {
+				if(endpoint_handlers[endpoint].in.handler != NULL) {
+					endpoint_handlers[endpoint].in.handler(endpoint_handlers[endpoint].in.token);
+				}
 			}
 		}
 
 		if(endpoint_directions[endpoint] == USBOut || endpoint_directions[endpoint] == USBBiDir) {
-			doRxForEndpoint(endpoint);
+			handleRxInterrupts(endpoint);
 		}
 
 		if(endpoint_directions[endpoint] == USBIn || endpoint_directions[endpoint] == USBBiDir) {
-			doTxForEndpoint(endpoint);
+			handleTxInterrupts(endpoint);
 		}
 	}
 }
 
-static void doTxForEndpoint(int endpoint) {
-	// TODO: This function
+static void handleTxInterrupts(int endpoint) {
+	if(!inInterruptStatus[endpoint]) {
+		return;
+	}
+
+	// clear pending interrupts
+	if((inInterruptStatus[endpoint] & USB_EPINT_INEPNakEff) == USB_EPINT_INEPNakEff) {
+		InEPRegs[endpoint].interrupt = USB_EPINT_INEPNakEff;
+	}
+
+	if((inInterruptStatus[endpoint] & USB_EPINT_INTknEPMis) == USB_EPINT_INTknEPMis) {
+		InEPRegs[endpoint].interrupt = USB_EPINT_INTknEPMis;
+
+		// clear the corresponding core interrupt
+		SET_REG(USB + GINTSTS, GET_REG(USB + GINTSTS) | GINTMSK_EPMIS);
+	}
+
+	if((inInterruptStatus[endpoint] & USB_EPINT_INTknTXFEmp) == USB_EPINT_INTknTXFEmp) {
+		InEPRegs[endpoint].interrupt = USB_EPINT_INTknTXFEmp;
+	}
+
+	if((inInterruptStatus[endpoint] & USB_EPINT_TimeOUT) == USB_EPINT_TimeOUT) {
+		InEPRegs[endpoint].interrupt = USB_EPINT_TimeOUT;
+
+		//TODO: retransmit
+	}
+
+	if((inInterruptStatus[endpoint] & USB_EPINT_AHBErr) == USB_EPINT_AHBErr) {
+		InEPRegs[endpoint].interrupt = USB_EPINT_AHBErr;
+	}
+
+	if((inInterruptStatus[endpoint] & USB_EPINT_EPDisbld) == USB_EPINT_EPDisbld) {
+		InEPRegs[endpoint].interrupt = USB_EPINT_EPDisbld;
+	}
+
+	if((inInterruptStatus[endpoint] & USB_EPINT_XferCompl) == USB_EPINT_XferCompl) {
+		InEPRegs[endpoint].interrupt = USB_EPINT_XferCompl;
+		advanceTxQueue();
+	}
+	
 }
 
-static void doRxForEndpoint(int endpoint) {
-	// TODO: This function
+static void handleRxInterrupts(int endpoint) {
+	if((outInterruptStatus[endpoint] & USB_EPINT_Back2BackSetup) == USB_EPINT_Back2BackSetup) {
+		OutEPRegs[endpoint].interrupt = USB_EPINT_Back2BackSetup;
+	}
+
+	if((outInterruptStatus[endpoint] & USB_EPINT_OUTTknEPDis) == USB_EPINT_OUTTknEPDis) {
+		OutEPRegs[endpoint].interrupt = USB_EPINT_OUTTknEPDis;
+	}
+
+	if((outInterruptStatus[endpoint] & USB_EPINT_AHBErr) == USB_EPINT_AHBErr) {
+		OutEPRegs[endpoint].interrupt = USB_EPINT_AHBErr;
+	}
+
+	if((outInterruptStatus[endpoint] & USB_EPINT_EPDisbld) == USB_EPINT_EPDisbld) {
+		OutEPRegs[endpoint].interrupt = USB_EPINT_EPDisbld;
+	}
+
+	if((outInterruptStatus[endpoint] & USB_EPINT_XferCompl) == USB_EPINT_XferCompl) {
+		OutEPRegs[endpoint].interrupt = USB_EPINT_XferCompl;
+		if(endpoint == 0) {
+			receiveControl(recvBuffer, sizeof(USBSetupPacket));
+		}
+	}
 }
 
 static void sendControl(void* buffer, int bufferLen) {
@@ -330,6 +404,30 @@ static void sendControl(void* buffer, int bufferLen) {
 
 static void usbHasStarted() {
 	// TODO: This function
+}
+
+static int advanceTxQueue() {
+	EnterCriticalSection();
+	int8_t nextEP = ringBufferDequeue(txQueue);
+	LeaveCriticalSection();
+
+	if(nextEP < 0)
+		return -1;
+
+	int endpoint;
+	for(endpoint = 0; endpoint < USB_NUM_ENDPOINTS; endpoint++) {
+		if(endpoint_directions[endpoint] == USBIn || endpoint_directions[endpoint] == USBBiDir) {
+			InEPRegs[endpoint].control = (InEPRegs[endpoint].control & ~(DCTL_NEXTEP_MASK << DCTL_NEXTEP_SHIFT)) | ((nextEP & DCTL_NEXTEP_MASK) << DCTL_NEXTEP_SHIFT);
+		}
+	}
+
+	// clear all the interrupts
+	InEPRegs[nextEP].interrupt = USB_EPINT_ALL;
+
+	// we're ready to transmit!
+	InEPRegs[nextEP].control = InEPRegs[nextEP].control | USB_EPCON_ENABLE | USB_EPCON_CLEARNAK;
+
+	return 0;
 }
 
 static void usbIRQHandler(uint32_t token) {
@@ -760,5 +858,51 @@ static void change_state(USBState new_state) {
 	if(usb_state == USBConfigured) {
 		// TODO: set to host powered
 	}
+}
+
+
+static RingBuffer* createRingBuffer(int size) {
+	RingBuffer* buffer;
+	buffer = (RingBuffer*) malloc(sizeof(RingBuffer));
+	buffer->bufferStart = (int8_t*) memalign(DMA_ALIGN, size);
+	buffer->bufferEnd = buffer->bufferStart + size;
+	buffer->size = size;
+	buffer->count = 0;
+	buffer->readPtr = buffer->bufferStart;
+	buffer->writePtr = buffer->bufferStart;
+
+	return buffer;
+}
+
+static int8_t ringBufferDequeue(RingBuffer* buffer) {
+	if(buffer->count == 0) {
+		return -1;
+	}
+
+	int8_t value = *buffer->readPtr;
+	buffer->readPtr++;
+	buffer->count--;
+
+	if(buffer->readPtr == buffer->bufferEnd) {
+		buffer->readPtr = buffer->bufferStart;
+	}
+
+	return value;
+}
+
+static int8_t ringBufferEnqueue(RingBuffer* buffer, uint8_t value) {
+	if(buffer->count == buffer->size) {
+		return -1;
+	}
+
+	*buffer->writePtr = value;
+	buffer->writePtr++;
+	buffer->count++;
+
+	if(buffer->writePtr == buffer->bufferEnd) {
+		buffer->writePtr = buffer->bufferStart;
+	}
+
+	return value;
 }
 

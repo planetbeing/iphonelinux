@@ -77,6 +77,7 @@
 #define GINTMSK_SOF (1 << 3)
 #define GINTMSK_SUSPEND (1 << 11)
 #define GINTMSK_RESET (1 << 12)
+#define GINTMSK_EPMIS (1 << 17)
 #define GINTMSK_INEP (1 << 18)
 #define GINTMSK_OEP (1 << 19)
 #define GINTMSK_DISCONNECT (1 << 29)
@@ -85,14 +86,6 @@
 #define TX_FIFO_DEPTH 0x1C0
 #define TX_FIFO_STARTADDR 0x200
 
-#define DIEPMSK_NONE 0x0
-#define DIEPMSK_XFERCOMPL 0x1
-#define DIEPMSK_AHBERR (1 << 2)
-#define DIEPMSK_TIMEOUT (1 << 3)
-#define DOEPMSK_NONE 0x0
-#define DOEPMSK_XFERCOMPL 0x1
-#define DOEPMSK_SETUP (1 << 3)
-#define DOEPMSK_BACK2BACKSETUP (1 << 6)
 #define DAINTMSK_ALL 0xFFFFFFFF
 #define DAINTMSK_OUT_SHIFT 16
 #define DAINTMSK_IN_SHIFT 0
@@ -102,6 +95,8 @@
 #define DCTL_PROGRAMDONE (1 << 11)
 #define DCTL_CGOUTNAK (1 << 10)
 #define DCTL_CGNPINNAK (1 << 8)
+#define DCTL_NEXTEP_MASK 0xF
+#define DCTL_NEXTEP_SHIFT 11
 
 #define DSTS_GET_SPEED(x) GET_BITS(x, 1, 2)
 
@@ -149,10 +144,11 @@
 #define USB_EPINT_EPDisbld 0x2
 #define USB_EPINT_XferCompl 0x1
 
-
-#define USB_EPINT_Back2BackSETup 0x40
+#define USB_EPINT_Back2BackSetup (1 << 6)
 #define USB_EPINT_OUTTknEPDis 0x10
 #define USB_EPINT_SetUp 0x8
+#define USB_EPINT_EpDisbld 0x1
+#define USB_EPINT_NONE 0
 #define USB_EPINT_ALL 0xFFFFFFFF
 
 #define USB_NUM_ENDPOINTS 6
