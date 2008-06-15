@@ -14,6 +14,9 @@
 #define USB_SEND_BUFFER_LEN 0x80
 #define USB_RECV_BUFFER_LEN 0x80
 
+// one packet at a time
+#define USB_MULTICOUNT 1
+
 #define OPENIBOOT_INTERFACE_CLASS 0xFF
 #define OPENIBOOT_INTERFACE_SUBCLASS 0xFF
 #define OPENIBOOT_INTERFACE_PROTOCOL 0x51
@@ -208,6 +211,8 @@ typedef struct RingBuffer {
 int usb_setup();
 int usb_shutdown();
 int usb_install_ep_handler(int endpoint, USBDirection direction, USBEndpointHandler handler, uint32_t token);
+void usb_send(uint8_t endpoint, void* buffer, int bufferLen);
+void usb_receive(uint8_t endpoint, void* buffer, int bufferLen);
 
 USBDeviceDescriptor* usb_get_device_descriptor();
 USBConfigurationDescriptor* usb_get_configuration_descriptor(int index, uint8_t speed_id);

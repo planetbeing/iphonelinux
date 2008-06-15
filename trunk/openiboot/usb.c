@@ -76,6 +76,8 @@ static RingBuffer* createRingBuffer(int size);
 static int8_t ringBufferDequeue(RingBuffer* buffer);
 static int8_t ringBufferEnqueue(RingBuffer* buffer, uint8_t value);
 
+static void usbTxRx(int endpoint, USBDirection direction, USBTransferType transferType, void* buffer, int bufferLen);
+
 int usb_setup() {
 	int i;
 
@@ -194,7 +196,7 @@ int usb_setup() {
 	OutEPRegs[0].control = USB_EPCON_ACTIVE;
 
 	SET_REG(USB + GRXFSIZ, RX_FIFO_DEPTH);
-	SET_REG(USB + GNPTXFSIZ, (TX_FIFO_DEPTH << 8) | TX_FIFO_STARTADDR);
+	SET_REG(USB + GNPTXFSIZ, (TX_FIFO_DEPTH << GNPTXFSIZ_DEPTH_SHIFT) | TX_FIFO_STARTADDR);
 
 	for(i = 0; i < USB_NUM_ENDPOINTS; i++) {
 		InEPRegs[i].interrupt = USB_EPINT_INEPNakEff | USB_EPINT_INTknEPMis | USB_EPINT_INTknTXFEmp
@@ -229,10 +231,54 @@ static void receiveControl(void* buffer, int bufferLen) {
 	receive(USB_CONTROLEP, USBControl, buffer, USB_MAX_PACKETSIZE, bufferLen);
 }
 
+static void usbTxRx(int endpoint, USBDirection direction, USBTransferType transferType, void* buffer, int bufferLen) {
+	int packetLength;
+
+	if(transferType == USBControl || transferType == USBInterrupt) {
+		packetLength = USB_MAX_PACKETSIZE;
+	} else {
+		packetLength = packetsizeFromSpeed(usb_speed);
+	}
+
+	CleanAndInvalidateCPUDataCache();
+
+	if(direction == USBOut) {
+		receive(endpoint, transferType, buffer, packetLength, bufferLen);
+		return;
+	}
+
+	if(GNPTXFSTS_GET_TXQSPCAVAIL(GET_REG(USB + GNPTXFSTS)) == 0) {
+		// no space available
+		return;
+	}
+
+	// enable interrupts for this endpoint
+	SET_REG(USB + DAINT, GET_REG(USB + DAINT) | ((1 << endpoint) << DAINTMSK_IN_SHIFT));
+	
+	InEPRegs[endpoint].dmaAddress = buffer;
+
+	if(endpoint == USB_CONTROLEP) {
+		// we'll only send one packet at a time on CONTROLEP
+		InEPRegs[endpoint].transferSize = ((1 & DEPTSIZ_PKTCNT_MASK) << DEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DEPTSIZ_XFERSIZ_MASK);
+		InEPRegs[endpoint].control = USB_EPCON_CLEARNAK;
+		return;
+	}
+
+	int packetCount = bufferLen / packetLength;
+	if((bufferLen % packetLength) != 0)
+		++packetCount;
+
+	InEPRegs[endpoint].transferSize = ((packetCount & DEPTSIZ_PKTCNT_MASK) << DEPTSIZ_PKTCNT_SHIFT)
+		| (bufferLen & DEPTSIZ_XFERSIZ_MASK) | ((USB_MULTICOUNT & DIEPTSIZ_MC_MASK) << DIEPTSIZ_MC_SHIFT);
+
+	InEPRegs[endpoint].control = USB_EPCON_CLEARNAK | USB_EPCON_ACTIVE | ((transferType & USB_EPCON_TYPE_MASK) << USB_EPCON_TYPE_SHIFT);
+	
+}
+
 static void receive(int endpoint, USBTransferType transferType, void* buffer, int packetLength, int bufferLen) {
 	if(endpoint == USB_CONTROLEP) {
 		OutEPRegs[endpoint].transferSize = ((USB_SETUP_PACKETS_AT_A_TIME & DOEPTSIZ0_SUPCNT_MASK) << DOEPTSIZ0_SUPCNT_SHIFT)
-			| ((USB_SETUP_PACKETS_AT_A_TIME & DOEPTSIZ0_PKTCNT_MASK) << DOEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DOEPTSIZ_XFERSIZ_MASK);
+			| ((USB_SETUP_PACKETS_AT_A_TIME & DOEPTSIZ0_PKTCNT_MASK) << DEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DEPTSIZ_XFERSIZ_MASK);
 	} else {
 		// divide our buffer into packets. Apple uses fancy bitwise arithmetic while we call huge libgcc integer arithmetic functions
 		// for the sake of code readability. Will this matter?
@@ -240,7 +286,7 @@ static void receive(int endpoint, USBTransferType transferType, void* buffer, in
 		if((bufferLen % packetLength) != 0)
 			++packetCount;
 
-		OutEPRegs[endpoint].transferSize = ((packetCount & DOEPTSIZ_PKTCNT_MASK) << DOEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DOEPTSIZ_XFERSIZ_MASK);
+		OutEPRegs[endpoint].transferSize = ((packetCount & DEPTSIZ_PKTCNT_MASK) << DEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DEPTSIZ_XFERSIZ_MASK);
 	}
 
 	SET_REG(USB + DAINTMSK, GET_REG(USB + DAINTMSK) | (1 << (DAINTMSK_OUT_SHIFT + endpoint)));
@@ -355,7 +401,7 @@ static void handleTxInterrupts(int endpoint) {
 	if((inInterruptStatus[endpoint] & USB_EPINT_TimeOUT) == USB_EPINT_TimeOUT) {
 		InEPRegs[endpoint].interrupt = USB_EPINT_TimeOUT;
 
-		//TODO: retransmit
+		ringBufferDequeue(txQueue);
 	}
 
 	if((inInterruptStatus[endpoint] & USB_EPINT_AHBErr) == USB_EPINT_AHBErr) {
@@ -399,7 +445,19 @@ static void handleRxInterrupts(int endpoint) {
 }
 
 static void sendControl(void* buffer, int bufferLen) {
-	// TODO: This function
+	usbTxRx(USB_CONTROLEP, USBIn, USBControl, buffer, bufferLen);
+	ringBufferEnqueue(txQueue, USB_CONTROLEP);
+	advanceTxQueue();
+}
+
+void usb_send(uint8_t endpoint, void* buffer, int bufferLen) {
+	usbTxRx(endpoint, USBIn, USBBulk, buffer, bufferLen);
+	ringBufferEnqueue(txQueue, endpoint);
+	advanceTxQueue();
+}
+
+void usb_receive(uint8_t endpoint, void* buffer, int bufferLen) {
+	usbTxRx(endpoint, USBOut, USBBulk, buffer, bufferLen);
 }
 
 static void usbHasStarted() {
