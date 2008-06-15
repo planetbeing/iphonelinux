@@ -20,12 +20,18 @@
 
 #define USB_LANGID_ENGLISH_US 0x0409
 
+#define USBError 0xEEE
+
 typedef enum USBState {
 	USBStart = 0,
 	USBPowered = 1,
 	USBDefault = 2,
 	USBAddress = 3,
-	USBConfigured = 4
+	USBConfigured = 4,
+
+	// Values higher than USBError(0xEEE) are error conditions
+	USBUnknownDescriptorRequest = 0xEEE,
+	USBUnknownRequest = 0xEEF
 } USBState;
 
 typedef enum USBDirection {
@@ -155,6 +161,40 @@ typedef struct USBConfiguration {
 	USBConfigurationDescriptor descriptor;
 	USBInterface* interfaces;
 } USBConfiguration;
+
+typedef struct USBSetupPacket {
+	uint8_t bmRequestType;
+	uint8_t bRequest;
+	uint16_t wValue;
+	uint16_t wIndex;
+	uint16_t wLength;
+} __attribute__ ((__packed__)) USBSetupPacket;
+
+#define USBSetupPacketRequestTypeDirection(x) GET_BITS(x, 7, 1)
+#define USBSetupPacketRequestTypeType(x) GET_BITS(x, 5, 2)
+#define USBSetupPacketRequestTypeRecpient(x) GET_BITS(x, 0, 5)
+
+#define USBSetupPacketHostToDevice 0
+#define USBSetupPacketDeviceToHost 1
+#define USBSetupPacketStandard 0
+#define USBSetupPacketClass 1
+#define USBSetupPacketVendor 2
+#define USBSetupPacketRecpientDevice 0
+#define USBSetupPacketRecpientInterface 1
+#define USBSetupPacketRecpientEndpoint 2
+#define USBSetupPacketRecpientOther 3
+
+#define USB_CLEAR_FEATURE 1
+#define USB_GET_CONFIGURATION 8
+#define USB_GET_DESCRIPTOR 6
+#define USB_GET_INTERFACE 10
+#define USB_GET_STATUS 0
+#define USB_SET_ADDRESS 5
+#define USB_SET_CONFIGURATION 9
+#define USB_SET_DESCRIPTOR 7
+#define USB_SET_FEATURE 3
+#define USB_SET_INTERFACE 11
+#define USB_SYNCH_FRAME 12
 
 int usb_setup();
 int usb_shutdown();

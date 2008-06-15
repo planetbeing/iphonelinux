@@ -154,6 +154,7 @@ static int setup_devices() {
 	uart_setup();
 
 	dma_setup();
+	usb_setup();
 
 	return 0;
 }
