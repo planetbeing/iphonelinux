@@ -132,6 +132,75 @@ static int setup_tasks() {
 	return 0;
 }
 
+static uint8_t* controlSendBuffer = NULL;
+static uint8_t* controlRecvBuffer = NULL;
+static uint8_t* dataSendBuffer = NULL;
+static uint8_t* dataRecvBuffer = NULL;
+
+
+static void controlReceived(uint32_t token) {
+	OpenIBootCmd* cmd = (OpenIBootCmd*)controlRecvBuffer;
+	OpenIBootCmd* reply = (OpenIBootCmd*)controlSendBuffer;
+	bufferPrintf("Omg command received: %d\r\n", cmd->command);
+
+	if(cmd->command == OPENIBOOTCMD_DUMPBUFFER) {
+		int length = strlen(MyBuffer);
+		if(length > 0x80) {
+			length = 0x80;
+		}
+		reply->command = OPENIBOOTCMD_DUMPBUFFER_LEN;
+		reply->dataLen = length;
+		bufferPrintf("%d %d\r\n", (int)reply->command, sizeof(OpenIBootCmd));
+		usb_send_interrupt(3, controlSendBuffer, length);
+	} else if(cmd->command == OPENIBOOTCMD_DUMPBUFFER_GOAHEAD) {
+		bufferPrintf("dataLen: %d\r\n", (int)cmd->dataLen);
+		memcpy(dataSendBuffer, MyBuffer, cmd->dataLen);
+/*		EnterCriticalSection();
+		static uint8_t MyBufferCopy[1024];
+		memcpy(MyBufferCopy, MyBuffer + cmd->dataLen, strlen(MyBuffer) + 1 - cmd->dataLen);
+		memcpy(MyBuffer, MyBufferCopy, 1024);
+		LeaveCriticalSection();*/
+		usb_send_bulk(1, dataSendBuffer, cmd->dataLen);
+	}
+
+	usb_receive_interrupt(4, controlRecvBuffer, sizeof(OpenIBootCmd));
+}
+
+static void dataReceived(uint32_t token) {
+
+}
+
+static void dataSent(uint32_t token) {
+	bufferPrintf("data sent successfully\r\n");
+}
+
+static void controlSent(uint32_t token) {
+	bufferPrintf("control sent successfully\r\n");
+}
+
+static void enumerateHandler(USBInterface* interface) {
+	usb_add_endpoint(interface, 1, USBIn, USBBulk);
+	usb_add_endpoint(interface, 2, USBOut, USBBulk);
+	usb_add_endpoint(interface, 3, USBIn, USBInterrupt);
+	usb_add_endpoint(interface, 4, USBOut, USBInterrupt);
+
+	if(!controlSendBuffer)
+		controlSendBuffer = memalign(DMA_ALIGN, 0x80);
+
+	if(!controlRecvBuffer)
+		controlRecvBuffer = memalign(DMA_ALIGN, 0x80);
+
+	if(!dataSendBuffer)
+		dataSendBuffer = memalign(DMA_ALIGN, 0x80);
+
+	if(!dataRecvBuffer)
+		dataRecvBuffer = memalign(DMA_ALIGN, 0x80);
+}
+
+static void startHandler() {
+	usb_receive_interrupt(4, controlRecvBuffer, sizeof(OpenIBootCmd));
+}
+
 static int setup_devices() {
 	// Basic prerequisites for everything else
 	miu_setup();
@@ -153,6 +222,11 @@ static int setup_devices() {
 
 	dma_setup();
 	usb_setup();
+	usb_install_ep_handler(4, USBOut, controlReceived, 0);
+	usb_install_ep_handler(2, USBOut, dataReceived, 0);
+	usb_install_ep_handler(3, USBIn, controlSent, 0);
+	usb_install_ep_handler(1, USBIn, dataSent, 0);
+	usb_start(enumerateHandler, startHandler);
 
 	return 0;
 }

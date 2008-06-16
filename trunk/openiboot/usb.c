@@ -32,10 +32,13 @@ static USBFirstStringDescriptor* firstStringDescriptor;
 
 static USBConfiguration* configurations;
 
-static uint8_t* sendBuffer = NULL;
-static uint8_t* recvBuffer = NULL;
+uint8_t* usb_send_buffer = NULL;
+uint8_t* usb_recv_buffer = NULL;
 
 static RingBuffer* txQueue = NULL;
+
+static USBEnumerateHandler enumerateHandler;
+static USBStartHandler startHandler;
 
 static void usbIRQHandler(uint32_t token);
 
@@ -66,7 +69,6 @@ static void callEndpointHandlers();
 static uint32_t getConfigurationTree(int i, uint8_t speed_id, void* buffer);
 static void setConfiguration(int i);
 
-static void usbHasStarted();
 static void handleTxInterrupts(int endpoint);
 static void handleRxInterrupts(int endpoint);
 
@@ -107,6 +109,7 @@ int usb_setup() {
 				endpoint_directions[i] = USBOut;
 				break;
 		}
+		bufferPrintf("EP %d: %d\r\n", i, endpoint_directions[i]);
 	}
 
 	memset(endpoint_handlers, 0, sizeof(endpoint_handlers));
@@ -172,21 +175,26 @@ int usb_setup() {
 	SET_REG(USB + DOEPMSK, USB_EPINT_NONE);
 
 	interrupt_install(USB_INTERRUPT, usbIRQHandler, 0);
-	interrupt_enable(USB_INTERRUPT);
 
-	// TODO: possibly initialize buffers
-	// Install endpoint handlers
+	usb_inited = TRUE;
+
+	return 0;
+}
+
+int usb_start(USBEnumerateHandler hEnumerate, USBStartHandler hStart) {
+	enumerateHandler = hEnumerate;
+	startHandler = hStart;
 
 	if(txQueue == NULL)
 		txQueue = createRingBuffer(0x80);
 
 	initializeDescriptors();
 
-	if(sendBuffer == NULL)
-		sendBuffer = memalign(DMA_ALIGN, USB_SEND_BUFFER_LEN);
+	if(usb_send_buffer == NULL)
+		usb_send_buffer = memalign(DMA_ALIGN, USB_SEND_BUFFER_LEN);
 
-	if(recvBuffer == NULL)
-		recvBuffer = memalign(DMA_ALIGN, USB_RECV_BUFFER_LEN);
+	if(usb_recv_buffer == NULL)
+		usb_recv_buffer = memalign(DMA_ALIGN, USB_RECV_BUFFER_LEN);
 
 	SET_REG(USB + GAHBCFG, GAHBCFG_DMAEN | GAHBCFG_BSTLEN_INCR8 | GAHBCFG_MASKINT);
 	SET_REG(USB + USB_UNKNOWNREG1, USB_UNKNOWNREG1_START);
@@ -198,15 +206,18 @@ int usb_setup() {
 	SET_REG(USB + GRXFSIZ, RX_FIFO_DEPTH);
 	SET_REG(USB + GNPTXFSIZ, (TX_FIFO_DEPTH << GNPTXFSIZ_DEPTH_SHIFT) | TX_FIFO_STARTADDR);
 
+	int i;
 	for(i = 0; i < USB_NUM_ENDPOINTS; i++) {
 		InEPRegs[i].interrupt = USB_EPINT_INEPNakEff | USB_EPINT_INTknEPMis | USB_EPINT_INTknTXFEmp
 			| USB_EPINT_TimeOUT | USB_EPINT_AHBErr | USB_EPINT_EPDisbld | USB_EPINT_XferCompl;
 		OutEPRegs[i].interrupt = USB_EPINT_OUTTknEPDis
 			| USB_EPINT_SetUp | USB_EPINT_AHBErr | USB_EPINT_EPDisbld | USB_EPINT_XferCompl;
+		
 	}
 
 	SET_REG(USB + GINTMSK, GINTMSK_OTG | GINTMSK_SUSPEND | GINTMSK_RESET | GINTMSK_INEP | GINTMSK_OEP | GINTMSK_DISCONNECT);
 	SET_REG(USB + DAINTMSK, DAINTMSK_ALL);
+
 	SET_REG(USB + DOEPMSK, USB_EPINT_XferCompl | USB_EPINT_SetUp | USB_EPINT_Back2BackSetup);
 	SET_REG(USB + DIEPMSK, USB_EPINT_XferCompl | USB_EPINT_AHBErr | USB_EPINT_TimeOUT);
 
@@ -217,11 +228,11 @@ int usb_setup() {
 	udelay(USB_PROGRAMDONE_DELAYUS);
 	SET_REG(USB + GOTGCTL, GET_REG(USB + GOTGCTL) | GOTGCTL_SESSIONREQUEST);
 
-	receiveControl(recvBuffer, sizeof(USBSetupPacket));
+	receiveControl(usb_recv_buffer, sizeof(USBSetupPacket));
 
 	change_state(USBPowered);
 
-	usb_inited = TRUE;
+	interrupt_enable(USB_INTERRUPT);
 
 	return 0;
 }
@@ -253,13 +264,13 @@ static void usbTxRx(int endpoint, USBDirection direction, USBTransferType transf
 	}
 
 	// enable interrupts for this endpoint
-	SET_REG(USB + DAINT, GET_REG(USB + DAINT) | ((1 << endpoint) << DAINTMSK_IN_SHIFT));
+	SET_REG(USB + DAINTMSK, GET_REG(USB + DAINTMSK) | ((1 << endpoint) << DAINTMSK_IN_SHIFT));
 	
 	InEPRegs[endpoint].dmaAddress = buffer;
 
 	if(endpoint == USB_CONTROLEP) {
 		// we'll only send one packet at a time on CONTROLEP
-		InEPRegs[endpoint].transferSize = ((1 & DEPTSIZ_PKTCNT_MASK) << DEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DEPTSIZ_XFERSIZ_MASK);
+		InEPRegs[endpoint].transferSize = ((1 & DEPTSIZ_PKTCNT_MASK) << DEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DEPTSIZ0_XFERSIZ_MASK);
 		InEPRegs[endpoint].control = USB_EPCON_CLEARNAK;
 		return;
 	}
@@ -271,14 +282,16 @@ static void usbTxRx(int endpoint, USBDirection direction, USBTransferType transf
 	InEPRegs[endpoint].transferSize = ((packetCount & DEPTSIZ_PKTCNT_MASK) << DEPTSIZ_PKTCNT_SHIFT)
 		| (bufferLen & DEPTSIZ_XFERSIZ_MASK) | ((USB_MULTICOUNT & DIEPTSIZ_MC_MASK) << DIEPTSIZ_MC_SHIFT);
 
-	InEPRegs[endpoint].control = USB_EPCON_CLEARNAK | USB_EPCON_ACTIVE | ((transferType & USB_EPCON_TYPE_MASK) << USB_EPCON_TYPE_SHIFT);
+	bufferPrintf("transferSize: %d %d %d", packetCount & DEPTSIZ_PKTCNT_MASK, bufferLen & DEPTSIZ_XFERSIZ_MASK, USB_MULTICOUNT & DIEPTSIZ_MC_MASK);
+
+	InEPRegs[endpoint].control = USB_EPCON_CLEARNAK | USB_EPCON_ACTIVE | ((transferType & USB_EPCON_TYPE_MASK) << USB_EPCON_TYPE_SHIFT) | (packetLength & USB_EPCON_MPS_MASK);
 	
 }
 
 static void receive(int endpoint, USBTransferType transferType, void* buffer, int packetLength, int bufferLen) {
 	if(endpoint == USB_CONTROLEP) {
 		OutEPRegs[endpoint].transferSize = ((USB_SETUP_PACKETS_AT_A_TIME & DOEPTSIZ0_SUPCNT_MASK) << DOEPTSIZ0_SUPCNT_SHIFT)
-			| ((USB_SETUP_PACKETS_AT_A_TIME & DOEPTSIZ0_PKTCNT_MASK) << DEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DEPTSIZ_XFERSIZ_MASK);
+			| ((USB_SETUP_PACKETS_AT_A_TIME & DOEPTSIZ0_PKTCNT_MASK) << DEPTSIZ_PKTCNT_SHIFT) | (bufferLen & DEPTSIZ0_XFERSIZ_MASK);
 	} else {
 		// divide our buffer into packets. Apple uses fancy bitwise arithmetic while we call huge libgcc integer arithmetic functions
 		// for the sake of code readability. Will this matter?
@@ -294,7 +307,8 @@ static void receive(int endpoint, USBTransferType transferType, void* buffer, in
 	OutEPRegs[endpoint].dmaAddress = buffer;
 
 	// start the transfer
-	OutEPRegs[endpoint].control = USB_EPCON_ENABLE | USB_EPCON_CLEARNAK | USB_EPCON_ACTIVE | ((transferType & USB_EPCON_TYPE_MASK) << USB_EPCON_TYPE_SHIFT);
+	OutEPRegs[endpoint].control = USB_EPCON_ENABLE | USB_EPCON_CLEARNAK | USB_EPCON_ACTIVE
+		| ((transferType & USB_EPCON_TYPE_MASK) << USB_EPCON_TYPE_SHIFT) | (packetLength & USB_EPCON_MPS_MASK);
 }
 
 static int resetUSB() {
@@ -311,14 +325,13 @@ static int resetUSB() {
 	SET_REG(USB + DOEPMSK, USB_EPINT_XferCompl | USB_EPINT_SetUp | USB_EPINT_Back2BackSetup);
 	SET_REG(USB + DIEPMSK, USB_EPINT_XferCompl | USB_EPINT_AHBErr | USB_EPINT_TimeOUT);
 
-	receiveControl(recvBuffer, sizeof(USBSetupPacket));
+	receiveControl(usb_recv_buffer, sizeof(USBSetupPacket));
 
 	return 0;
 }
 
 static void getEndpointInterruptStatuses() {
 	// To not mess up the interrupt controller, we can only read the interrupt status once per interrupt, so we need to cache them here
-
 	int endpoint;
 	for(endpoint = 0; endpoint < USB_NUM_ENDPOINTS; endpoint++) {
 		if(endpoint_directions[endpoint] == USBIn || endpoint_directions[endpoint] == USBBiDir) {
@@ -327,6 +340,7 @@ static void getEndpointInterruptStatuses() {
 		if(endpoint_directions[endpoint] == USBOut || endpoint_directions[endpoint] == USBBiDir) {
 			outInterruptStatus[endpoint] = OutEPRegs[endpoint].interrupt;
 		}
+		bufferPrintf("%d: %x %x\r\n", endpoint, inInterruptStatus[endpoint], outInterruptStatus[endpoint]);
 	}
 }
 
@@ -350,21 +364,30 @@ static void callEndpointHandlers() {
 	uint32_t status = GET_REG(USB + DAINTMSK);
 
 	int endpoint;
+	bufferPrintf("status: %x\r\n", status);
 	for(endpoint = 0; endpoint < USB_NUM_ENDPOINTS; endpoint++) {
 		if((status & ((1 << endpoint) << DAINTMSK_OUT_SHIFT)) == ((1 << endpoint) << DAINTMSK_OUT_SHIFT)) {
+			bufferPrintf("ep %d OUT: %x %x ", endpoint, outInterruptStatus[endpoint], OutEPRegs[endpoint].control);
 			if((outInterruptStatus[endpoint] & USB_EPINT_XferCompl) == USB_EPINT_XferCompl) {
+				bufferPrintf("xfer complete ", endpoint);
 				if(endpoint_handlers[endpoint].out.handler != NULL) {
+					bufferPrintf("handler present ", endpoint);
 					endpoint_handlers[endpoint].out.handler(endpoint_handlers[endpoint].out.token);
 				}
 			}
+			bufferPrintf("\r\n");
 		}
 
 		if((status & ((1 << endpoint) << DAINTMSK_IN_SHIFT)) == ((1 << endpoint) << DAINTMSK_IN_SHIFT)) {
+			bufferPrintf("ep %d IN: %x %x ", endpoint, inInterruptStatus[endpoint], InEPRegs[endpoint].control);
 			if((inInterruptStatus[endpoint] & USB_EPINT_XferCompl) == USB_EPINT_XferCompl) {
+				bufferPrintf("xfer complete ", endpoint);
 				if(endpoint_handlers[endpoint].in.handler != NULL) {
+					bufferPrintf("handler present ", endpoint);
 					endpoint_handlers[endpoint].in.handler(endpoint_handlers[endpoint].in.token);
 				}
 			}
+			bufferPrintf("\r\n");
 		}
 
 		if(endpoint_directions[endpoint] == USBOut || endpoint_directions[endpoint] == USBBiDir) {
@@ -439,7 +462,7 @@ static void handleRxInterrupts(int endpoint) {
 	if((outInterruptStatus[endpoint] & USB_EPINT_XferCompl) == USB_EPINT_XferCompl) {
 		OutEPRegs[endpoint].interrupt = USB_EPINT_XferCompl;
 		if(endpoint == 0) {
-			receiveControl(recvBuffer, sizeof(USBSetupPacket));
+			receiveControl(usb_recv_buffer, sizeof(USBSetupPacket));
 		}
 	}
 }
@@ -450,18 +473,25 @@ static void sendControl(void* buffer, int bufferLen) {
 	advanceTxQueue();
 }
 
-void usb_send(uint8_t endpoint, void* buffer, int bufferLen) {
+void usb_send_bulk(uint8_t endpoint, void* buffer, int bufferLen) {
 	usbTxRx(endpoint, USBIn, USBBulk, buffer, bufferLen);
 	ringBufferEnqueue(txQueue, endpoint);
 	advanceTxQueue();
 }
 
-void usb_receive(uint8_t endpoint, void* buffer, int bufferLen) {
+void usb_send_interrupt(uint8_t endpoint, void* buffer, int bufferLen) {
+	usbTxRx(endpoint, USBIn, USBInterrupt, buffer, bufferLen);
+	ringBufferEnqueue(txQueue, endpoint);
+	advanceTxQueue();
+}
+
+
+void usb_receive_bulk(uint8_t endpoint, void* buffer, int bufferLen) {
 	usbTxRx(endpoint, USBOut, USBBulk, buffer, bufferLen);
 }
 
-static void usbHasStarted() {
-	// TODO: This function
+void usb_receive_interrupt(uint8_t endpoint, void* buffer, int bufferLen) {
+	usbTxRx(endpoint, USBOut, USBInterrupt, buffer, bufferLen);
 }
 
 static int advanceTxQueue() {
@@ -484,6 +514,7 @@ static int advanceTxQueue() {
 
 	// we're ready to transmit!
 	InEPRegs[nextEP].control = InEPRegs[nextEP].control | USB_EPCON_ENABLE | USB_EPCON_CLEARNAK;
+	//bufferPrintf("\r\nTransmitting: %x %x %x\r\n", InEPRegs[nextEP].control, InEPRegs[nextEP].dmaAddress, InEPRegs[nextEP].transferSize);
 
 	return 0;
 }
@@ -538,8 +569,8 @@ static void usbIRQHandler(uint32_t token) {
 			getEndpointInterruptStatuses();
 
 			if(isSetupPhaseDone()) {
-				// recall our earlier receiveControl calls. We now should have 8 bytes of goodness in recvBuffer.
-				USBSetupPacket* setupPacket = (USBSetupPacket*) recvBuffer;
+				// recall our earlier receiveControl calls. We now should have 8 bytes of goodness in usb_recv_buffer.
+				USBSetupPacket* setupPacket = (USBSetupPacket*) usb_recv_buffer;
 
 				uint16_t length;
 				uint32_t totalLength;
@@ -556,12 +587,12 @@ static void usbIRQHandler(uint32_t token) {
 									if(length > sizeof(USBDeviceDescriptor))
 										length = sizeof(USBDeviceDescriptor);
 
-									memcpy(sendBuffer, usb_get_device_descriptor(), length);
+									memcpy(usb_send_buffer, usb_get_device_descriptor(), length);
 									break;
 								case USBConfigurationDescriptorType:
 									bufferPrintf("Configuration descriptor\r\n");
 									// hopefully SET_ADDRESS was received beforehand to set the speed
-									totalLength = getConfigurationTree(setupPacket->wValue & 0xFF, usb_speed, sendBuffer);
+									totalLength = getConfigurationTree(setupPacket->wValue & 0xFF, usb_speed, usb_send_buffer);
 									if(length > totalLength)
 										length = totalLength;
 									break;
@@ -570,7 +601,7 @@ static void usbIRQHandler(uint32_t token) {
 									strDesc = usb_get_string_descriptor(setupPacket->wValue & 0xFF);
 									if(length > strDesc->bLength)
 										length = strDesc->bLength;
-									memcpy(sendBuffer, strDesc, length);
+									memcpy(usb_send_buffer, strDesc, length);
 									break;
 								default:
 									if(usb_state < USBError) {
@@ -579,7 +610,7 @@ static void usbIRQHandler(uint32_t token) {
 							}
 
 							if(usb_state < USBError) {
-								sendControl(sendBuffer, length);
+								sendControl(usb_send_buffer, length);
 							}
 
 							break;
@@ -592,7 +623,7 @@ static void usbIRQHandler(uint32_t token) {
 								| ((setupPacket->wValue & DCFG_DEVICEADDR_UNSHIFTED_MASK) << DCFG_DEVICEADDR_SHIFT));
 
 							// send an acknowledgement
-							sendControl(sendBuffer, 0);
+							sendControl(usb_send_buffer, 0);
 
 							if(usb_state < USBError) {
 								change_state(USBAddress);
@@ -602,14 +633,14 @@ static void usbIRQHandler(uint32_t token) {
 						case USB_SET_INTERFACE:
 							bufferPrintf("SET_INTERFACE\r\n");
 							// send an acknowledgement
-							sendControl(sendBuffer, 0);
+							sendControl(usb_send_buffer, 0);
 							break;
 
 						case USB_GET_STATUS:
 							bufferPrintf("GET_STATUS\r\n");
 							// FIXME: iBoot doesn't really care about this status
-							*((uint16_t*) sendBuffer) = 0;
-							sendControl(sendBuffer, sizeof(uint16_t));
+							*((uint16_t*) usb_send_buffer) = 0;
+							sendControl(usb_send_buffer, sizeof(uint16_t));
 							break;
 
 						case USB_GET_CONFIGURATION:
@@ -622,11 +653,11 @@ static void usbIRQHandler(uint32_t token) {
 
 							setConfiguration(0);
 							// send an acknowledgment
-							sendControl(sendBuffer, 0);
+							sendControl(usb_send_buffer, 0);
 
 							if(usb_state < USBError) {
 								change_state(USBConfigured);
-								usbHasStarted();
+								startHandler();
 							}
 							break;
 						default:
@@ -636,9 +667,10 @@ static void usbIRQHandler(uint32_t token) {
 					}
 
 					// get the next SETUP packet
-					receiveControl(recvBuffer, sizeof(USBSetupPacket));
+					receiveControl(usb_recv_buffer, sizeof(USBSetupPacket));
 				}
 			} else {
+				bufferPrintf("--- calling endpoint handlers ---\r\n");
 				callEndpointHandlers();
 			}
 
@@ -711,8 +743,6 @@ static uint32_t getConfigurationTree(int i, uint8_t speed_id, void* buffer) {
 	memcpy(buf + pos, usb_get_configuration_descriptor(i, speed_id), sizeof(USBConfigurationDescriptor));
 	pos += sizeof(USBConfigurationDescriptor);
 
-	bufferPrintf("num interfaces(%d): %d\r\n", i, configurations[i].descriptor.bNumInterfaces);
-
 	int8_t j;
 	for(j = 0; j < configurations[i].descriptor.bNumInterfaces; j++) {
 		memcpy(buf + pos, &configurations[i].interfaces[j].descriptor, sizeof(USBInterfaceDescriptor));
@@ -729,21 +759,18 @@ static uint32_t getConfigurationTree(int i, uint8_t speed_id, void* buffer) {
 
 USBConfigurationDescriptor* usb_get_configuration_descriptor(int index, uint8_t speed_id) {
 	if(index == 0 && configurations[0].interfaces == NULL) {
-		bufferPrintf("adding interfaces...\r\n");
 		USBInterface* interface = addInterfaceDescriptor(&configurations[0], 0, 0,
 			OPENIBOOT_INTERFACE_CLASS, OPENIBOOT_INTERFACE_SUBCLASS, OPENIBOOT_INTERFACE_PROTOCOL, addStringDescriptor("IF0"));
 
-		bufferPrintf("adding endpoint 1 in...\r\n");
-		addEndpointDescriptor(interface, 1, USBIn, USBBulk, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(speed_id), 0);
-		bufferPrintf("adding endpoint 1 out...\r\n");
-		addEndpointDescriptor(interface, 1, USBOut, USBBulk, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(speed_id), 0);
-		bufferPrintf("finalizing config...\r\n");
+		enumerateHandler(interface);
 		endConfiguration(&configurations[0]);
-	} else {
-		bufferPrintf("okay, looks like there's already one here\r\n");
 	}
 
 	return &configurations[index].descriptor;
+}
+
+void usb_add_endpoint(USBInterface* interface, int endpoint, USBDirection direction, USBTransferType transferType) {
+	addEndpointDescriptor(interface, endpoint, direction, transferType, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(usb_speed), 0);
 }
 
 static void initializeDescriptors() {
@@ -827,7 +854,7 @@ static uint8_t addEndpointDescriptor(USBInterface* interface, uint8_t endpoint, 
 	interface->endpointDescriptors = (USBEndpointDescriptor*) realloc(interface->endpointDescriptors, sizeof(USBEndpointDescriptor) * interface->descriptor.bNumEndpoints);
 	interface->endpointDescriptors[newIndex].bLength = sizeof(USBEndpointDescriptor);
 	interface->endpointDescriptors[newIndex].bDescriptorType = USBEndpointDescriptorType;
-	interface->endpointDescriptors[newIndex].bEndpointAddress = (endpoint & 0x3) | ((direction & 0x1) << 7);	// see USB specs for the bitfield spec
+	interface->endpointDescriptors[newIndex].bEndpointAddress = (endpoint & 0xF) | ((direction & 0x1) << 7);	// see USB specs for the bitfield spec
 	interface->endpointDescriptors[newIndex].bmAttributes = (transferType & 0x3) | ((syncType & 0x3) << 2) | ((usageType & 0x3) << 4);
 	interface->endpointDescriptors[newIndex].wMaxPacketSize = wMaxPacketSize;
 	interface->endpointDescriptors[newIndex].bInterval = bInterval;

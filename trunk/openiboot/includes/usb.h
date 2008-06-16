@@ -182,6 +182,18 @@ typedef struct RingBuffer {
 	int8_t* bufferEnd;
 } RingBuffer;
 
+typedef void (*USBStartHandler)(void);
+typedef void (*USBEnumerateHandler)(USBInterface* interface);
+
+#define OPENIBOOTCMD_DUMPBUFFER 0
+#define OPENIBOOTCMD_DUMPBUFFER_LEN 1
+#define OPENIBOOTCMD_DUMPBUFFER_GOAHEAD 2
+
+typedef struct OpenIBootCmd {
+	uint32_t command;
+	uint32_t dataLen;
+}  __attribute__ ((__packed__)) OpenIBootCmd;
+
 #define USBSetupPacketRequestTypeDirection(x) GET_BITS(x, 7, 1)
 #define USBSetupPacketRequestTypeType(x) GET_BITS(x, 5, 2)
 #define USBSetupPacketRequestTypeRecpient(x) GET_BITS(x, 0, 5)
@@ -208,12 +220,18 @@ typedef struct RingBuffer {
 #define USB_SET_INTERFACE 11
 #define USB_SYNCH_FRAME 12
 
+extern uint8_t* usb_send_buffer;
+extern uint8_t* usb_recv_buffer;
+
 int usb_setup();
+int usb_start(USBEnumerateHandler hEnumerate, USBStartHandler hStart);
 int usb_shutdown();
 int usb_install_ep_handler(int endpoint, USBDirection direction, USBEndpointHandler handler, uint32_t token);
-void usb_send(uint8_t endpoint, void* buffer, int bufferLen);
-void usb_receive(uint8_t endpoint, void* buffer, int bufferLen);
-
+void usb_add_endpoint(USBInterface* interface, int endpoint, USBDirection direction, USBTransferType transferType);
+void usb_send_interrupt(uint8_t endpoint, void* buffer, int bufferLen);
+void usb_send_bulk(uint8_t endpoint, void* buffer, int bufferLen);
+void usb_receive_bulk(uint8_t endpoint, void* buffer, int bufferLen);
+void usb_receive_interrupt(uint8_t endpoint, void* buffer, int bufferLen);
 extern int called;
 
 USBDeviceDescriptor* usb_get_device_descriptor();
