@@ -9,6 +9,10 @@ void* memcpy(void* dest, const void* src, uint32_t size);
 int strlen(const char* str);
 int putchar(int c);
 void dump_memory(uint32_t start, int length);
+void bufferPrint(const char* toBuffer);
+void bufferPrintf(const char* format, ...);
+
+extern char MyBuffer[];
 
 #include "printf.h"
 #include "malloc-2.8.3.h"

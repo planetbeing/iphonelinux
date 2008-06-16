@@ -92,7 +92,7 @@ typedef struct USBEPRegisters {
 	volatile void* dmaAddress;
 	volatile uint32_t field_18;
 	volatile uint32_t field_1C;
-} __attribute__ ((__packed__)) USBEPRegisters;
+} USBEPRegisters;
 
 typedef struct USBDeviceDescriptor {
 	uint8_t bLength;
@@ -213,6 +213,8 @@ int usb_shutdown();
 int usb_install_ep_handler(int endpoint, USBDirection direction, USBEndpointHandler handler, uint32_t token);
 void usb_send(uint8_t endpoint, void* buffer, int bufferLen);
 void usb_receive(uint8_t endpoint, void* buffer, int bufferLen);
+
+extern int called;
 
 USBDeviceDescriptor* usb_get_device_descriptor();
 USBConfigurationDescriptor* usb_get_configuration_descriptor(int index, uint8_t speed_id);

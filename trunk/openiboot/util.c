@@ -63,3 +63,28 @@ void dump_memory(uint32_t start, int length) {
 
 	printf("\r\n");
 }
+
+char MyBuffer[1024];
+char* pMyBuffer = NULL;
+
+void bufferPrint(const char* toBuffer) {
+	if(pMyBuffer == NULL) {
+		pMyBuffer = MyBuffer;
+		*pMyBuffer = '\0';
+	}
+	int len = strlen(toBuffer);
+	memcpy(pMyBuffer, toBuffer, len + 1);
+	pMyBuffer += len;
+}
+
+void bufferPrintf(const char* format, ...) {
+	char buffer[1000];
+	buffer[0] = '\0';
+
+	va_list args;
+	va_start(args, format);
+	vsprintf(buffer, format, args);
+	va_end(args);
+	bufferPrint(buffer);
+}
+

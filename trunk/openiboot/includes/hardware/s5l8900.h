@@ -4,14 +4,6 @@
 #include "hardware/s5l8900.h"
 
 /*
- *	Macros
- */
-
-#define GET_REG(x) (*((volatile uint32_t*)(x)))
-#define SET_REG(x, y) (*((volatile uint32_t*)(x)) = (y))
-#define GET_BITS(x, start, length) ((x << (32 - ((start) + (length)))) >> (32 - (length)))
-
-/*
  *	Constants
  */
 

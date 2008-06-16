@@ -8,7 +8,7 @@
 #include "clock.h"
 #include "interrupt.h"
 #include "openiboot-asmhelpers.h"
-
+int called;
 static void change_state(USBState new_state);
 
 static Boolean usb_inited;
@@ -143,7 +143,7 @@ int usb_setup() {
 	while((GET_REG(USB + GRSTCTL) & GRSTCTL_CORESOFTRESET) == GRSTCTL_CORESOFTRESET);
 
 	// wait until reset completes
-	while(GET_REG(USB + GRSTCTL) >= 0);
+	while((GET_REG(USB + GRSTCTL) & ~GRSTCTL_AHBIDLE) != 0);
 
 	udelay(USB_RESETWAITFINISH_DELAYUS);
 
@@ -489,9 +489,13 @@ static int advanceTxQueue() {
 }
 
 static void usbIRQHandler(uint32_t token) {
+
 	// we need to mask because GINTSTS is set for a particular interrupt even if it's masked in GINTMSK (GINTMSK just prevents an interrupt being generated)
 	uint32_t status = GET_REG(USB + GINTSTS) & GET_REG(USB + GINTMSK);
 	int process = FALSE;
+
+	called++;
+	bufferPrintf("<begin interrupt: %x>\r\n", status);
 
 	if(status) {
 		process = TRUE;
@@ -543,23 +547,27 @@ static void usbIRQHandler(uint32_t token) {
 				if(USBSetupPacketRequestTypeType(setupPacket->bmRequestType) != USBSetupPacketVendor) {
 					switch(setupPacket->bRequest) {
 						case USB_GET_DESCRIPTOR:
+							bufferPrintf("GET_DESCRIPTOR\r\n");
 							length = setupPacket->wLength;
 							// descriptor type is high, descriptor index is low
 							switch(setupPacket->wValue >> 8) {
 								case USBDeviceDescriptorType:
+									bufferPrintf("Device descriptor\r\n");
 									if(length > sizeof(USBDeviceDescriptor))
 										length = sizeof(USBDeviceDescriptor);
 
 									memcpy(sendBuffer, usb_get_device_descriptor(), length);
 									break;
 								case USBConfigurationDescriptorType:
+									bufferPrintf("Configuration descriptor\r\n");
 									// hopefully SET_ADDRESS was received beforehand to set the speed
-									totalLength = getConfigurationTree(setupPacket->wValue & 0xFFFF, usb_speed, sendBuffer);
+									totalLength = getConfigurationTree(setupPacket->wValue & 0xFF, usb_speed, sendBuffer);
 									if(length > totalLength)
 										length = totalLength;
 									break;
 								case USBStringDescriptorType:
-									strDesc = usb_get_string_descriptor(setupPacket->wValue & 0xFFFF);
+									bufferPrintf("String descriptor\r\n");
+									strDesc = usb_get_string_descriptor(setupPacket->wValue & 0xFF);
 									if(length > strDesc->bLength)
 										length = strDesc->bLength;
 									memcpy(sendBuffer, strDesc, length);
@@ -573,9 +581,11 @@ static void usbIRQHandler(uint32_t token) {
 							if(usb_state < USBError) {
 								sendControl(sendBuffer, length);
 							}
+
 							break;
 
 						case USB_SET_ADDRESS:
+							bufferPrintf("SET_ADDRESS\r\n");
 							usb_speed = DSTS_GET_SPEED(GET_REG(USB + DSTS));
 							usb_max_packet_size = packetsizeFromSpeed(usb_speed);
 							SET_REG(USB + DCFG, (GET_REG(USB + DCFG) & ~DCFG_DEVICEADDRMSK)
@@ -587,25 +597,29 @@ static void usbIRQHandler(uint32_t token) {
 							if(usb_state < USBError) {
 								change_state(USBAddress);
 							}
-
 							break;
 
 						case USB_SET_INTERFACE:
+							bufferPrintf("SET_INTERFACE\r\n");
 							// send an acknowledgement
 							sendControl(sendBuffer, 0);
 							break;
 
 						case USB_GET_STATUS:
+							bufferPrintf("GET_STATUS\r\n");
 							// FIXME: iBoot doesn't really care about this status
 							*((uint16_t*) sendBuffer) = 0;
 							sendControl(sendBuffer, sizeof(uint16_t));
 							break;
 
 						case USB_GET_CONFIGURATION:
+							bufferPrintf("GET_CONFIGURATION\r\n");
 							// FIXME: iBoot just puts out a debug message on console for this request.
 							break;
 
 						case USB_SET_CONFIGURATION:
+							bufferPrintf("SET_CONFIGURATION\r\n");
+
 							setConfiguration(0);
 							// send an acknowledgment
 							sendControl(sendBuffer, 0);
@@ -614,6 +628,7 @@ static void usbIRQHandler(uint32_t token) {
 								change_state(USBConfigured);
 								usbHasStarted();
 							}
+							break;
 						default:
 							if(usb_state < USBError) {
 								change_state(USBUnknownRequest);
@@ -642,6 +657,8 @@ static void usbIRQHandler(uint32_t token) {
 
 		status = GET_REG(USB + GINTSTS) & GET_REG(USB + GINTMSK);
 	}
+
+	bufferPrintf("<end interrupt>\r\n");
 
 }
 
@@ -694,6 +711,8 @@ static uint32_t getConfigurationTree(int i, uint8_t speed_id, void* buffer) {
 	memcpy(buf + pos, usb_get_configuration_descriptor(i, speed_id), sizeof(USBConfigurationDescriptor));
 	pos += sizeof(USBConfigurationDescriptor);
 
+	bufferPrintf("num interfaces(%d): %d\r\n", i, configurations[i].descriptor.bNumInterfaces);
+
 	int8_t j;
 	for(j = 0; j < configurations[i].descriptor.bNumInterfaces; j++) {
 		memcpy(buf + pos, &configurations[i].interfaces[j].descriptor, sizeof(USBInterfaceDescriptor));
@@ -710,12 +729,18 @@ static uint32_t getConfigurationTree(int i, uint8_t speed_id, void* buffer) {
 
 USBConfigurationDescriptor* usb_get_configuration_descriptor(int index, uint8_t speed_id) {
 	if(index == 0 && configurations[0].interfaces == NULL) {
+		bufferPrintf("adding interfaces...\r\n");
 		USBInterface* interface = addInterfaceDescriptor(&configurations[0], 0, 0,
 			OPENIBOOT_INTERFACE_CLASS, OPENIBOOT_INTERFACE_SUBCLASS, OPENIBOOT_INTERFACE_PROTOCOL, addStringDescriptor("IF0"));
 
+		bufferPrintf("adding endpoint 1 in...\r\n");
 		addEndpointDescriptor(interface, 1, USBIn, USBBulk, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(speed_id), 0);
+		bufferPrintf("adding endpoint 1 out...\r\n");
 		addEndpointDescriptor(interface, 1, USBOut, USBBulk, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(speed_id), 0);
+		bufferPrintf("finalizing config...\r\n");
 		endConfiguration(&configurations[0]);
+	} else {
+		bufferPrintf("okay, looks like there's already one here\r\n");
 	}
 
 	return &configurations[index].descriptor;
@@ -759,6 +784,7 @@ static uint8_t addConfiguration(uint8_t bConfigurationValue, uint8_t iConfigurat
 	configurations[newIndex].descriptor.iConfiguration = iConfiguration;
 	configurations[newIndex].descriptor.bmAttributes = ((0x1) << 7) | ((selfPowered & 0x1) << 6) | ((remoteWakeup & 0x1) << 5);
 	configurations[newIndex].descriptor.bMaxPower = maxPower / 2;
+	configurations[newIndex].interfaces = NULL;
 
 	return newIndex;
 }
@@ -912,6 +938,7 @@ int usb_shutdown() {
 }
 
 static void change_state(USBState new_state) {
+	bufferPrintf("USB state change: %d -> %d\r\n", usb_state, new_state);
 	usb_state = new_state;
 	if(usb_state == USBConfigured) {
 		// TODO: set to host powered

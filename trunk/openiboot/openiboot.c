@@ -45,7 +45,7 @@ Event testEvent;
 
 void testEventHandler(Event* event, void* opaque) {
 	printf("Hello iBoot! Up time: %Ld seconds\r\n", timer_get_system_microtime() / 1000000);
-	printf("ClockFrequency: %u Hz\r\n", (unsigned int) ClockFrequency);
+/*	printf("ClockFrequency: %u Hz\r\n", (unsigned int) ClockFrequency);
 	printf("MemoryFrequency: %u Hz\r\n", (unsigned int) MemoryFrequency);
 	printf("BusFrequency: %u Hz\r\n", (unsigned int) BusFrequency);
 	printf("UnknownFrequency: %u Hz\r\n", (unsigned int) UnknownFrequency);
@@ -56,11 +56,9 @@ void testEventHandler(Event* event, void* opaque) {
 	printf("PLL0 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[0]);
 	printf("PLL1 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[1]);
 	printf("PLL2 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[2]);
-	printf("PLL3 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[3]);
-
-	void* x = malloc(32214);
-	malloc_stats();
-	free(x);
+	printf("PLL3 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[3]);*/
+	printf(MyBuffer);
+	printf("Called: %u\r\n", (unsigned int) called);
 
 	printf("\n\n");
 
