@@ -44,7 +44,7 @@ TaskDescriptor bootstrapTask;
 Event testEvent;
 
 void testEventHandler(Event* event, void* opaque) {
-	printf("Hello iBoot! Up time: %Ld seconds\r\n", timer_get_system_microtime() / 1000000);
+	bufferPrintf("Hello iBoot! Up time: %Ld seconds\r\n", timer_get_system_microtime() / 1000000);
 /*	printf("ClockFrequency: %u Hz\r\n", (unsigned int) ClockFrequency);
 	printf("MemoryFrequency: %u Hz\r\n", (unsigned int) MemoryFrequency);
 	printf("BusFrequency: %u Hz\r\n", (unsigned int) BusFrequency);
@@ -57,10 +57,10 @@ void testEventHandler(Event* event, void* opaque) {
 	printf("PLL1 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[1]);
 	printf("PLL2 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[2]);
 	printf("PLL3 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[3]);*/
-	printf(MyBuffer);
-	printf("Called: %u\r\n", (unsigned int) called);
 
-	printf("\n\n");
+	bufferPrintf("\n\n");
+
+	printf(getScrollback());
 
 	event_readd(event, 0);
 }
@@ -75,16 +75,18 @@ void OpenIBootStart() {
 
 	int i;
 	for(i = 0; i < 5; i++) {
-		printf("Devices loaded. OpenIBoot starting in: %d\r\n", 5 - i);
+		bufferPrintf("Devices loaded. OpenIBoot starting in: %d\r\n", 5 - i);
 		udelay(uSecPerSec);
 	}
 
 	event_add(&testEvent, uSecPerSec, &testEventHandler, NULL);
 
 	while(TRUE) {
-		void* x = malloc(10021);
+/*		void* x = malloc(10021);
 		udelay(100000);
-		free(x);
+		free(x);*/
+		printf("heartbeat\r\n");
+		udelay(100000);
 	}
   
 	DebugReboot();
@@ -136,31 +138,26 @@ static uint8_t* controlSendBuffer = NULL;
 static uint8_t* controlRecvBuffer = NULL;
 static uint8_t* dataSendBuffer = NULL;
 static uint8_t* dataRecvBuffer = NULL;
+static size_t left = 0;
 
+#define USB_BYTES_AT_A_TIME 0x80
 
 static void controlReceived(uint32_t token) {
 	OpenIBootCmd* cmd = (OpenIBootCmd*)controlRecvBuffer;
 	OpenIBootCmd* reply = (OpenIBootCmd*)controlSendBuffer;
-	bufferPrintf("Omg command received: %d\r\n", cmd->command);
 
 	if(cmd->command == OPENIBOOTCMD_DUMPBUFFER) {
-		int length = strlen(MyBuffer);
-		if(length > 0x80) {
-			length = 0x80;
-		}
+		int length = getScrollbackLen();
 		reply->command = OPENIBOOTCMD_DUMPBUFFER_LEN;
 		reply->dataLen = length;
-		bufferPrintf("%d %d\r\n", (int)reply->command, sizeof(OpenIBootCmd));
-		usb_send_interrupt(3, controlSendBuffer, length);
+		usb_send_interrupt(3, controlSendBuffer, sizeof(OpenIBootCmd));
 	} else if(cmd->command == OPENIBOOTCMD_DUMPBUFFER_GOAHEAD) {
-		bufferPrintf("dataLen: %d\r\n", (int)cmd->dataLen);
-		memcpy(dataSendBuffer, MyBuffer, cmd->dataLen);
-/*		EnterCriticalSection();
-		static uint8_t MyBufferCopy[1024];
-		memcpy(MyBufferCopy, MyBuffer + cmd->dataLen, strlen(MyBuffer) + 1 - cmd->dataLen);
-		memcpy(MyBuffer, MyBufferCopy, 1024);
-		LeaveCriticalSection();*/
-		usb_send_bulk(1, dataSendBuffer, cmd->dataLen);
+		left = cmd->dataLen;
+
+		size_t toRead = (left > USB_BYTES_AT_A_TIME) ? USB_BYTES_AT_A_TIME: left;
+		bufferFlush((char*) dataSendBuffer, toRead);
+		usb_send_bulk(1, dataSendBuffer, toRead);
+		left -= toRead;
 	}
 
 	usb_receive_interrupt(4, controlRecvBuffer, sizeof(OpenIBootCmd));
@@ -171,11 +168,14 @@ static void dataReceived(uint32_t token) {
 }
 
 static void dataSent(uint32_t token) {
-	bufferPrintf("data sent successfully\r\n");
+	size_t toRead = (left > USB_BYTES_AT_A_TIME) ? USB_BYTES_AT_A_TIME: left;
+	bufferFlush((char*) dataSendBuffer, toRead);
+	usb_send_bulk(1, dataSendBuffer, toRead);
+	left -= toRead;
 }
 
 static void controlSent(uint32_t token) {
-	bufferPrintf("control sent successfully\r\n");
+
 }
 
 static void enumerateHandler(USBInterface* interface) {

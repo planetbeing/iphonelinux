@@ -10,7 +10,7 @@ typedef struct OpenIBootCmd {
 	uint32_t dataLen;
 }  __attribute__ ((__packed__)) OpenIBootCmd;
 
-usb_dev_handle *find_openiboot() {
+int main(int argc, char* argv[]) {
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
@@ -44,35 +44,40 @@ usb_dev_handle *find_openiboot() {
     		}
 	}
 
-	return NULL;
+	return 1;
 
 done:
 
 	device = usb_open(dev);
-	printf("open: %x\n", device);
-	printf("claim: %d %d\n", i, usb_claim_interface(device, i));
+	if(!device) {
+		return 2;
+	}
+
+	if(usb_claim_interface(device, i) != 0) {
+		return 3;
+	}
 
 	OpenIBootCmd cmd;
-	char buffer[1024];
-	int read = 0;
+	char* buffer;
+
 	cmd.command = OPENIBOOTCMD_DUMPBUFFER;
-	printf("write: %d\n", usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000)); fflush(stdout);
-	while(read == 0) {
-		printf("read: %d\n", read = usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000)); fflush(stdout);
-	}
+	usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
+	while(usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000) <= 0);
+	buffer = (char*) malloc(cmd.dataLen);
+
 	cmd.command = OPENIBOOTCMD_DUMPBUFFER_GOAHEAD;
-	printf("write: %d\n", usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000)); fflush(stdout);
-	read = 0;
-	while(read == 0) {
-		printf("read: %d %d\n", cmd.dataLen, read = usb_bulk_read(device, 1, buffer, cmd.dataLen, 1000)); fflush(stdout);
+	usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
+
+	int read = 0;
+	while(read < cmd.dataLen) {
+		size_t toRead = (cmd.dataLen > 0x80) ? 0x80 : cmd.dataLen;
+		while(usb_bulk_read(device, 1, buffer + read, toRead, 1000) <= 0);
+		read += toRead;
 	}
-	printf("exiting\n"); fflush(stdout);
-	//printf(buffer); fflush(stdout);
+	*(buffer + read) = '\0';
+	printf(buffer); fflush(stdout);
+
 	usb_release_interface(device, i);
 	usb_close(device);
-}
-
-int main(int argc, char* argv[]) {
-	find_openiboot();
 }
 

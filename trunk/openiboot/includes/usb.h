@@ -11,8 +11,9 @@
 // values we're using
 #define USB_MAX_PACKETSIZE 64
 #define USB_SETUP_PACKETS_AT_A_TIME 1
-#define USB_SEND_BUFFER_LEN 0x80
-#define USB_RECV_BUFFER_LEN 0x80
+#define CONTROL_SEND_BUFFER_LEN 0x80
+#define CONTROL_RECV_BUFFER_LEN 0x80
+#define TX_QUEUE_LEN 0x80
 
 // one packet at a time
 #define USB_MULTICOUNT 1
@@ -220,9 +221,6 @@ typedef struct OpenIBootCmd {
 #define USB_SET_INTERFACE 11
 #define USB_SYNCH_FRAME 12
 
-extern uint8_t* usb_send_buffer;
-extern uint8_t* usb_recv_buffer;
-
 int usb_setup();
 int usb_start(USBEnumerateHandler hEnumerate, USBStartHandler hStart);
 int usb_shutdown();
@@ -232,7 +230,6 @@ void usb_send_interrupt(uint8_t endpoint, void* buffer, int bufferLen);
 void usb_send_bulk(uint8_t endpoint, void* buffer, int bufferLen);
 void usb_receive_bulk(uint8_t endpoint, void* buffer, int bufferLen);
 void usb_receive_interrupt(uint8_t endpoint, void* buffer, int bufferLen);
-extern int called;
 
 USBDeviceDescriptor* usb_get_device_descriptor();
 USBConfigurationDescriptor* usb_get_configuration_descriptor(int index, uint8_t speed_id);

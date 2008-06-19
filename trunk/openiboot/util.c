@@ -2,6 +2,7 @@
 #include "hardware/s5l8900.h"
 #include "uart.h"
 #include "util.h"
+#include "openiboot-asmhelpers.h"
 
 void* memset(void* x, int fill, uint32_t size) {
 	uint32_t i;
@@ -15,6 +16,24 @@ void* memcpy(void* dest, const void* src, uint32_t size) {
 	uint32_t i;
 	for(i = 0; i < size; i++) {
 		((uint8_t*)dest)[i] = ((uint8_t*)src)[i];
+	}
+	return dest;
+}
+
+/* Adapted from public domain memmove function from  David MacKenzie <djm@gnu.ai.mit.edu>.  */
+void* memmove(void *dest, const void* src, size_t length)
+{
+	register uint8_t* myDest = dest;
+	const register uint8_t* mySrc = src;
+	if (mySrc < myDest)
+		/* Moving from low mem to hi mem; start at end.  */
+		for(src += length, myDest += length; length; --length)
+			*--myDest = *--mySrc;
+	else if (src != myDest)
+	{
+		/* Moving from hi mem to low mem; start at beginning.  */
+		for (; length; --length)
+			*myDest++ = *mySrc++;
 	}
 	return dest;
 }
@@ -64,17 +83,31 @@ void dump_memory(uint32_t start, int length) {
 	printf("\r\n");
 }
 
-char MyBuffer[1024];
-char* pMyBuffer = NULL;
+static char* MyBuffer= NULL;
+static char* pMyBuffer = NULL;
+static size_t MyBufferLen = 0;
+
+#define SCROLLBACK_LEN (1024*1024)
 
 void bufferPrint(const char* toBuffer) {
+	EnterCriticalSection();
 	if(pMyBuffer == NULL) {
+		MyBuffer = (char*) malloc(SCROLLBACK_LEN);
+		MyBufferLen = 0;
 		pMyBuffer = MyBuffer;
 		*pMyBuffer = '\0';
 	}
 	int len = strlen(toBuffer);
+	MyBufferLen += len;
+
+	if((MyBufferLen + 1) > SCROLLBACK_LEN) {
+		len -= (MyBufferLen + 1) - SCROLLBACK_LEN;
+		MyBufferLen = SCROLLBACK_LEN;
+	}
+
 	memcpy(pMyBuffer, toBuffer, len + 1);
 	pMyBuffer += len;
+	LeaveCriticalSection();
 }
 
 void bufferPrintf(const char* format, ...) {
@@ -87,4 +120,23 @@ void bufferPrintf(const char* format, ...) {
 	va_end(args);
 	bufferPrint(buffer);
 }
+
+void bufferFlush(char* destination, size_t length) {
+	EnterCriticalSection();
+	memcpy(destination, MyBuffer, length);
+	memmove(MyBuffer, MyBuffer + length, MyBufferLen - length);
+	MyBufferLen -= length;
+	pMyBuffer -= length;
+	*pMyBuffer = '\0';
+	LeaveCriticalSection();
+}
+
+char* getScrollback() {
+	return MyBuffer;
+}
+
+size_t getScrollbackLen() {
+	return MyBufferLen;
+}
+
 
