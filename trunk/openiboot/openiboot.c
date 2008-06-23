@@ -2,6 +2,8 @@
 #include "hardware/s5l8900.h"
 #include "hardware/arm.h"
 #include "openiboot-asmhelpers.h"
+#include "hardware/gpio.h"
+#include "hardware/power.h"
 
 #include "uart.h"
 #include "usb.h"
@@ -14,6 +16,7 @@
 #include "interrupt.h"
 #include "gpio.h"
 #include "dma.h"
+#include "nor.h"
 
 #include "util.h"
 
@@ -74,17 +77,26 @@ void OpenIBootStart() {
 	LeaveCriticalSection();
 
 	int i;
+
 	for(i = 0; i < 5; i++) {
 		bufferPrintf("Devices loaded. OpenIBoot starting in: %d\r\n", 5 - i);
+		printf("Devices loaded. OpenIBoot starting in: %d\r\n", 5 - i);
 		udelay(uSecPerSec);
 	}
+
+	uint16_t word;
+	word = nor_read_word(0x3000);
+	bufferPrintf("\r\nword at 0x3000: %x\r\n", (unsigned int) word);
+	nor_erase_sector(0x3000);
+	word = nor_read_word(0x3000);
+	bufferPrintf("word at 0x3000: %x\r\n\r\n", (unsigned int) word);
+	nor_write_word(0x3000, 0xc0de);
+	word = nor_read_word(0x3000);
+	bufferPrintf("word at 0x3000: %x\r\n\r\n", (unsigned int) word);
 
 	event_add(&testEvent, uSecPerSec, &testEventHandler, NULL);
 
 	while(TRUE) {
-/*		void* x = malloc(10021);
-		udelay(100000);
-		free(x);*/
 		printf("heartbeat\r\n");
 		udelay(100000);
 	}
@@ -227,6 +239,8 @@ static int setup_devices() {
 	usb_install_ep_handler(3, USBIn, controlSent, 0);
 	usb_install_ep_handler(1, USBIn, dataSent, 0);
 	usb_start(enumerateHandler, startHandler);
+
+	nor_setup();
 
 	return 0;
 }

@@ -83,6 +83,12 @@ extern TaskDescriptor* CurrentRunning;
 
 #define GET_REG(x) (*((volatile uint32_t*)(x)))
 #define SET_REG(x, y) (*((volatile uint32_t*)(x)) = (y))
+#define GET_REG32(x) GET_REG(x)
+#define SET_REG32(x, y) SET_REG(x, y)
+#define GET_REG16(x) (*((volatile uint16_t*)(x)))
+#define SET_REG16(x, y) (*((volatile uint16_t*)(x)) = (y))
+#define GET_REG8(x) (*((volatile uint8_t*)(x)))
+#define SET_REG8(x, y) (*((volatile uint8_t*)(x)) = (y))
 #define GET_BITS(x, start, length) ((x << (32 - ((start) + (length)))) >> (32 - (length)))
 
 #endif

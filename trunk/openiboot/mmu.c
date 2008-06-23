@@ -33,6 +33,11 @@ void mmu_enable() {
 	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | 0x1);
 }
 
+void mmu_disable() {
+	WriteControlRegisterConfigData(ReadControlRegisterConfigData() & ~0x4);
+	WriteControlRegisterConfigData(ReadControlRegisterConfigData() & ~0x1);
+}
+
 void initialize_pagetable() {
 	// Initialize the page table with a default identity mapping
 	mmu_map_section_range(MemoryStart, MemoryEnd, MemoryStart, FALSE, FALSE);

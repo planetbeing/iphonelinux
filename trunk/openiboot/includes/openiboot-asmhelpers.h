@@ -27,6 +27,7 @@ void GiveFullAccessCP10CP11();
 void EnableVFP();
 void WaitForInterrupt();
 void WriteTranslationTableBaseRegister0(void* translationTableBase);
+uint32_t ReadTranslationTableBaseRegister0();
 
 void InvalidateUnifiedTLBUnlockedEntries();
 void ClearCPUInstructionCache();

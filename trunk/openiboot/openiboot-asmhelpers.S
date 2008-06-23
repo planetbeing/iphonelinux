@@ -29,6 +29,7 @@
 .global EnableVFP
 .global WaitForInterrupt
 .global WriteTranslationTableBaseRegister0
+.global ReadTranslationTableBaseRegister0
 
 .global InvalidateUnifiedTLBUnlockedEntries
 .global ClearCPUInstructionCache
@@ -136,11 +137,11 @@ DisableCPUFIQ:
 @
 
 ReadControlRegisterConfigData:
-	MRC	p15, 0,	R0, c1, c0
+	MRC	p15, 0,	R0, c1, c0, 0
 	BX	LR
 
 WriteControlRegisterConfigData:
-	MCR	p15, 0,	R0, c1, c0
+	MCR	p15, 0,	R0, c1, c0, 0
 	BX	LR
 
 ReadAuxiliaryControlRegister:
@@ -193,6 +194,10 @@ WriteTranslationTableBaseRegister0:
 	MCR	p15, 0,	R0, c2, c0
 	BX LR
 
+ReadTranslationTableBaseRegister0:
+	MRC	p15, 0,	R0, c2, c0
+	BX LR
+
 InvalidateUnifiedTLBUnlockedEntries:
 	MOV	R0, #0
 	MCR	p15, 0,	R0, c8, c7
@@ -240,7 +245,7 @@ ClearCPUCaches:
 	BX	LR
 
 DebugReboot:
-	LDR	PC, =0x20000000
+	LDR	PC, =(0x20000000)
 	B	DebugReboot
 
 .data

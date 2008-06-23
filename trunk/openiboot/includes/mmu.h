@@ -19,6 +19,7 @@ extern uint32_t* CurrentPageTable;
 
 int mmu_setup();
 void mmu_enable();
+void mmu_disable();
 void mmu_map_section(uint32_t section, uint32_t target, Boolean cacheable, Boolean bufferable);
 void mmu_map_section_range(uint32_t rangeStart, uint32_t rangeEnd, uint32_t target, Boolean cacheable, Boolean bufferable);
 
