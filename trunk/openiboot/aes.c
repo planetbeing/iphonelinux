@@ -83,10 +83,10 @@ static void initVector(void* iv) {
 		}
 	} else {
 		for(i = 0; i < (AES_128_CBC_IV_SIZE / 4); i++) {
-			ivRegs[i] =	(ivWords[i] && 0x000000ff) << 24
-					| (ivWords[i] && 0x0000ff00) << 8
-					| (ivWords[i] && 0x00ff0000) >> 8
-					| (ivWords[i] && 0xff000000) >> 24;
+			ivRegs[i] =	(ivWords[i] & 0x000000ff) << 24
+					| (ivWords[i] & 0x0000ff00) << 8
+					| (ivWords[i] & 0x00ff0000) >> 8
+					| (ivWords[i] & 0xff000000) >> 24;
 		}
 	}
 }
@@ -103,15 +103,15 @@ static void loadKey(void *key) {
 	int keyWords;
 	switch(keyLen) {
 		case AES256:
-			keyAddr = AES + KEY + 256/8 + 256/8;
+			keyAddr = AES + KEY + 256/8 - 256/8;
 			keyWords = 256/8/4;
 			break;
 		case AES192:
-			keyAddr = AES + KEY + 256/8 + 192/8;
+			keyAddr = AES + KEY + 256/8 - 192/8;
 			keyWords = 192/8/4;
 			break;
 		case AES128:
-			keyAddr = AES + KEY + 256/8 + 128/8;
+			keyAddr = AES + KEY + 256/8 - 128/8;
 			keyWords = 128/8/4;
 			break;
 		default:
@@ -122,10 +122,10 @@ static void loadKey(void *key) {
 	uint32_t* aKeyWords = (uint32_t*) key;
 	int i;
 	for(i = 0; i < keyWords; i++) {
-		keyRegs[i] =	(aKeyWords[i] && 0x000000ff) << 24
-				| (aKeyWords[i] && 0x0000ff00) << 8
-				| (aKeyWords[i] && 0x00ff0000) >> 8
-				| (aKeyWords[i] && 0xff000000) >> 24;
+		keyRegs[i] =	(aKeyWords[i] & 0x000000ff) << 24
+				| (aKeyWords[i] & 0x0000ff00) << 8
+				| (aKeyWords[i] & 0x00ff0000) >> 8
+				| (aKeyWords[i] & 0xff000000) >> 24;
 	}
 
 }

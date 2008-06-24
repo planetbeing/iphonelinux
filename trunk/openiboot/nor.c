@@ -6,17 +6,6 @@
 #include "mmu.h"
 
 static NorInfo* probeNOR() {
-	SET_REG16(NOR, DATA_MODE);
-	GET_REG16(NOR);
-	GET_REG16(NOR);
-	SET_REG16(NOR, DATA_MODE);
-	GET_REG16(NOR);
-	GET_REG16(NOR);
-	SET_REG16(NOR, DATA_MODE);
-	GET_REG16(NOR);
-	uint16_t temp = GET_REG16(NOR);
-
-	bufferPrintf("NOR data=%x\r\n", GET_REG16(0x1C000000));
 	SET_REG16(NOR + COMMAND, COMMAND_UNLOCK);
 	SET_REG16(NOR + LOCK, LOCK_UNLOCK);
 
@@ -32,7 +21,6 @@ static NorInfo* probeNOR() {
 	GET_REG16(NOR);
 
 	bufferPrintf("NOR vendor=%x, device=%x\r\n", (uint32_t) vendor, (uint32_t) device);
-//	while(TRUE);
 	return NULL;
 }
 
