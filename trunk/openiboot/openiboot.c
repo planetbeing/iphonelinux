@@ -17,6 +17,7 @@
 #include "gpio.h"
 #include "dma.h"
 #include "nor.h"
+#include "aes.h"
 
 #include "util.h"
 
@@ -78,12 +79,34 @@ void OpenIBootStart() {
 
 	int i;
 
+	uint8_t test[0x40];
+
+	uint8_t userkey[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0xE, 0x0F};
+
+	memcpy(test, "This is a test!", sizeof("This is a test!"));
+	for(i = 0; i < sizeof("This is a test!"); i++) {
+		bufferPrintf("%x ", (unsigned int) test[i]);
+	}
+	bufferPrintf("\r\n");
+	aes_encrypt(test, sizeof("This is a test!"), AESCustom, userkey, NULL);
+	for(i = 0; i < sizeof("This is a test!"); i++) {
+		bufferPrintf("%x ", (unsigned int) test[i]);
+	}
+	bufferPrintf("\r\n");
+	aes_decrypt(test, sizeof("This is a test!"), AESCustom, userkey, NULL);
+	for(i = 0; i < sizeof("This is a test!"); i++) {
+		bufferPrintf("%x ", (unsigned int) test[i]);
+	}
+	bufferPrintf("\r\n");
+
+
 	for(i = 0; i < 5; i++) {
 		bufferPrintf("Devices loaded. OpenIBoot starting in: %d\r\n", 5 - i);
 		printf("Devices loaded. OpenIBoot starting in: %d\r\n", 5 - i);
 		udelay(uSecPerSec);
 	}
 
+/*
 	uint16_t word;
 	word = nor_read_word(0x3000);
 	bufferPrintf("\r\nword at 0x3000: %x\r\n", (unsigned int) word);
@@ -93,7 +116,7 @@ void OpenIBootStart() {
 	nor_write_word(0x3000, 0xc0de);
 	word = nor_read_word(0x3000);
 	bufferPrintf("word at 0x3000: %x\r\n\r\n", (unsigned int) word);
-
+*/
 	event_add(&testEvent, uSecPerSec, &testEventHandler, NULL);
 
 	while(TRUE) {
