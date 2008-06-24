@@ -8,8 +8,8 @@
 
 typedef enum AESKeyType {
 	AESCustom = 0,
-	AESUID = 1,
-	AESGID = 2
+	AESGID = 1,
+	AESUID = 2
 } AESKeyType;
 
 typedef enum AESKeyLen {
