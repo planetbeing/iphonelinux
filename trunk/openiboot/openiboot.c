@@ -1,10 +1,7 @@
 #include "openiboot.h"
-#include "hardware/s5l8900.h"
-#include "hardware/arm.h"
 #include "openiboot-asmhelpers.h"
-#include "hardware/gpio.h"
-#include "hardware/power.h"
 
+#include "arm.h"
 #include "uart.h"
 #include "usb.h"
 #include "mmu.h"
@@ -18,32 +15,11 @@
 #include "dma.h"
 #include "nor.h"
 #include "aes.h"
+#include "tasks.h"
 
 #include "util.h"
 
-static int setup_processor();
-static int setup_tasks();
 static int setup_devices();
-
-const TaskDescriptor bootstrapTaskInit = {
-	TaskDescriptorIdentifier1,
-	{0, 0},
-	{0, 0},
-	TASK_RUNNING,
-	1,
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{{0, 0}, 0, 0, 0, 0},
-	{0, 0},
-	0,
-	0,
-	0,
-	0,
-	0,
-	"bootstrap",
-	TaskDescriptorIdentifier2
-	};
-
-TaskDescriptor bootstrapTask;
 
 Event testEvent;
 
@@ -70,9 +46,9 @@ void testEventHandler(Event* event, void* opaque) {
 }
 
 void OpenIBootStart() {
-	setup_processor();
+	arm_setup();
 	mmu_setup();
-	setup_tasks();
+	tasks_setup();
 	setup_devices();
 
 	LeaveCriticalSection();
@@ -125,48 +101,6 @@ void OpenIBootStart() {
 	}
   
 	DebugReboot();
-}
-
-
-static int setup_processor() {
-
-	CleanAndInvalidateCPUDataCache();
-	ClearCPUInstructionCache();
-
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() & ~(ARM11_Control_INSTRUCTIONCACHE));	// Disable instruction cache
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() & ~(ARM11_Control_DATACACHE));		// Disable data cache
-
-	GiveFullAccessCP10CP11();
-	EnableVFP();
-
-	// Map the peripheral port of size 128 MB to 0x38000000
-	WritePeripheralPortMemoryRemapRegister(PeripheralPort | ARM11_PeripheralPortSize128MB);
-	InvalidateCPUDataCache();
-	ClearCPUInstructionCache();
-
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | ARM11_Control_INSTRUCTIONCACHE);	// Enable instruction cache
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | ARM11_Control_DATACACHE);		// Enable data cache
-
-	WriteControlRegisterConfigData((ReadControlRegisterConfigData()
-		& ~(ARM11_Control_STRICTALIGNMENTCHECKING))				// Disable strict alignment fault checking
-		| ARM11_Control_UNALIGNEDDATAACCESS);					// Enable unaligned data access operations
-
-
-	WriteControlRegisterConfigData(ReadControlRegisterConfigData() | ARM11_Control_BRANCHPREDICTION); 	// Enable branch prediction
-
-	// Enable return stack, dynamic branch prediction, static branch prediction
-	WriteAuxiliaryControlRegister(ReadAuxiliaryControlRegister()
-		| ARM11_AuxControl_RETURNSTACK
-		| ARM11_AuxControl_DYNAMICBRANCHPREDICTION
-		| ARM11_AuxControl_STATICBRANCHPREDICTION);
-
-	return 0;
-}
-
-static int setup_tasks() {
-	memcpy(&bootstrapTask, &bootstrapTaskInit, sizeof(TaskDescriptor));
-	CurrentRunning = &bootstrapTask;
-	return 0;
 }
 
 static uint8_t* controlSendBuffer = NULL;

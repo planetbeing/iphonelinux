@@ -3,7 +3,6 @@
 #include "hardware/nor.h"
 #include "util.h"
 #include "timer.h"
-#include "mmu.h"
 
 static NorInfo* probeNOR() {
 	SET_REG16(NOR + COMMAND, COMMAND_UNLOCK);
