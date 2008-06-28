@@ -13,6 +13,7 @@
 #include "interrupt.h"
 #include "gpio.h"
 #include "dma.h"
+#include "spi.h"
 #include "nor.h"
 #include "aes.h"
 #include "tasks.h"
@@ -46,14 +47,14 @@ void testEventHandler(Event* event, void* opaque) {
 }
 
 void OpenIBootStart() {
+	int i;
+
 	arm_setup();
 	mmu_setup();
 	tasks_setup();
 	setup_devices();
 
 	LeaveCriticalSection();
-
-	int i;
 
 	uint8_t test[0x40];
 
@@ -197,6 +198,7 @@ static int setup_devices() {
 	usb_install_ep_handler(1, USBIn, dataSent, 0);
 	usb_start(enumerateHandler, startHandler);
 
+	spi_setup();
 	nor_setup();
 
 	return 0;
