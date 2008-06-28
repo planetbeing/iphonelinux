@@ -47,7 +47,8 @@ void aes_encrypt(void* data, int size, AESKeyType keyType, void* key, void* iv) 
 	memset((void*)(AES + KEY), 0, KEYSIZE);
 	memset((void*)(AES + IV), 0, IVSIZE);
 
-	memcpy(data, destinationBuffer, size);
+	if(size < AES_128_CBC_BLOCK_SIZE)
+		memcpy(data, destinationBuffer, size);
 }
 
 void aes_decrypt(void* data, int size, AESKeyType keyType, void* key, void* iv) {
