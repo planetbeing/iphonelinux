@@ -1,7 +1,7 @@
 AS = arm-elf-as
 LD = arm-elf-ld
 CC = arm-elf-gcc
-OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o
+OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o i2c.o
 ASFLAGS += -mcpu=arm11
 ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
 LDFLAGS += -Ttext 0x18000000 -Tdata 0x18021980 --nostdlib

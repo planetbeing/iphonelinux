@@ -14,6 +14,7 @@
 #include "gpio.h"
 #include "dma.h"
 #include "spi.h"
+#include "i2c.h"
 #include "nor.h"
 #include "aes.h"
 #include "lcd.h"
@@ -194,6 +195,7 @@ static int setup_devices() {
 	// Other devices
 	usb_shutdown();
 	uart_setup();
+	i2c_setup();
 
 	dma_setup();
 	usb_setup();
