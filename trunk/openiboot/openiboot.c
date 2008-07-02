@@ -16,6 +16,7 @@
 #include "spi.h"
 #include "nor.h"
 #include "aes.h"
+#include "lcd.h"
 #include "tasks.h"
 
 #include "util.h"
@@ -26,18 +27,18 @@ Event testEvent;
 
 void testEventHandler(Event* event, void* opaque) {
 	bufferPrintf("Hello iBoot! Up time: %Ld seconds\r\n", timer_get_system_microtime() / 1000000);
-/*	printf("ClockFrequency: %u Hz\r\n", (unsigned int) ClockFrequency);
-	printf("MemoryFrequency: %u Hz\r\n", (unsigned int) MemoryFrequency);
-	printf("BusFrequency: %u Hz\r\n", (unsigned int) BusFrequency);
-	printf("UnknownFrequency: %u Hz\r\n", (unsigned int) UnknownFrequency);
-	printf("PeripheralFrequency: %u Hz\r\n", (unsigned int) PeripheralFrequency);
-	printf("Unknown2Frequency: %u Hz\r\n", (unsigned int) Unknown2Frequency);
-	printf("FixedFrequency: %u Hz\r\n", (unsigned int) FixedFrequency);
-	printf("TimebaseFrequency: %u Hz\r\n", (unsigned int) TimebaseFrequency);
-	printf("PLL0 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[0]);
-	printf("PLL1 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[1]);
-	printf("PLL2 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[2]);
-	printf("PLL3 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[3]);*/
+	bufferPrintf("ClockFrequency: %u Hz\r\n", (unsigned int) ClockFrequency);
+	bufferPrintf("MemoryFrequency: %u Hz\r\n", (unsigned int) MemoryFrequency);
+	bufferPrintf("BusFrequency: %u Hz\r\n", (unsigned int) BusFrequency);
+	bufferPrintf("UnknownFrequency: %u Hz\r\n", (unsigned int) UnknownFrequency);
+	bufferPrintf("PeripheralFrequency: %u Hz\r\n", (unsigned int) PeripheralFrequency);
+	bufferPrintf("DisplayFrequency: %u Hz\r\n", (unsigned int) DisplayFrequency);
+	bufferPrintf("FixedFrequency: %u Hz\r\n", (unsigned int) FixedFrequency);
+	bufferPrintf("TimebaseFrequency: %u Hz\r\n", (unsigned int) TimebaseFrequency);
+	bufferPrintf("PLL0 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[0]);
+	bufferPrintf("PLL1 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[1]);
+	bufferPrintf("PLL2 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[2]);
+	bufferPrintf("PLL3 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[3]);
 
 	bufferPrintf("\n\n");
 
@@ -55,6 +56,10 @@ void OpenIBootStart() {
 	setup_devices();
 
 	LeaveCriticalSection();
+
+	for(i = 0x0f400000; i < (0x0f400000 + 0x00c00000); i += sizeof(int)) {
+		SET_REG(i, 0x0000FF00);
+	}
 
 	uint8_t test[0x40];
 
@@ -200,6 +205,8 @@ static int setup_devices() {
 
 	spi_setup();
 	nor_setup();
+
+	lcd_setup();
 
 	return 0;
 }

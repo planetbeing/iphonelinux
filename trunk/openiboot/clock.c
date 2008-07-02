@@ -11,7 +11,7 @@ uint32_t MemoryFrequency;
 uint32_t BusFrequency;
 uint32_t PeripheralFrequency;
 uint32_t UnknownFrequency;   
-uint32_t Unknown2Frequency;  
+uint32_t DisplayFrequency;  
 uint32_t FixedFrequency;
 uint32_t TimebaseFrequency;
 
@@ -65,13 +65,13 @@ int clock_setup() {
 	uint32_t peripheralFactor = CLOCK1_PERIPHERALDIVIDER(config);
 
 	config = GET_REG(CLOCK1 + CLOCK1_CONFIG2);
-	uint32_t unknown2PLL = CLOCK1_UNKNOWN2PLL(config);
-	uint32_t unknown2Divisor;
+	uint32_t displayPLL = CLOCK1_DISPLAYPLL(config);
+	uint32_t displayDivisor;
 
-	if(CLOCK1_UNKNOWN2DIVIDER(config)) {
-		unknown2Divisor = CLOCK1_UNKNOWN2HASDIVIDER(config) + 1;
+	if(CLOCK1_DISPLAYDIVIDER(config)) {
+		displayDivisor = CLOCK1_DISPLAYHASDIVIDER(config) + 1;
 	} else {
-		unknown2Divisor = 1;
+		displayDivisor = 1;
 	}
 
 	ClockPLL = clockPLL;
@@ -145,7 +145,7 @@ int clock_setup() {
 	BusFrequency = PLLFrequencies[busPLL] / busDivisor;
 	UnknownFrequency = PLLFrequencies[unknownPLL] / unknownDivisor;
 	PeripheralFrequency = BusFrequency / (1 << peripheralFactor);
-	Unknown2Frequency = PLLFrequencies[unknown2PLL] / unknown2Divisor;
+	DisplayFrequency = PLLFrequencies[displayPLL] / displayDivisor;
 	FixedFrequency = FREQUENCY_BASE * 2;
 	TimebaseFrequency = FREQUENCY_BASE / 2;
 
@@ -201,4 +201,27 @@ int clock_set_bottom_bits_38100000(Clock0ConfigCode code) {
 	SET_REG(CLOCK0 + CLOCK0_CONFIG, (GET_REG(CLOCK0 + CLOCK0_CONFIG) & (~CLOCK0_CONFIG_BOTTOMMASK)) | bottomValue);
 
 	return 0;
+}
+
+uint32_t clock_get_frequency(FrequencyBase freqBase) {
+	switch(freqBase) {
+		case FrequencyBaseClock:
+			return ClockFrequency;
+		case FrequencyBaseMemory:
+			return MemoryFrequency;
+		case FrequencyBaseBus:
+			return BusFrequency;
+		case FrequencyBasePeripheral:
+			return PeripheralFrequency;
+		case FrequencyBaseUnknown:
+			return UnknownFrequency;
+		case FrequencyBaseDisplay:
+			return DisplayFrequency;
+		case FrequencyBaseFixed:
+			return FixedFrequency;
+		case FrequencyBaseTimebase:
+			return TimebaseFrequency;
+		default:
+			return 0;
+	}
 }

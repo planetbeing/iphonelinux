@@ -46,5 +46,8 @@ typedef struct SPIInfo {
 } SPIInfo;
 
 int spi_setup();
+int spi_tx(int port, uint8_t* buffer, int len, int block, int unknown);
+int spi_rx(int port, uint8_t* buffer, int len, int block, int unknown);
+void spi_set_baud(int port, int baud, SPIOption13 option13, int option3, int option2, int option1);
 
 #endif

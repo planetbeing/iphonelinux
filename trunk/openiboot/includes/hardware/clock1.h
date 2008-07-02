@@ -53,9 +53,9 @@
 
 #define CLOCK1_PERIPHERALDIVIDER(x) GET_BITS((x), 20, 2)
 
-#define CLOCK1_UNKNOWN2PLL(x) GET_BITS((x), 28, 2)
-#define CLOCK1_UNKNOWN2DIVIDER(x) GET_BITS((x), 16, 4)
-#define CLOCK1_UNKNOWN2HASDIVIDER(x) GET_BITS((x), 24, 1)
+#define CLOCK1_DISPLAYPLL(x) GET_BITS((x), 28, 2)
+#define CLOCK1_DISPLAYDIVIDER(x) GET_BITS((x), 16, 4)
+#define CLOCK1_DISPLAYHASDIVIDER(x) GET_BITS((x), 24, 1)
 
 #define CLOCK1_PLLMODE_ONOFF(x, y) (((x) >> (y)) & 0x1)
 #define CLOCK1_PLLMODE_DIVIDERMODE(x, y) (((x) >> (y + 4)) & 0x1)
