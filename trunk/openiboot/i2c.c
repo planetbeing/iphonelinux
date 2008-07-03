@@ -31,13 +31,13 @@ int i2c_setup() {
 	return 0;
 }
 
-I2CError i2c_rx(int bus, int iicaddr, int* registers, int num_regs, void* buffer, int len) {
+I2CError i2c_rx(int bus, int iicaddr, uint8_t* registers, int num_regs, void* buffer, int len) {
 	I2C[bus].address = iicaddr;
 	I2C[bus].is_write = FALSE;
 	I2C[bus].registers = registers;
 	I2C[bus].num_regs = num_regs;
 	I2C[bus].bufferLen = len;
-	I2C[bus].buffer = buffer;
+	I2C[bus].buffer = (uint8_t*) buffer;
 	return i2c_readwrite(&I2C[bus]);
 }
 
@@ -47,7 +47,7 @@ I2CError i2c_tx(int bus, int iicaddr, void* buffer, int len) {
 	I2C[bus].registers = NULL;
 	I2C[bus].num_regs = 0;
 	I2C[bus].bufferLen = len;
-	I2C[bus].buffer = buffer;
+	I2C[bus].buffer = (uint8_t*) buffer;
 	return i2c_readwrite(&I2C[bus]);
 }
 
@@ -57,17 +57,17 @@ static void init_i2c(I2CInfo* i2c, FrequencyBase freqBase) {
 	int prescaler;
 	if(divisorRequired < 512) {
 		// round up
-		i2c->current_iiccon = IICCON_INIT | IICCON_TXCLKSRC_FPCLK16;
+		i2c->iiccon_settings = IICCON_INIT | IICCON_TXCLKSRC_FPCLK16;
 		prescaler = ((divisorRequired + 0x1F) >> 5) - 1;
 	} else {
-		i2c->current_iiccon = IICCON_INIT | IICCON_TXCLKSRC_FPCLK512;
+		i2c->iiccon_settings = IICCON_INIT | IICCON_TXCLKSRC_FPCLK512;
 		prescaler = ((divisorRequired + 0x1FF) >> 9) - 1;
 	}
 
 	if(prescaler == 0)
 		prescaler = 1;
 
-	i2c->current_iiccon |= prescaler;
+	i2c->iiccon_settings |= prescaler;
 
 	gpio_custom_io(i2c->iic_sda_gpio, 0xE); // pull sda low?
 
@@ -82,9 +82,9 @@ static void init_i2c(I2CInfo* i2c, FrequencyBase freqBase) {
 }
 
 static I2CError i2c_readwrite(I2CInfo* i2c) {
-	SET_REG(i2c->register_IICCON, i2c->current_iiccon);
+	SET_REG(i2c->register_IICCON, i2c->iiccon_settings);
 
-	i2c->current_iiccon |= IICCON_ACKGEN;
+	i2c->iiccon_settings |= IICCON_ACKGEN;
 	i2c->state = I2CStart;
 	i2c->operation_result = 0;
 	i2c->error_code = I2CNoError;
@@ -115,9 +115,136 @@ static I2CError i2c_readwrite(I2CInfo* i2c) {
 }
 
 static void do_i2c(I2CInfo* i2c) {
-	while(i2c->operation_result) {
+	int proceed = FALSE;
+	while(i2c->operation_result == 0 || proceed) {
+		proceed = TRUE;
 		switch(i2c->state) {
-
+			case I2CStart:
+				if(i2c->num_regs != 0) {
+					SET_REG(i2c->register_IICCON, i2c->iiccon_settings);
+					SET_REG(i2c->register_IICDS, i2c->address);
+					i2c->operation_result = OPERATION_SEND;
+					i2c->current_iicstat =
+						(IICSTAT_MODE_MASTERTX << IICSTAT_MODE_SHIFT)
+						| (IICSTAT_STARTSTOPGEN_START << IICSTAT_STARTSTOPGEN_SHIFT)
+						| (1 << IICSTAT_DATAOUTPUT_ENABLE_SHIFT);
+					SET_REG(i2c->register_IICSTAT, i2c->current_iicstat);
+					i2c->cursor = 0;
+					i2c->state = I2CSendRegister;
+				} else {
+					i2c->operation_result = 0;
+					i2c->state = I2CSetup;
+					proceed = TRUE;
+				}
+				break;
+			case I2CSendRegister:
+				if((GET_REG(i2c->register_IICSTAT) & IICSTAT_LASTRECEIVEDBIT) == 0) {
+					// ack received
+					if(i2c->cursor != i2c->num_regs) {
+						// need to send more from the register list
+						i2c->operation_result = OPERATION_SEND;
+						SET_REG(i2c->register_IICDS, i2c->registers[i2c->cursor++]);
+						SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_INTPENDING);
+					} else {
+						i2c->state = I2CRegistersDone;
+						proceed = TRUE;	
+					}
+				} else {
+					// ack not received
+					i2c->error_code = -1;
+					i2c->state = I2CFinish;
+					proceed = TRUE;
+				}
+				break;
+			case I2CRegistersDone:
+				if(i2c->is_write) {
+					i2c->state = I2CSetup;
+					proceed = TRUE;
+				} else {
+					i2c->operation_result = OPERATION_CONDITIONCHANGE;
+					i2c->current_iicstat = (i2c->current_iicstat
+						& ~((IICSTAT_MODE_MASK << IICSTAT_MODE_SHIFT) | (IICSTAT_STARTSTOPGEN_MASK << IICSTAT_STARTSTOPGEN_SHIFT)))
+						| (IICSTAT_MODE_MASTERRX << IICSTAT_MODE_SHIFT) | (IICSTAT_STARTSTOPGEN_STOP << IICSTAT_STARTSTOPGEN_SHIFT);
+					i2c->state = I2CSetup;
+					SET_REG(i2c->register_IICSTAT, i2c->current_iicstat);
+					SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_INTPENDING);
+					i2c->state = I2CSetup;
+				}
+				break;
+			case I2CSetup:
+				SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_ACKGEN);
+				SET_REG(i2c->register_IICDS, i2c->address);
+				i2c->operation_result = OPERATION_SEND;
+				if(i2c->is_write) {
+					i2c->current_iicstat =
+						(IICSTAT_MODE_MASTERTX << IICSTAT_MODE_SHIFT)
+						| (IICSTAT_STARTSTOPGEN_START << IICSTAT_STARTSTOPGEN_SHIFT)
+						| (1 << IICSTAT_DATAOUTPUT_ENABLE_SHIFT);
+				} else {
+					i2c->current_iicstat =
+						(IICSTAT_MODE_MASTERRX << IICSTAT_MODE_SHIFT)
+						| (IICSTAT_STARTSTOPGEN_START << IICSTAT_STARTSTOPGEN_SHIFT)
+						| (1 << IICSTAT_DATAOUTPUT_ENABLE_SHIFT);
+				}
+				SET_REG(i2c->register_IICSTAT, i2c->current_iicstat);
+				i2c->cursor = 0;
+				if(i2c->is_write) {
+					i2c->state = I2CTx;
+				} else {
+					i2c->state = I2CRxSetup;
+				}
+				break;
+			case I2CTx:
+				if((GET_REG(i2c->register_IICSTAT) & IICSTAT_LASTRECEIVEDBIT) == 0) {
+					if(i2c->cursor != i2c->bufferLen) {
+						// need to send more from the register list
+						i2c->operation_result = OPERATION_SEND;
+						SET_REG(i2c->register_IICDS, i2c->buffer[i2c->cursor++]);
+						SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_INTPENDING | IICCON_ACKGEN);
+					} else {
+						i2c->state = I2CRegistersDone;
+						proceed = TRUE;	
+					}
+				} else {
+					// ack not received
+					i2c->error_code = -1;
+					i2c->state = I2CFinish;
+					proceed = TRUE;
+				}
+				break;
+			case I2CRx:
+				i2c->buffer[i2c->cursor++] = GET_REG(i2c->register_IICDS);
+				// fall into I2CRxSetup
+			case I2CRxSetup:
+				if(i2c->cursor == 0 || (GET_REG(i2c->register_IICSTAT) & IICSTAT_LASTRECEIVEDBIT) == 0) {
+					if(i2c->cursor != i2c->bufferLen) {
+						if((i2c->bufferLen - i2c->cursor) == 1) {
+							// last byte
+							i2c->iiccon_settings &= IICCON_ACKGEN;
+						}
+						i2c->operation_result = OPERATION_SEND;
+						SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_INTPENDING);
+						i2c->state = I2CRx;
+					} else {
+						i2c->state = I2CFinish;
+					}
+				} else {
+					i2c->error_code = -1;
+					i2c->state = I2CFinish;
+					proceed = TRUE;
+				}
+				break;
+			case I2CFinish:
+				i2c->operation_result = OPERATION_CONDITIONCHANGE;
+				i2c->current_iicstat &= ~((IICSTAT_STARTSTOPGEN_MASK << IICSTAT_STARTSTOPGEN_SHIFT) | (IICSTAT_MODE_MASK << IICSTAT_MODE_SHIFT));
+				i2c->current_iicstat |= IICSTAT_MODE_MASTERRX << IICSTAT_MODE_SHIFT;
+				SET_REG(i2c->register_IICSTAT, i2c->current_iicstat);
+				SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_INTPENDING);
+				i2c->state =I2CDone;
+				break;
+			case I2CDone:
+				// should not occur
+				break;
 		}
 	}
 }
