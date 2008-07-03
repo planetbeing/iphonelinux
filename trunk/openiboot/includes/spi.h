@@ -45,6 +45,9 @@ typedef struct SPIInfo {
 	int rxDone;
 } SPIInfo;
 
+#define GPIO_SPI0_CS0 0x400
+#define GPIO_SPI1_CS0 0x1800
+
 int spi_setup();
 int spi_tx(int port, uint8_t* buffer, int len, int block, int unknown);
 int spi_rx(int port, uint8_t* buffer, int len, int block, int unknown);

@@ -7,6 +7,8 @@
 #include "hardware/power.h"
 #include "util.h"
 #include "spi.h"
+#include "i2c.h"
+#include "timer.h"
 
 static int lcd_has_init = FALSE;
 static int lcd_init_attempted = FALSE;
@@ -37,6 +39,14 @@ static void setLayer(int window, int zero0, int zero1);
 
 static void framebuffer_fill(Framebuffer* framebuffer, int x, int y, int width, int height, int fill);
 static void hline_rgb888(Framebuffer* framebuffer, int start, int line_no, int length, int fill);
+
+static void setCommandMode(OnOff swt);
+static void transmitCommandOnSPI1(int command, int subcommand);
+static void transmitCommandOnSPI1ClearBit7(int command, int subcommand);
+static void transmitShortCommandOnSPI1(int command);
+static void resetLCD();
+static void enterRegisterMode();
+static int getPanelStatus(int status_id);
 
 int lcd_setup() {
 	int backlightLevel = 0;
@@ -160,8 +170,6 @@ static void createFramebuffer(Framebuffer* framebuffer, uint32_t framebufferAddr
 
 static void setWindow(int window, int zero0, int zero1, ColorSpace colorSpace, int width1, uint32_t framebuffer, int zero2, int width2, int zero3, int height) {
 	int nibblesPerPixel;
-
-	
 
 	switch(colorSpace) {
 		case RGB565:
@@ -452,10 +460,110 @@ static void configureClockCON0(int OTFClockDivisor, int clockSource, int option4
 
 static int syrah_init() {
 	bufferPrintf("syrah_ihit() -- OMG-I'm-dreading-this-function code version I-Don't-Even-Know-What-The-Date-Is\r\n");
+
+	return 0;
 	spi_set_baud(1, 1000000, SPIOption13Setting0, 1, 1, 1);
 	spi_set_baud(0, 500000, SPIOption13Setting0, 1, 0, 0);
 
+	setCommandMode(ON);
+
+	gpio_pin_output(LCD_GPIO_MPL_RX_ENABLE, 0);
+	gpio_pin_output(LCD_GPIO_POWER_ENABLE, 0);
+	resetLCD();
+
+	gpio_pin_output(LCD_GPIO_POWER_ENABLE, 1);
+	udelay(10000);
+
+	transmitCommandOnSPI1(0x6D, 0x40);
+
+	enterRegisterMode();
+
+	udelay(1000);
+
+	setCommandMode(OFF);
+
 	return 0;
+}
+
+static void resetLCD() {
+	gpio_pin_output(LCD_GPIO_RESET, 1);
+	udelay(10000);
+	gpio_pin_output(LCD_GPIO_RESET, 0);
+}
+
+static void setCommandMode(OnOff swt) {
+	uint8_t lcdCommand[2];
+
+	lcdCommand[0] = LCD_I2C_COMMAND;
+
+	if(swt) {
+		lcdCommand[1] = LCD_I2C_COMMANDMODE_ON;
+	} else {
+		lcdCommand[1] = LCD_I2C_COMMANDMODE_OFF;
+	}
+
+	i2c_tx(LCD_I2C_BUS, LCD_I2C_ADDR, lcdCommand, sizeof(lcdCommand));
+}
+
+static void enterRegisterMode() {
+	int tries = 0;
+	int status;
+
+	do {
+		transmitShortCommandOnSPI1(0xDE);
+		status = getPanelStatus(0x15);
+		tries += 1;
+
+		if(tries >= 20000) {
+			bufferPrintf("enter register mode timeout\r\n");
+			break;
+		}
+	} while((status & 0x1) != 0);
+
+	bufferPrintf("enter register mode success!\r\n");
+}
+
+static void transmitCommandOnSPI1(int command, int subcommand) {
+	uint8_t lcdCommand[2];
+	lcdCommand[0] = command;
+	lcdCommand[1] = subcommand;
+
+	gpio_pin_output(GPIO_SPI1_CS0, 0);
+	spi_tx(1, lcdCommand, 2, TRUE, 0);
+	gpio_pin_output(GPIO_SPI1_CS0, 1);
+}
+
+static void transmitCommandOnSPI1ClearBit7(int command, int subcommand) {
+	uint8_t lcdCommand[2];
+	lcdCommand[0] = command & 0x7F;
+	lcdCommand[1] = subcommand;
+
+	gpio_pin_output(GPIO_SPI1_CS0, 0);
+	spi_tx(1, lcdCommand, 2, TRUE, 0);
+	gpio_pin_output(GPIO_SPI1_CS0, 1);
+}
+
+
+static void transmitShortCommandOnSPI1(int command) {
+	uint8_t lcdCommand[1];
+	lcdCommand[0] = command;
+
+	gpio_pin_output(GPIO_SPI1_CS0, 0);
+	spi_tx(1, lcdCommand, 1, TRUE, 0);
+	gpio_pin_output(GPIO_SPI1_CS0, 1);
+}
+
+static int getPanelStatus(int status_id) {
+	uint8_t lcdCommand[1];
+	uint8_t buffer[1];
+	lcdCommand[0] = 0x80 | status_id;
+
+	gpio_pin_output(GPIO_SPI1_CS0, 0);
+	spi_tx(1, lcdCommand, 1, TRUE, 0);
+	spi_rx(1, buffer, 1, TRUE, 0);
+	gpio_pin_output(GPIO_SPI1_CS0, 1);
+
+	return buffer[0];
 }
 
 static void syrah_quiesce() {

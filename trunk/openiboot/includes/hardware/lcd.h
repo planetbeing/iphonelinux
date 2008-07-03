@@ -5,6 +5,8 @@
 
 // Device
 #define LCD 0x38900000
+#define LCD_I2C_BUS 0
+#define LCD_I2C_ADDR 0xE6
 
 // Registers
 #define LCD_CON 0x4
@@ -49,7 +51,13 @@
 #define LCD_CLOCKGATE1 0x7
 #define LCD_CLOCKGATE2 0x1D
 
+#define LCD_GPIO_RESET 0x1
+#define LCD_GPIO_POWER_ENABLE 0x2
 #define LCD_GPIO_PIXEL_CLOCK_ENABLE 0x3
+#define LCD_GPIO_MPL_RX_ENABLE 0x1804
+#define LCD_I2C_COMMAND 0x31
+#define LCD_I2C_COMMANDMODE_ON 0x35
+#define LCD_I2C_COMMANDMODE_OFF 0x15
 
 #define NUM_WINDOWS 3
 
