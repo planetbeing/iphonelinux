@@ -40,5 +40,8 @@ openiboot-iboot.img2:
 clean:
 	-rm *.o
 	-rm openiboot
+	-rm openiboot-iboot.img2
 	-rm openiboot.img2
+	-rm openiboot.img3
+	-rm openiboot.bin
 
