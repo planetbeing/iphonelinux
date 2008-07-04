@@ -50,6 +50,18 @@ typedef struct Window {
 	uint32_t lcdCon[2];
 } Window;
 
+typedef struct GammaTable {
+	uint32_t data[18];
+} GammaTable;
+
+typedef struct GammaTableDescriptor {
+	uint32_t panelIDMatch;
+	uint32_t panelIDMask;
+	GammaTable table0;
+	GammaTable table1;
+	GammaTable table2;
+} GammaTableDescriptor;
+
 extern int LCDInitRegisterCount;
 extern const uint16_t* LCDInitRegisters;
 extern uint32_t LCDPanelID;

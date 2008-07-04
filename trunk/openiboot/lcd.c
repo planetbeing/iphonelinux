@@ -73,6 +73,19 @@ static const uint16_t AUOInitRegisters[] = {0xB90A, 0x55};
 
 static const int AUOInitRegisterCount = 2;
 
+static const GammaTableDescriptor gammaTables[] =
+	{{0xD100, 0xFF70,
+		{{0x34328EB6, 0x34003400, 0x34003400, 0xD000D00, 0x3400D00, 0x71DC771D, 0x340D37, 0xD0, 0x1C007000, 0x1C1C070, 0xC771C707, 0xDDC7771D, 0xDC7771DD, 0xDDDDDDDD, 0x7477774, 0x70001C00, 0xE9C, 0}},
+		{{0x343400F6, 0x434D0D0D, 0xD0D0D343, 0x34343434, 0x434D0D0D, 0x34000D03, 0x7000, 0x1C070070, 0xC0700700, 0x71C1C1C1, 0xC7071C1C, 0xDC771C71, 0xC71DC71D, 0xDDDC771D, 0x71D71D, 0xF701C01C, 0, 0}},
+		{{0x74DDD0F6, 0xDD377777, 0x7774DDDD, 0xDDDDDD37, 0x77777774, 0x4034DDD3, 0xD00003, 0x70070000, 0x1C070700, 0x7771C707, 0xDDDC7777, 0xDD377774, 0x434D3434, 0x3434343, 0x1D010D, 0xF701C01C, 0, 0}}
+	},
+	{0xC200, 0xFF70,
+		{{0xDDD37F2, 0x1DDDD34D, 0x4D341C, 0x40D1C4D0, 0x3400D3, 0x1C000000, 0xDDDDDC1C, 0xD34374, 0x3400D, 0, 0x70000000, 0, 0, 0, 0, 0x1C034, 0, 0}},
+		{{0x774DCA98, 0x1C1C, 0x1C1DD34, 0x77774340, 0x70701C1C, 0xDDDC71C0, 0x3434DDD, 0xD, 0x1C000, 0xC07001C0, 0x701C01, 0x1C007, 0xD00035C, 0x40D0D034, 0xD37434D3, 0xD34DD374, 0xD, 0}},
+		{{0x37774A98, 0x74DD374D, 0x34D374D3, 0x34D3434D, 0x74D34D34, 0xDD374DD3, 0xC771DDDD, 0x7071C1D, 0xD374D347, 0x34D34374, 0xD343434, 0x34D3434D, 0xDDDD374D, 0x71C771D, 0x7007, 0x340D00D0, 0, 0}}
+	}};
+
+
 static int initDisplay();
 static int syrah_init();
 static void syrah_quiesce();
@@ -102,6 +115,8 @@ static void enterRegisterMode();
 static int getPanelRegister(int status_id);
 static void togglePixelClock(OnOff swt);
 static void displayPanelInfo(uint8_t* panelID);
+
+static void installGammaTables(uint32_t panelID);
 
 int lcd_setup() {
 	int backlightLevel = 0;
@@ -159,9 +174,23 @@ static int initDisplay() {
 	if(syrah_init() != 0)
 		return -1;
 
-	installGammaTable(LCDPanelID);
+	installGammaTables(LCDPanelID);
 
 	return 0;
+}
+
+static void installGammaTables(uint32_t panelID) {
+	const GammaTableDescriptor* curTable = gammaTables;
+
+	while(curTable < (gammaTables + sizeof(gammaTables))) {
+		if((curTable->panelIDMask & panelID) == curTable->panelIDMatch) {
+			bufferPrintf("Installing gamma table 0x%08lx / 0x%08lx\r\n", curTable->panelIDMatch, panelID);
+			return;
+		}
+		curTable++;
+	}
+
+	bufferPrintf("No matching gamma table found\r\n");
 }
 
 static Window* createWindow(int zero0, int zero1, int width, int height, ColorSpace colorSpace) {
