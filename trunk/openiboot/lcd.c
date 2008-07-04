@@ -117,6 +117,7 @@ static void togglePixelClock(OnOff swt);
 static void displayPanelInfo(uint8_t* panelID);
 
 static void installGammaTables(uint32_t panelID);
+static void installGammaTable(int tableNo, uint8_t* table);
 
 int lcd_setup() {
 	int backlightLevel = 0;
@@ -165,16 +166,35 @@ static int initDisplay() {
 
 	initLCD(info);
 
+	SET_REG(LCD + 0x24, 0);
+
 	currentWindow = createWindow(0, 0, info->width, info->height, RGB888);
 	if(currentWindow == NULL)
 		return -1;
+
 
 	framebuffer_fill(&currentWindow->framebuffer, 0, 0, framebuffer->width, framebuffer->height, 0);
 
 	if(syrah_init() != 0)
 		return -1;
 
+	int i = 0;
+	for(i = 0; i < 5; i++) {
+		bufferPrintf("get: %x\r\n", GET_REG(LCD + 0x204));
+		udelay(500000);
+	}
+
+	bufferPrintf("frame buffer at: %x\r\n", currentWindow->framebuffer.buffer);
+	buffer_dump_memory((uint32_t)currentWindow->framebuffer.buffer, 0x100);
+
+	bufferPrintf("get: %x: %x\r\n", LCD + 0x400, GET_REG(LCD + 0x400));
+	SET_REG(LCD + 0x400, 0);
+	bufferPrintf("set: %x: %x\r\n", LCD + 0x400, GET_REG(LCD + 0x400));
+
+	buffer_dump_memory(LCD + 0x400, 0x0);
 	installGammaTables(LCDPanelID);
+
+//	buffer_dump_memory(LCD + 0x400, 0x400);
 
 	return 0;
 }
@@ -184,13 +204,109 @@ static void installGammaTables(uint32_t panelID) {
 
 	while(curTable < (gammaTables + sizeof(gammaTables))) {
 		if((curTable->panelIDMask & panelID) == curTable->panelIDMatch) {
-			bufferPrintf("Installing gamma table 0x%08lx / 0x%08lx\r\n", curTable->panelIDMatch, panelID);
+			bufferPrintf("Installing gamma table 0x%08lx / 0x%08lx\r\n", curTable->panelIDMatch, curTable->panelIDMask);
+			installGammaTable(0, (uint8_t*) curTable->table0.data);
+			installGammaTable(1, (uint8_t*) curTable->table1.data);
+			installGammaTable(2, (uint8_t*) curTable->table2.data);
 			return;
 		}
 		curTable++;
 	}
 
 	bufferPrintf("No matching gamma table found\r\n");
+}
+
+static int gammaVar1;
+static int gammaVar2;
+static uint8_t gammaVar3;
+
+static uint8_t installGammaTableHelper(uint8_t* table) {
+	if(gammaVar2 == 0) {
+		gammaVar3 = table[gammaVar1++];
+	}
+
+	int toRet = (gammaVar3 >> gammaVar2) & 0x3;
+	gammaVar2 += 2;
+
+	if(gammaVar2 == 8)
+		gammaVar2 = 0;
+
+	return toRet;
+}
+
+
+static void installGammaTable(int tableNo, uint8_t* table) {
+	uint32_t baseReg;
+	switch(tableNo) {
+		case 0:
+			baseReg = LCD + 0x400;
+			break;
+		case 1:
+			baseReg = LCD + 0x800;
+			break;
+		case 2:
+			baseReg = LCD + 0xC00;
+			break;
+
+		default:
+			return;
+	}
+
+	SET_REG(baseReg, 0);
+	SET_REG(baseReg + 0x3FC, 0x3FF);
+
+	gammaVar1 = 0;
+	gammaVar2 = 0;
+	gammaVar3 = 0;
+
+	uint8_t r4 = 0;
+	uint16_t r6 = 0;
+	uint8_t r8 = 0;
+
+	uint32_t curReg = baseReg + 4;
+
+	int i;
+	for(i = 1; i < 0xFF; i++) {
+//	for(i = 1; i < 0x10; i++) {
+		switch(installGammaTableHelper(table)) {
+			case 0:
+				r4 = 0;
+				break;
+			case 1:
+				r4 = 1;
+				break;
+			case 2:
+				{
+					uint8_t a = installGammaTableHelper(table);
+					uint8_t b = installGammaTableHelper(table);				
+					r4 = a | (b << 2);
+					if((r4 & (1 << 3)) != 0) {
+						r4 |= 0xF0;
+					}
+				}
+				break;
+			case 3:
+				r4 = 0xFF;
+				break;
+		}
+
+		if(i == 1) {
+			r4 = r4 + 8;
+		}
+
+		r8 += r4;
+		r6 += r8;
+
+		SET_REG(curReg, (uint32_t)r6);
+		
+//		bufferPrintf("writing: %x: %x, r8 = %x, new value: %x\r\n", curReg, r6, r8, GET_REG(curReg));
+
+		curReg += 4;
+	}
+
+/*	if(tableNo == 0) {
+		buffer_dump_memory(LCD + 0x400, 0x400);
+	}*/
 }
 
 static Window* createWindow(int zero0, int zero1, int width, int height, ColorSpace colorSpace) {
@@ -239,6 +355,8 @@ static Window* createWindow(int zero0, int zero1, int width, int height, ColorSp
 	setLayer(currentWindowNo, zero0, zero1);
 
 	SET_REG(LCD + LCD_CON2, GET_REG(LCD + LCD_CON2) | ((newWindow->lcdConPtr[1] & 0x3F) << 2));
+
+	bufferPrintf("LCD_CON2 right now: %d %x %x\r\n", numWindows, ((newWindow->lcdConPtr[1] & 0x3F) << 2), GET_REG(LCD + LCD_CON2));
 
 	newWindow->created = TRUE;
 
@@ -387,16 +505,15 @@ static void initLCD(LCDInfo* info) {
 
 	SET_REG(LCD + 0xD4, GET_REG(LCD + 0xD4) & ~(0x7 << 8));
 	SET_REG(LCD + 0xD4, GET_REG(LCD + 0xD4) & ~(0x7));
-	SET_REG(LCD + LCD_CON2, (GET_REG(LCD + 0x8) & ~((1 << 0) | (1 << 29))) | ((1 << 0) | (1 << 29)));
+	SET_REG(LCD + LCD_CON2, (GET_REG(LCD + LCD_CON2) & ~((1 << 0) | (1 << 29))) | ((1 << 0) | (1 << 29)));
 
 	configLCD(2, 2, 2);
 
 	SET_REG(LCD + 0xC, 0);
 
-	SET_REG(LCD + 0xD4, (GET_REG(LCD + 0xD4) & ~(1 << 15)) | (1 << 15));
-	SET_REG(LCD + 0xD4, (GET_REG(LCD + 0xD4) & ~(1 << 15)) | (1 << 15));
-	SET_REG(LCD + 0xD4, GET_REG(LCD + 0xD4) & ~(0x3F << 2));	// field of 6 bits starting at bit 2
-	SET_REG(LCD + 0xD4, GET_REG(LCD + 0xD4) & ~(1 << 1));
+	SET_REG(LCD + LCD_CON2, (GET_REG(LCD + LCD_CON2) & ~(1 << 15)) | (1 << 15));
+	SET_REG(LCD + LCD_CON2, GET_REG(LCD + LCD_CON2) & ~(0x3F << 2));	// field of 6 bits starting at bit 2
+	SET_REG(LCD + LCD_CON2, GET_REG(LCD + LCD_CON2) & ~(1 << 1));
 
 	configureLCDClock(info);
 
@@ -483,7 +600,9 @@ static void configLCD(int option20, int option24, int option16) {
 			return;
 	}
 
-	SET_REG(LCD + LCD_CON2, GET_REG(LCD + LCD_CON2) | ((option16 & 0x3) << 16) | ((option20 & 0x3) << 20) | ((option24 & 0x3) << 24));
+	bufferPrintf("LCD_CON2 before configLCD: %x\r\n", GET_REG(LCD + LCD_CON2));
+	SET_REG(LCD + LCD_CON2, (GET_REG(LCD + LCD_CON2) & ~((0x3 << 16) | (0x3 << 20) | (0x3 << 24))) | ((option16 & 0x3) << 16) | ((option20 & 0x3) << 20) | ((option24 & 0x3) << 24));
+	bufferPrintf("LCD_CON2 after configLCD: %x\r\n", GET_REG(LCD + LCD_CON2));
 
 }
 
@@ -527,7 +646,7 @@ static void configureLCDClock(LCDInfo* info) {
 
 	configureClockCON0(info->OTFClockDivisor, clockSource, 0);
 
-	SET_REG(LCD + VIDTCON2, ((info->width & VIDTCON2_HOZVALMASK) << VIDTCON2_HOZVALSHIFT) | ((info->width & VIDTCON2_LINEVALMASK) << VIDTCON2_LINEVALSHIFT));
+	SET_REG(LCD + VIDTCON2, (((info->width - 1) & VIDTCON2_HOZVALMASK) << VIDTCON2_HOZVALSHIFT) | (((info->height - 1) & VIDTCON2_LINEVALMASK) << VIDTCON2_LINEVALSHIFT));
 
 	bufferPrintf("fps set to: %d.%03d\r\n", framesPer1000Second / 1000, framesPer1000Second % 1000);
 }
@@ -540,7 +659,7 @@ static void configureClockCON0(int OTFClockDivisor, int clockSource, int option4
 			| (VIDCON0_OPTION4MASK << VIDCON0_OPTION4SHIFT)
 			| (VIDCON0_OTFCLOCKDIVISORMASK <<  VIDCON0_OTFCLOCKDIVISORSHIFT)))
 		| ((clockSource & VIDCON0_CLOCKMASK) << VIDCON0_CLOCKSHIFT)
-		| ((clockSource & VIDCON0_OPTION4MASK) << VIDCON0_OPTION4SHIFT)
+		| ((option4 & VIDCON0_OPTION4MASK) << VIDCON0_OPTION4SHIFT)
 		| (((OTFClockDivisor - 1) & VIDCON0_OTFCLOCKDIVISORMASK) << VIDCON0_OTFCLOCKDIVISORSHIFT));
 }
 
@@ -705,7 +824,7 @@ static int syrah_init() {
 	switch(panelID[2] & 0x7) {
 		case 0:
 			bufferPrintf("Do init for Merlot\r\n");
-			setPanelRegister(0x2E, getPanelRegister(0x2E) & 0x74);
+			setPanelRegister(0x2E, getPanelRegister(0x2E) & 0x7F);
 			break;
 		case 2:
 			bufferPrintf("turning on parity error flag");

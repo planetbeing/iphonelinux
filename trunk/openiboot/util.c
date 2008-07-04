@@ -83,6 +83,31 @@ void dump_memory(uint32_t start, int length) {
 	printf("\r\n");
 }
 
+void buffer_dump_memory(uint32_t start, int length) {
+	uint32_t curPos = start;
+	int x = 0;
+	while(curPos < (start + length)) {
+		if(x == 0) {
+			bufferPrintf("0x%08x:", (unsigned int) curPos);
+		}
+		bufferPrintf(" %08x", (unsigned int) GET_REG(curPos));
+		if(x == 1) {
+			bufferPrintf(" ");
+		}
+		if(x == 3) {
+			bufferPrintf("\r\n");
+			x = 0;
+		} else {
+			x++;
+		}
+
+		curPos += 4;
+	}
+
+	bufferPrintf("\r\n");
+}
+
+
 static char* MyBuffer= NULL;
 static char* pMyBuffer = NULL;
 static size_t MyBufferLen = 0;
