@@ -50,6 +50,10 @@ typedef struct Window {
 	uint32_t lcdCon[2];
 } Window;
 
+extern int LCDInitRegisterCount;
+extern const uint16_t* LCDInitRegisters;
+extern uint32_t LCDPanelID;
+
 int lcd_setup();
 
 #endif

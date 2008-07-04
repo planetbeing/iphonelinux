@@ -21,6 +21,58 @@ static Window* currentWindow;
 static int numWindows = 0;
 static uint32_t nextFramebuffer = 0;
 
+int LCDInitRegisterCount;
+const uint16_t* LCDInitRegisters;
+
+uint32_t LCDPanelID;
+
+static const uint16_t TMDInitRegisters[] =
+	{0x6B2E, 0x1943, 0x1844, 0x901D, 0xC030, 0x11E, 0x1831, 0x1832, 0x633, 0x634, 0x1137, 0x23B, 0x213C, 0x3E1F, 0x3E20, 0xE21, 0x422,
+	0x623D, 0x43E, 0xD140, 0xE441, 0x942, 0x4848, 0x4A49, 0x684A, 0x204B, 0x514C, 0x264D, 0x434E, 0x484F, 0x4A50, 0x6851, 0x2057, 0x5158,
+	0x2666,0x4367, 0x869, 0x416A, 0x6D6B, 0x206C, 0x724, 0x3A25, 0x4327, 0xE452, 0x39, 0x55};
+
+static const int TMDInitRegisterCount = 46;
+
+static const uint16_t SEInitRegisters[] = 
+	{0x139, 0x113,0x841D,  0x3F,  0x30, 0x11E, 0x162,0x1431,
+	0x1432, 0x433, 0xC34,0x5635, 0xC37, 0x63B,0x413C, 0x628,
+	0xB29,0x351F,0x3520,0x1921,0x2922,0x3723,0x1C3D, 0xF3E,
+	0x36,  0x38,     7, 0x108,0xDD40,0xEA41, 0x942,0x242E,
+	0x1443,0x1044, 0xA47,0xA348,0x1849,0xDD4A, 0xF4B,0xC54C,
+	0x744D,0x1E4E, 0x74F,0x1D50,0xDD51,0x1F57,0xE858,0x7466,
+	0x1E67,0xC469,0x186A,0xDE6B,0x136C,0xC624,0x7825,0x1E27,
+	0xE452, 0x42A,0x5078,  0x79,0x8F7A, 0x17B,0x287C,  0x7D,
+	0x177E, 0x17F,  0x55};
+
+static const int SEInitRegisterCount = 67;
+
+static const uint16_t SharpInitRegisters[] =
+	{0x113,0xD41D,  0x3F,0xA030,0x1954, 0x11E, 0x162, 0xA34,
+	0x4E35,0x1531,0x1432, 0x533,0x4237, 0x73B,0x383C,0x331F,
+	0x3320, 0xF21,0x1722,0x1F23,0x843D, 0x63E,     7, 0x108,
+	0xD140,0xF441, 0x942, 0xA2E,0x1743,0x1944, 0x847,0xE248,
+	0xC49,0xFC4A, 0xA4B,0x674C,0x704D,0x374E,0x274F,0x1550,
+	0xFB51,0x1E57,0xA958,0x6C66,0x3767,0xE269, 0xC6A,0xFD6B,
+	0xA6C,0x6724,0x7425,0x3727,0xE852, 0x42A,0x5078,  0x79,
+	0x8F7A, 0x17B,0x287C,  0x7D,0x177E, 0x17F,0xFF19,0xFF1A,
+	0x55};
+
+static const int SharpInitRegisterCount = 65;
+
+static const uint16_t SamsungInitRegisters[] =
+	{0x452E,0x102D, 0xF2B,0x9646,0x1547,0x1143,0x1044,0x141D,
+	0x4030, 0x139, 0x71E, 0x162,0x1431,0x1432, 0x733, 0xE34,
+	0x5635, 0x237,0x443B,0x213C,0x9A18,0xAF48,0x4549,0x494A,
+	0x244B,0x2C4C,0x2A4D,0x504E,0x6452, 0x22A,  0x28,  0x29,
+	0x7B1F,0x7B20,0x1421,0x2C22,0x7F23,0x143D,0x903E, 0xC36,
+	0x1938,0x7A40,0x5041,0x1942,  0x55};
+
+static const int SamsungInitRegisterCount = 45;
+
+static const uint16_t AUOInitRegisters[] = {0xB90A, 0x55};
+
+static const int AUOInitRegisterCount = 2;
+
 static int initDisplay();
 static int syrah_init();
 static void syrah_quiesce();
@@ -43,11 +95,11 @@ static void hline_rgb888(Framebuffer* framebuffer, int start, int line_no, int l
 static void setCommandMode(OnOff swt);
 static void transmitCommandOnSPI0(int command, int subcommand);
 static void transmitCommandOnSPI1(int command, int subcommand);
-static void transmitCommandOnSPI1ClearBit7(int command, int subcommand);
+static void setPanelRegister(int command, int subcommand);
 static void transmitShortCommandOnSPI1(int command);
 static void resetLCD();
 static void enterRegisterMode();
-static int getPanelStatus(int status_id);
+static int getPanelRegister(int status_id);
 static void togglePixelClock(OnOff swt);
 static void displayPanelInfo(uint8_t* panelID);
 
@@ -479,10 +531,10 @@ static int syrah_init() {
 	enterRegisterMode();
 	udelay(1000);
 
-	transmitCommandOnSPI1ClearBit7(0x56, 0x8F);
+	setPanelRegister(0x56, 0x8F);
 	udelay(40000);
 
-	transmitCommandOnSPI1ClearBit7(0x5F, 1);
+	setPanelRegister(0x5F, 1);
 
 	transmitShortCommandOnSPI1(0xDF);
 	udelay(10000);
@@ -510,8 +562,8 @@ static int syrah_init() {
 	togglePixelClock(ON);
 	udelay(40000);
 
-	transmitCommandOnSPI1ClearBit7(0x6D, 0x0);
-	transmitCommandOnSPI1ClearBit7(0x36, 0x8);
+	setPanelRegister(0x6D, 0x0);
+	setPanelRegister(0x36, 0x8);
 	udelay(30000);
 
 	uint8_t lcdCommand[2];
@@ -547,12 +599,98 @@ static int syrah_init() {
 		enterRegisterMode();
 		udelay(1000);
 
-		transmitCommandOnSPI1ClearBit7(0x55, 0x2);
-		transmitCommandOnSPI1ClearBit7(0x2E, 0xA0);
+		setPanelRegister(0x55, 0x2);
+		setPanelRegister(0x2E, 0xA0);
 		udelay(1000);
+
+		if(panelID[1] == 0 || panelID[1] == 0x80) {
+			panelID[0] = getPanelRegister(0x5A);
+			panelID[1] = getPanelRegister(0x5B);
+			panelID[2] = getPanelRegister(0x5C);
+			bufferPrintf("Trying to reading panel ID again...\r\n");
+			displayPanelInfo(panelID);
+			if(panelID[1] == 0 || panelID[1] == 0x80) {
+				// Try to set panelID manually from environment variables. Basically we're screwed at this point.
+			}
+		}
+
+		switch(panelID[1]) {
+			case 0xC2:
+				LCDInitRegisterCount = TMDInitRegisterCount;
+				LCDInitRegisters = TMDInitRegisters;
+
+				int originalVcs = getPanelRegister(0x47);
+				bufferPrintf("Original value of Vcs (0x47): 0x%02x\r\n", originalVcs);
+				if((panelID[2] & 0x70) == 0 && panelID[0] == 0x71 && originalVcs == 8) {
+					bufferPrintf("Overwriting TMD register 0x47 to 0x0B from 0x08\r\n");
+					uint16_t* myRegs = malloc((TMDInitRegisterCount  + 1) * sizeof(uint16_t));
+					memcpy(myRegs, TMDInitRegisters, TMDInitRegisterCount * sizeof(uint16_t));
+					myRegs[TMDInitRegisterCount] = 0x0B47;
+					LCDInitRegisters = myRegs;
+					LCDInitRegisterCount++;
+				}
+				break;
+			case 0xB3:
+				LCDInitRegisterCount = SEInitRegisterCount;
+				LCDInitRegisters = SEInitRegisters;
+				break;
+			case 0xD1:
+				LCDInitRegisterCount = SharpInitRegisterCount;
+				LCDInitRegisters = SharpInitRegisters;
+				break;
+			case 0xE5:
+				LCDInitRegisterCount = SamsungInitRegisterCount;
+				LCDInitRegisters = SamsungInitRegisters;
+				break;
+			default:
+				bufferPrintf("Unknown panel, we are screwed.\r\n");
+				break;
+		}
+	} else {
+		if((panelID[2] & 0x7) == 1) {
+			enterRegisterMode();
+			setPanelRegister(0x7E, 0x0);
+			setPanelRegister(0x5F, 0x1);
+			transmitShortCommandOnSPI1(0xDF);
+		}
+		transmitShortCommandOnSPI1(0x29);
+		udelay(18000);
+		enterRegisterMode();
+		if(panelID[1] == 0xD1 && (panelID[2] & 0x7) == 2 && panelID[0] == 0xA1) {
+			LCDInitRegisterCount = AUOInitRegisterCount;
+			LCDInitRegisters = AUOInitRegisters;
+		}
+	}
+
+	LCDPanelID = (panelID[0] << 16) | (panelID[1] << 8) | panelID[2];
+
+	int i;
+	for(i = 0; i < LCDInitRegisterCount; i++) {
+		uint8_t* regInfo = (uint8_t*) &LCDInitRegisters[i];
+		setPanelRegister(regInfo[0], regInfo[1]);
+	}
+
+	switch(panelID[2] & 0x7) {
+		case 0:
+			setPanelRegister(0x2E, getPanelRegister(0x2E) & 0x74);
+			break;
+		case 2:
+			bufferPrintf("turning on parity error flag");
+			setPanelRegister(0x53, 0x5);
+			setPanelRegister(0xB, 0x10);
+			break;
+		case 3:
+			bufferPrintf("changing to continuous calibration mode");
+			setPanelRegister(0x50, 0x3);
+			// drop down to init for Novatek-5.x
+		case 1:
+			setPanelRegister(0x55, 0xB);
+			break;
 	}
 
 	setCommandMode(OFF);
+
+	udelay(40000);
 
 	return 0;
 }
@@ -665,7 +803,7 @@ static void enterRegisterMode() {
 
 	do {
 		transmitShortCommandOnSPI1(0xDE);
-		status = getPanelStatus(0x15);
+		status = getPanelRegister(0x15);
 		tries += 1;
 
 		if(tries >= 20000) {
@@ -700,10 +838,10 @@ static void transmitCommandOnSPI1(int command, int subcommand) {
 	gpio_pin_output(GPIO_SPI1_CS0, 1);
 }
 
-static void transmitCommandOnSPI1ClearBit7(int command, int subcommand) {
+static void setPanelRegister(int reg, int value) {
 	uint8_t lcdCommand[2];
-	lcdCommand[0] = command & 0x7F;
-	lcdCommand[1] = subcommand;
+	lcdCommand[0] = reg & 0x7F;
+	lcdCommand[1] = value;
 
 	gpio_pin_output(GPIO_SPI1_CS0, 0);
 	spi_tx(1, lcdCommand, 2, TRUE, 0);
@@ -720,10 +858,10 @@ static void transmitShortCommandOnSPI1(int command) {
 	gpio_pin_output(GPIO_SPI1_CS0, 1);
 }
 
-static int getPanelStatus(int status_id) {
+static int getPanelRegister(int reg) {
 	uint8_t lcdCommand[1];
 	uint8_t buffer[1];
-	lcdCommand[0] = 0x80 | status_id;
+	lcdCommand[0] = 0x80 | reg;
 
 	gpio_pin_output(GPIO_SPI1_CS0, 0);
 	spi_tx(1, lcdCommand, 1, TRUE, 0);
