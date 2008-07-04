@@ -27,12 +27,12 @@ typedef struct LCDInfo {
 	uint32_t OTFClockDivisor;
 } LCDInfo;
 
-struct Framebuffer* framebuffer;
+struct Framebuffer;
 
 typedef void (*HLineFunc)(struct Framebuffer* framebuffer, int start, int line_no, int length, int fill);
 
 typedef struct Framebuffer {
-	uint32_t* buffer;
+	volatile uint32_t* buffer;
 	uint32_t width;
 	uint32_t height;
 	uint32_t lineWidth;
@@ -67,6 +67,7 @@ extern const uint16_t* LCDInitRegisters;
 extern uint32_t LCDPanelID;
 
 int lcd_setup();
+void lcd_fill(uint32_t color);
 
 #endif
 

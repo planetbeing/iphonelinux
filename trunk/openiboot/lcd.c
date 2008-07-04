@@ -146,6 +146,10 @@ int lcd_setup() {
 	return 0;
 }
 
+void lcd_fill(uint32_t color) {
+	framebuffer_fill(&currentWindow->framebuffer, 0, 0, currentWindow->framebuffer.width, currentWindow->framebuffer.height, color);
+}
+
 static int initDisplay() {
 	LCDInfo* info = &curTimings;
 
@@ -159,7 +163,6 @@ static int initDisplay() {
 		syrah_quiesce();
 	}
 
-	
 	SET_REG(LCD + VIDCON0, GET_REG(LCD + VIDCON0) & ~VIDCON0_ENVID_F);
 	gpio_pin_output(LCD_GPIO_PIXEL_CLOCK_ENABLE, 0);
 	SET_REG(LCD + LCD_CON, 1);
@@ -173,28 +176,16 @@ static int initDisplay() {
 		return -1;
 
 
-	framebuffer_fill(&currentWindow->framebuffer, 0, 0, framebuffer->width, framebuffer->height, 0);
+	framebuffer_fill(&currentWindow->framebuffer, 0, 0, currentWindow->framebuffer.width, currentWindow->framebuffer.height, 0);
 
 	if(syrah_init() != 0)
 		return -1;
 
-	int i = 0;
-	for(i = 0; i < 5; i++) {
-		bufferPrintf("get: %x\r\n", GET_REG(LCD + 0x204));
-		udelay(500000);
-	}
-
-	bufferPrintf("frame buffer at: %x\r\n", currentWindow->framebuffer.buffer);
-	buffer_dump_memory((uint32_t)currentWindow->framebuffer.buffer, 0x100);
-
-	bufferPrintf("get: %x: %x\r\n", LCD + 0x400, GET_REG(LCD + 0x400));
-	SET_REG(LCD + 0x400, 0);
-	bufferPrintf("set: %x: %x\r\n", LCD + 0x400, GET_REG(LCD + 0x400));
-
-	buffer_dump_memory(LCD + 0x400, 0x0);
 	installGammaTables(LCDPanelID);
 
 //	buffer_dump_memory(LCD + 0x400, 0x400);
+/*	buffer_dump_memory(LCD + 0x800, 0x400);
+	buffer_dump_memory(LCD + 0xC00, 0x400);*/
 
 	return 0;
 }
@@ -212,8 +203,8 @@ static void installGammaTables(uint32_t panelID) {
 		}
 		curTable++;
 	}
-
 	bufferPrintf("No matching gamma table found\r\n");
+
 }
 
 static int gammaVar1;
@@ -252,8 +243,12 @@ static void installGammaTable(int tableNo, uint8_t* table) {
 			return;
 	}
 
+	bufferPrintf("old values: %x %x %x\r\n", baseReg, GET_REG(baseReg), GET_REG(baseReg + 0x3FC));
+
 	SET_REG(baseReg, 0);
 	SET_REG(baseReg + 0x3FC, 0x3FF);
+
+	bufferPrintf("new values: %x %x %x\r\n", baseReg, GET_REG(baseReg), GET_REG(baseReg + 0x3FC));
 
 	gammaVar1 = 0;
 	gammaVar2 = 0;
@@ -267,7 +262,6 @@ static void installGammaTable(int tableNo, uint8_t* table) {
 
 	int i;
 	for(i = 1; i < 0xFF; i++) {
-//	for(i = 1; i < 0x10; i++) {
 		switch(installGammaTableHelper(table)) {
 			case 0:
 				r4 = 0;
@@ -298,15 +292,9 @@ static void installGammaTable(int tableNo, uint8_t* table) {
 		r6 += r8;
 
 		SET_REG(curReg, (uint32_t)r6);
-		
-//		bufferPrintf("writing: %x: %x, r8 = %x, new value: %x\r\n", curReg, r6, r8, GET_REG(curReg));
 
 		curReg += 4;
 	}
-
-/*	if(tableNo == 0) {
-		buffer_dump_memory(LCD + 0x400, 0x400);
-	}*/
 }
 
 static Window* createWindow(int zero0, int zero1, int width, int height, ColorSpace colorSpace) {
@@ -355,8 +343,6 @@ static Window* createWindow(int zero0, int zero1, int width, int height, ColorSp
 	setLayer(currentWindowNo, zero0, zero1);
 
 	SET_REG(LCD + LCD_CON2, GET_REG(LCD + LCD_CON2) | ((newWindow->lcdConPtr[1] & 0x3F) << 2));
-
-	bufferPrintf("LCD_CON2 right now: %d %x %x\r\n", numWindows, ((newWindow->lcdConPtr[1] & 0x3F) << 2), GET_REG(LCD + LCD_CON2));
 
 	newWindow->created = TRUE;
 
@@ -600,9 +586,7 @@ static void configLCD(int option20, int option24, int option16) {
 			return;
 	}
 
-	bufferPrintf("LCD_CON2 before configLCD: %x\r\n", GET_REG(LCD + LCD_CON2));
 	SET_REG(LCD + LCD_CON2, (GET_REG(LCD + LCD_CON2) & ~((0x3 << 16) | (0x3 << 20) | (0x3 << 24))) | ((option16 & 0x3) << 16) | ((option20 & 0x3) << 20) | ((option24 & 0x3) << 24));
-	bufferPrintf("LCD_CON2 after configLCD: %x\r\n", GET_REG(LCD + LCD_CON2));
 
 }
 
@@ -668,6 +652,8 @@ static int syrah_init() {
 
 	spi_set_baud(1, 1000000, SPIOption13Setting0, 1, 1, 1);
 	spi_set_baud(0, 500000, SPIOption13Setting0, 1, 0, 0);
+
+	setCommandMode(OFF);
 
 	gpio_pin_output(LCD_GPIO_MPL_RX_ENABLE, 0);
 	gpio_pin_output(LCD_GPIO_POWER_ENABLE, 0);
@@ -976,7 +962,7 @@ static void transmitCommandOnSPI0(int command, int subcommand) {
 
 	gpio_custom_io(LCD_GPIO_CONTROL_ENABLE, 0x2 | 1);
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
-	spi_tx(1, lcdCommand, 2, TRUE, 0);
+	spi_tx(0, lcdCommand, 2, TRUE, 0);
 	gpio_pin_output(GPIO_SPI0_CS0, 1);
 	gpio_custom_io(LCD_GPIO_CONTROL_ENABLE, 0x2 | 0);
 
@@ -1055,7 +1041,7 @@ static void framebuffer_fill(Framebuffer* framebuffer, int x, int y, int width, 
 
 static void hline_rgb888(Framebuffer* framebuffer, int start, int line_no, int length, int fill) {
 	int i;
-	uint32_t* line;
+	volatile uint32_t* line;
 
 	fill = fill & 0xffffff;	// no alpha
 	line = &framebuffer->buffer[line_no * framebuffer->lineWidth];

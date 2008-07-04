@@ -60,8 +60,13 @@ void OpenIBootStart() {
 
 	lcd_setup();
 
-	for(i = 0x0f400000; i < (0x0f400000 + 0x00c00000); i += sizeof(int)) {
-		SET_REG(i, 0x0000FF00);
+	while(1) {
+		lcd_fill(0xFF0000);
+		udelay(1000000);
+		lcd_fill(0x00FF00);
+		udelay(1000000);
+		lcd_fill(0x0000FF);
+		udelay(1000000);
 	}
 
 	uint8_t test[0x40];
