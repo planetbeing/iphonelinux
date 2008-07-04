@@ -159,6 +159,8 @@ static int initDisplay() {
 	if(syrah_init() != 0)
 		return -1;
 
+	installGammaTable(LCDPanelID);
+
 	return 0;
 }
 
@@ -664,6 +666,7 @@ static int syrah_init() {
 
 	LCDPanelID = (panelID[0] << 16) | (panelID[1] << 8) | panelID[2];
 
+	bufferPrintf("Writing LCD init registers...\r\n");
 	int i;
 	for(i = 0; i < LCDInitRegisterCount; i++) {
 		uint8_t* regInfo = (uint8_t*) &LCDInitRegisters[i];
@@ -672,6 +675,7 @@ static int syrah_init() {
 
 	switch(panelID[2] & 0x7) {
 		case 0:
+			bufferPrintf("Do init for Merlot\r\n");
 			setPanelRegister(0x2E, getPanelRegister(0x2E) & 0x74);
 			break;
 		case 2:
@@ -691,6 +695,8 @@ static int syrah_init() {
 	setCommandMode(OFF);
 
 	udelay(40000);
+
+	bufferPrintf("syrah_init success!\r\n");
 
 	return 0;
 }
