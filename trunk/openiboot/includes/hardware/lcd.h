@@ -9,6 +9,7 @@
 #define LCD_I2C_ADDR 0xE6
 
 // Registers
+#define LCD_0 0x0
 #define LCD_CON 0x4
 #define LCD_CON2 0x8
 #define WND_CON 0x20
@@ -54,6 +55,7 @@
 #define LCD_GPIO_RESET 0x1
 #define LCD_GPIO_POWER_ENABLE 0x2
 #define LCD_GPIO_PIXEL_CLOCK_ENABLE 0x3
+#define LCD_GPIO_CONTROL_ENABLE 0x304
 #define LCD_GPIO_MPL_RX_ENABLE 0x1804
 #define LCD_I2C_COMMAND 0x31
 #define LCD_I2C_COMMANDMODE_ON 0x35

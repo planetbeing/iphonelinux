@@ -103,7 +103,7 @@ int spi_rx(int port, uint8_t* buffer, int len, int block, int unknown) {
 		while(!spi_info[port].rxDone) {
 			// yield
 		}
-		if(unknown) {
+		if(unknown == 0) {
 			SET_REG(SPIRegs[port].setup, GET_REG(SPIRegs[port].setup) & ~1);
 		}
 		return len;

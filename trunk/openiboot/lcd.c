@@ -41,6 +41,7 @@ static void framebuffer_fill(Framebuffer* framebuffer, int x, int y, int width, 
 static void hline_rgb888(Framebuffer* framebuffer, int start, int line_no, int length, int fill);
 
 static void setCommandMode(OnOff swt);
+static void transmitCommandOnSPI0(int command, int subcommand);
 static void transmitCommandOnSPI1(int command, int subcommand);
 static void transmitCommandOnSPI1ClearBit7(int command, int subcommand);
 static void transmitShortCommandOnSPI1(int command);
@@ -487,7 +488,31 @@ static int syrah_init() {
 	transmitShortCommandOnSPI1(0x11);
 	udelay(70000);
 
+	gpio_pin_output(LCD_GPIO_MPL_RX_ENABLE, 1);
+
+	transmitCommandOnSPI0(0x16, 0xFF);
+	transmitCommandOnSPI0(0x0, 0x10);
+	transmitCommandOnSPI0(0xA, 0x2);
+
+	// mpl dither is always off
+	transmitCommandOnSPI0(0x8, 0x1);
+
+	transmitCommandOnSPI0(0x2, 0x0);
+	transmitCommandOnSPI0(0x3, 0x0);
+	transmitCommandOnSPI0(0x4, 0x0);
+	transmitCommandOnSPI0(0x5, 0x0);
+	transmitCommandOnSPI0(0x6, 0x0);
+	transmitCommandOnSPI0(0x7, 0x0);
+	transmitCommandOnSPI0(0x0, 0x16);
+
+	// some voodoo function. 1 is always passed to it
+	SET_REG(LCD + LCD_0, 1);
+	SET_REG(LCD + LCD_0, GET_REG(LCD + VIDCON0) | 1);
+	gpio_custom_io(LCD_GPIO_PIXEL_CLOCK_ENABLE, 0x2);
+
 	setCommandMode(OFF);
+
+	bufferPrintf("all done!\r\n");
 
 	return 0;
 }
@@ -528,6 +553,19 @@ static void enterRegisterMode() {
 	} while((status & 0x1) != 0);
 
 	bufferPrintf("enter register mode success!\r\n");
+}
+
+static void transmitCommandOnSPI0(int command, int subcommand) {
+	uint8_t lcdCommand[2];
+	lcdCommand[0] = command;
+	lcdCommand[1] = subcommand;
+
+	gpio_custom_io(LCD_GPIO_CONTROL_ENABLE, 0x2 | 1);
+	gpio_pin_output(GPIO_SPI0_CS0, 0);
+	spi_tx(1, lcdCommand, 2, TRUE, 0);
+	gpio_pin_output(GPIO_SPI0_CS0, 1);
+	gpio_custom_io(LCD_GPIO_CONTROL_ENABLE, 0x2 | 0);
+
 }
 
 static void transmitCommandOnSPI1(int command, int subcommand) {
