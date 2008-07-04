@@ -16,8 +16,8 @@ typedef struct SPIRegister {
 } SPIRegister;
 
 typedef enum SPIClockSource {
-	NCLK = 0,
-	PCLK = 1
+	PCLK = 0,
+	NCLK = 1
 } SPIClockSource;
 
 typedef enum SPIOption13 {
@@ -34,15 +34,15 @@ typedef struct SPIInfo {
 	int baud;
 	int option3;
 	int option5;
-	uint8_t* txBuffer;
-	int txCurrentLen;
-	int txTotalLen;
-	uint8_t* rxBuffer;
-	int rxCurrentLen;
-	int rxTotalLen;
-	int counter;
-	int txDone;
-	int rxDone;
+	volatile uint8_t* txBuffer;
+	volatile int txCurrentLen;
+	volatile int txTotalLen;
+	volatile uint8_t* rxBuffer;
+	volatile int rxCurrentLen;
+	volatile int rxTotalLen;
+	volatile int counter;
+	volatile int txDone;
+	volatile int rxDone;
 } SPIInfo;
 
 #define GPIO_SPI0_CS0 0x400

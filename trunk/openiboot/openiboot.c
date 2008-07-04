@@ -58,6 +58,8 @@ void OpenIBootStart() {
 
 	LeaveCriticalSection();
 
+	lcd_setup();
+
 	for(i = 0x0f400000; i < (0x0f400000 + 0x00c00000); i += sizeof(int)) {
 		SET_REG(i, 0x0000FF00);
 	}
@@ -207,8 +209,6 @@ static int setup_devices() {
 
 	spi_setup();
 	nor_setup();
-
-	lcd_setup();
 
 	return 0;
 }

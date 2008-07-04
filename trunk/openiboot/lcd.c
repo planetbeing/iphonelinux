@@ -459,13 +459,10 @@ static void configureClockCON0(int OTFClockDivisor, int clockSource, int option4
 }
 
 static int syrah_init() {
-	bufferPrintf("syrah_ihit() -- OMG-I'm-dreading-this-function code version I-Don't-Even-Know-What-The-Date-Is\r\n");
+	bufferPrintf("syrah_init() -- OMG-I'm-dreading-this-function code version I-Don't-Even-Know-What-The-Date-Is\r\n");
 
-	return 0;
 	spi_set_baud(1, 1000000, SPIOption13Setting0, 1, 1, 1);
 	spi_set_baud(0, 500000, SPIOption13Setting0, 1, 0, 0);
-
-	setCommandMode(ON);
 
 	gpio_pin_output(LCD_GPIO_MPL_RX_ENABLE, 0);
 	gpio_pin_output(LCD_GPIO_POWER_ENABLE, 0);
@@ -477,8 +474,18 @@ static int syrah_init() {
 	transmitCommandOnSPI1(0x6D, 0x40);
 
 	enterRegisterMode();
-
 	udelay(1000);
+
+	transmitCommandOnSPI1ClearBit7(0x56, 0x8F);
+	udelay(40000);
+
+	transmitCommandOnSPI1ClearBit7(0x5F, 1);
+
+	transmitShortCommandOnSPI1(0xDF);
+	udelay(10000);
+
+	transmitShortCommandOnSPI1(0x11);
+	udelay(70000);
 
 	setCommandMode(OFF);
 

@@ -117,7 +117,7 @@ static I2CError i2c_readwrite(I2CInfo* i2c) {
 static void do_i2c(I2CInfo* i2c) {
 	int proceed = FALSE;
 	while(i2c->operation_result == 0 || proceed) {
-		proceed = TRUE;
+		proceed = FALSE;
 		switch(i2c->state) {
 			case I2CStart:
 				if(i2c->num_regs != 0) {
@@ -202,7 +202,7 @@ static void do_i2c(I2CInfo* i2c) {
 						SET_REG(i2c->register_IICDS, i2c->buffer[i2c->cursor++]);
 						SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_INTPENDING | IICCON_ACKGEN);
 					} else {
-						i2c->state = I2CRegistersDone;
+						i2c->state = I2CFinish;
 						proceed = TRUE;	
 					}
 				} else {
