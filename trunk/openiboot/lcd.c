@@ -48,6 +48,8 @@ static void transmitShortCommandOnSPI1(int command);
 static void resetLCD();
 static void enterRegisterMode();
 static int getPanelStatus(int status_id);
+static void togglePixelClock(OnOff swt);
+static void displayPanelInfo(uint8_t* panelID);
 
 int lcd_setup() {
 	int backlightLevel = 0;
@@ -505,16 +507,136 @@ static int syrah_init() {
 	transmitCommandOnSPI0(0x7, 0x0);
 	transmitCommandOnSPI0(0x0, 0x16);
 
-	// some voodoo function. 1 is always passed to it
-	SET_REG(LCD + LCD_0, 1);
-	SET_REG(LCD + LCD_0, GET_REG(LCD + VIDCON0) | 1);
-	gpio_custom_io(LCD_GPIO_PIXEL_CLOCK_ENABLE, 0x2);
+	togglePixelClock(ON);
+	udelay(40000);
+
+	transmitCommandOnSPI1ClearBit7(0x6D, 0x0);
+	transmitCommandOnSPI1ClearBit7(0x36, 0x8);
+	udelay(30000);
+
+	uint8_t lcdCommand[2];
+	uint8_t panelID[3];
+
+	memset(panelID, 0, 3);
+
+	lcdCommand[0] = 0xDA;
+	gpio_pin_output(GPIO_SPI1_CS0, 0);
+	spi_tx(1, lcdCommand, 1, TRUE, 0);
+	spi_rx(1, &panelID[0], 1, TRUE, 0);
+	gpio_pin_output(GPIO_SPI1_CS0, 1);
+
+	lcdCommand[0] = 0xDB;
+	gpio_pin_output(GPIO_SPI1_CS0, 0);
+	spi_tx(1, lcdCommand, 1, TRUE, 0);
+	spi_rx(1, &panelID[1], 1, TRUE, 0);
+	gpio_pin_output(GPIO_SPI1_CS0, 1);
+
+	lcdCommand[0] = 0xDC;
+	gpio_pin_output(GPIO_SPI1_CS0, 0);
+	spi_tx(1, lcdCommand, 1, TRUE, 0);
+	spi_rx(1, &panelID[2], 1, TRUE, 0);
+	gpio_pin_output(GPIO_SPI1_CS0, 1);
+
+	if((panelID[2] & 0x7) == 1 || (panelID[2] & 0x7) == 3) {
+		panelID[2] |= 0x8;
+	}
+
+	displayPanelInfo(panelID);
+
+	if((panelID[2] & (1 << 3)) == 0) {
+		enterRegisterMode();
+		udelay(1000);
+
+		transmitCommandOnSPI1ClearBit7(0x55, 0x2);
+		transmitCommandOnSPI1ClearBit7(0x2E, 0xA0);
+		udelay(1000);
+	}
 
 	setCommandMode(OFF);
 
-	bufferPrintf("all done!\r\n");
-
 	return 0;
+}
+
+static void displayPanelInfo(uint8_t* panelID) {
+	bufferPrintf("Syrah Panel ID (0x%02x%02x%02x):\r\n", (int)panelID[0], (int)panelID[1], (int)panelID[2]);
+
+	bufferPrintf("   Build:          ");
+	switch(panelID[0] & 0xF0) {
+		case 0x10:
+			bufferPrintf("EVT%d ", panelID[0] & 0x0F);
+			break;
+		case 0x50:
+			bufferPrintf("DVT%d ", panelID[0] & 0x0F);
+			break;
+		case 0x70:
+			bufferPrintf("PVT%d ", panelID[0] & 0x0F);
+			break;
+		case 0xA0:
+			bufferPrintf("MP%d ", panelID[0] & 0x0F);
+			break;
+		default:
+			bufferPrintf("UNKNOWN ");
+	}
+
+	bufferPrintf("\r\n   Type:           ");
+	switch(panelID[1]) {
+		case 0xC2:
+			bufferPrintf("TMD ");
+			break;
+		case 0xA4:
+			bufferPrintf("AUO ");
+			break;
+		case 0xB3:
+			bufferPrintf("SE ");
+			break;
+		case 0xD1:
+			bufferPrintf("SHARP ");
+			break;
+		case 0xE5:
+			bufferPrintf("SAMSUNG ");
+			break;
+		default:
+			bufferPrintf("UNKNOWN ");
+	}
+
+	bufferPrintf("\r\n   Project/Driver: ");
+	if((panelID[2] & 0x70) == 0) {
+		bufferPrintf("M68/");
+	} else if((panelID[2] & 0x70) == 0x10) {
+		bufferPrintf("N45/");
+	} else {
+		bufferPrintf("UNKNOWN/");
+	}
+
+	switch(panelID[2] & 0x7) {
+		case 0:
+			bufferPrintf("NSC-Merlot ");
+			break;
+		case 1:
+			bufferPrintf("Novatek-5.x ");
+			break;
+		case 2:
+			bufferPrintf("NSC-Muscat ");
+			break;
+		case 3:
+			bufferPrintf("Novatek-6.x ");
+			break;
+		default:
+			bufferPrintf("UNKNOWN ");
+	}
+	bufferPrintf("\r\n");
+}
+
+static void togglePixelClock(OnOff swt) {
+	if(swt) {
+		SET_REG(LCD + LCD_0, 1);
+		SET_REG(LCD + VIDCON0, GET_REG(LCD + VIDCON0) | 1);
+		gpio_custom_io(LCD_GPIO_PIXEL_CLOCK_ENABLE, 0x2);
+	} else {
+		SET_REG(LCD + VIDCON0, GET_REG(LCD + VIDCON0) & ~1);
+		gpio_pin_output(LCD_GPIO_PIXEL_CLOCK_ENABLE, 0);
+		SET_REG(LCD + LCD_CON, 1);
+	}
 }
 
 static void resetLCD() {
@@ -547,10 +669,10 @@ static void enterRegisterMode() {
 		tries += 1;
 
 		if(tries >= 20000) {
-			bufferPrintf("enter register mode timeout\r\n");
+			bufferPrintf("enter register mode timeout %x\r\n", status);
 			break;
 		}
-	} while((status & 0x1) != 0);
+	} while((status & 0x1) != 1);
 
 	bufferPrintf("enter register mode success!\r\n");
 }

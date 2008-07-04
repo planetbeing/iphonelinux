@@ -89,7 +89,7 @@ int spi_rx(int port, uint8_t* buffer, int len, int block, int unknown) {
 	spi_info[port].rxBuffer = buffer;
 	spi_info[port].rxDone = FALSE;
 	spi_info[port].rxCurrentLen = 0;
-	spi_info[port].txTotalLen = len;
+	spi_info[port].rxTotalLen = len;
 	spi_info[port].counter = 0;
 
 	SET_REG(SPIRegs[port].unkReg2, len);
@@ -216,7 +216,7 @@ dorx:
 			if(spi_info[port].rxBuffer == NULL)
 				break;
 
-			int toRX = spi_info[port].rxCurrentLen - spi_info[port].rxTotalLen;
+			int toRX = spi_info[port].rxTotalLen - spi_info[port].rxCurrentLen;
 			int canRX = GET_BITS(status, 8, 4);
 
 			if(toRX > canRX)
