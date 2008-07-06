@@ -4,6 +4,8 @@
 #include "util.h"
 #include "timer.h"
 
+static int NORSectorSize = 4096;
+
 static NorInfo* probeNOR() {
 	SET_REG16(NOR + COMMAND, COMMAND_UNLOCK);
 	SET_REG16(NOR + LOCK, LOCK_UNLOCK);
@@ -20,6 +22,7 @@ static NorInfo* probeNOR() {
 	GET_REG16(NOR);
 
 	bufferPrintf("NOR vendor=%x, device=%x\r\n", (uint32_t) vendor, (uint32_t) device);
+
 	return NULL;
 }
 
@@ -39,8 +42,6 @@ void nor_write_word(uint32_t offset, uint16_t data) {
 			break;
 		}
 	}
-
-	bufferPrintf("successfully wrote to NOR!\r\n");
 }
 
 uint16_t nor_read_word(uint32_t offset) {
@@ -66,8 +67,49 @@ void nor_erase_sector(uint32_t offset) {
 			break;
 		}
 	}
+}
 
-	bufferPrintf("successfully erased NOR sector!\r\n");
+void nor_read(void* buffer, int offset, int len) {
+	uint16_t* alignedBuffer = (uint16_t*) buffer;
+	for(; len >= 2; len -= 2) {
+		*alignedBuffer = nor_read_word(offset);
+		offset += 2;
+		alignedBuffer++;
+	}
+
+	if(len > 0) {
+		uint16_t lastWord = nor_read_word(offset);
+		uint8_t* unalignedBuffer = (uint8_t*) alignedBuffer;
+		*unalignedBuffer = *((uint8_t*)(&lastWord));
+	}
+}
+
+void nor_write(void* buffer, int offset, int len) {
+	int startSector = offset / NORSectorSize;
+	int endSector = (offset + len) / NORSectorSize;
+
+	int numSectors = endSector - startSector + 1;
+	uint8_t* sectorsToChange = (uint8_t*) malloc(NORSectorSize * numSectors);
+	nor_read(sectorsToChange, startSector * NORSectorSize, NORSectorSize * numSectors);
+
+	int offsetFromStart = offset - (startSector * NORSectorSize);
+	bufferPrintf("altering %d sectors: %d - %d\r\n", numSectors, startSector, endSector);
+
+	bufferPrintf("altering bytes %d - %d\r\n", offsetFromStart, offsetFromStart + len);
+	memcpy(sectorsToChange + offsetFromStart, buffer, len);
+
+	int i;
+	for(i = 0; i < numSectors; i++) {
+		bufferPrintf("erasing and writing sector: %x\r\n", (i + startSector) * NORSectorSize);
+		nor_erase_sector((i + startSector) * NORSectorSize);
+		int j;
+		uint16_t* curSector = (uint16_t*)(sectorsToChange + (i * NORSectorSize));
+		for(j = 0; j < (NORSectorSize / 2); j++) {
+			nor_write_word(((i + startSector) * NORSectorSize) + (j * 2), curSector[j]);
+		}
+	}
+
+	free(sectorsToChange);
 }
 
 int nor_setup() {

@@ -19,10 +19,12 @@
 #include "aes.h"
 #include "lcd.h"
 #include "tasks.h"
+#include "images.h"
 
 #include "util.h"
 
 static int setup_devices();
+static int setup_openiboot();
 
 Event testEvent;
 
@@ -51,14 +53,7 @@ void testEventHandler(Event* event, void* opaque) {
 void OpenIBootStart() {
 	int i;
 
-	arm_setup();
-	mmu_setup();
-	tasks_setup();
-	setup_devices();
-
-	LeaveCriticalSection();
-
-	lcd_setup();
+	setup_openiboot();
 
 	while(1) {
 		lcd_fill(0xFF0000);
@@ -214,6 +209,20 @@ static int setup_devices() {
 
 	spi_setup();
 	nor_setup();
+
+	return 0;
+}
+
+static int setup_openiboot() {
+	arm_setup();
+	mmu_setup();
+	tasks_setup();
+	setup_devices();
+
+	LeaveCriticalSection();
+
+	lcd_setup();
+	images_setup();
 
 	return 0;
 }
