@@ -18,6 +18,8 @@ void bufferFlush(char* destination, size_t length);
 char* getScrollback();
 size_t getScrollbackLen();
 
+uint32_t crc32(uint32_t* ckSum, const void *buffer, size_t len);
+
 #include "printf.h"
 #include "malloc-2.8.3.h"
 

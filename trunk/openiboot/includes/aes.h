@@ -18,6 +18,12 @@ typedef enum AESKeyLen {
 	AES256 = 2
 } AESKeyLen;
 
+int aes_setup();
+void aes_836_encrypt(void* data, int size, void* iv);
+void aes_836_decrypt(void* data, int size, void* iv);
+void aes_838_encrypt(void* data, int size, void* iv);
+void aes_838_decrypt(void* data, int size, void* iv);
+
 void aes_encrypt(void* data, int size, AESKeyType keyType, void* key, void* iv);
 void aes_decrypt(void* data, int size, AESKeyType keyType, void* key, void* iv);
 

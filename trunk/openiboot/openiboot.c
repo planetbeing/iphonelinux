@@ -50,10 +50,13 @@ void testEventHandler(Event* event, void* opaque) {
 	event_readd(event, 0);
 }
 
+
 void OpenIBootStart() {
 	int i;
 
 	setup_openiboot();
+
+	images_list();
 
 	while(1) {
 		lcd_fill(0xFF0000);
@@ -222,6 +225,8 @@ static int setup_openiboot() {
 	LeaveCriticalSection();
 
 	lcd_setup();
+
+	aes_setup();
 	images_setup();
 
 	return 0;

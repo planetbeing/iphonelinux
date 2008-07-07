@@ -99,7 +99,7 @@ void nor_write(void* buffer, int offset, int len) {
 	memcpy(sectorsToChange + offsetFromStart, buffer, len);
 
 	int i;
-	for(i = 0; i < numSectors; i++) {
+	for(i = 0; i < numSectors; i++) {	
 		bufferPrintf("erasing and writing sector: %x\r\n", (i + startSector) * NORSectorSize);
 		nor_erase_sector((i + startSector) * NORSectorSize);
 		int j;
