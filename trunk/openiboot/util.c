@@ -20,6 +20,25 @@ void* memcpy(void* dest, const void* src, uint32_t size) {
 	return dest;
 }
 
+int memcmp(const void* s1, const void* s2, uint32_t size) {
+	uint32_t i;
+	const uint8_t* a = s1;
+	const uint8_t* b = s2;
+	for(i = 0; i < size; i++) {
+		if(a[i] == b[i])
+			continue;
+
+		if(a[i] < b[i])
+			return -1;
+
+		if(a[i] > b[i])
+			return 1;
+	}
+
+	return 0;
+
+}
+
 /* Adapted from public domain memmove function from  David MacKenzie <djm@gnu.ai.mit.edu>.  */
 void* memmove(void *dest, const void* src, size_t length)
 {
@@ -112,7 +131,7 @@ static char* MyBuffer= NULL;
 static char* pMyBuffer = NULL;
 static size_t MyBufferLen = 0;
 
-#define SCROLLBACK_LEN (1024*1024)
+#define SCROLLBACK_LEN (1024*4)
 
 void bufferPrint(const char* toBuffer) {
 	EnterCriticalSection();

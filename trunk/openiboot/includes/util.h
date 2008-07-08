@@ -7,6 +7,7 @@
 
 void* memset(void* x, int fill, uint32_t size);
 void* memcpy(void* dest, const void* src, uint32_t size);
+int memcmp(const void* s1, const void* s2, uint32_t size);
 void* memmove(void *dest, const void* src, size_t length);
 int strlen(const char* str);
 int putchar(int c);

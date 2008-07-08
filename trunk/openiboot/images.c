@@ -3,6 +3,7 @@
 #include "nor.h"
 #include "util.h"
 #include "aes.h"
+#include "sha1.h"
 
 static const uint32_t IMG2Offset = 0x8400;
 static const uint32_t NOREnd = 0xF0000;
@@ -13,9 +14,20 @@ static uint32_t MaxOffset = 0;
 static uint32_t ImagesStart = 0;
 static uint32_t SegmentSize = 0;
 
+static const uint8_t Img2HashPadding[] = {	0xAD, 0x2E, 0xE3, 0x8D, 0x2D, 0x9B, 0xE4, 0x35, 0x99, 4,
+						0x44, 0x33, 0x65, 0x3D, 0xF0, 0x74, 0x98, 0xD8, 0x56, 0x3B,
+						0x4F, 0xF9, 0x6A, 0x55, 0x45, 0xCE, 0x82, 0xF2, 0x9A, 0x5A,
+						0xC2, 0xBC, 0x47, 0x61, 0x6D, 0x65, 0x4F, 0x76, 0x65, 0x72,
+						0xA6, 0xA0, 0x99, 0x13};
+
+static void calculateHash(Img2Header* header, uint8_t* hash);
+
 int images_setup() {
 	IMG2* header;
 	Img2Header* curImg2;
+	uint8_t hash[0x20];
+
+	MaxOffset = 0;
 
 	header = (IMG2*) malloc(sizeof(IMG2));
 
@@ -53,6 +65,15 @@ int images_setup() {
 		curImage->length = curImg2->dataLen;
 		curImage->padded = curImg2->dataLenPadded;
 		curImage->index = curImg2->index;
+
+		calculateHash(curImg2, hash);
+
+		if(memcmp(hash, curImg2->hash, 0x20) == 0) {
+			curImage->hashMatch = TRUE;
+		} else {
+			curImage->hashMatch = FALSE;
+		}
+
 		curImage->next = NULL;
 
 		if((curOffset + curImage->padded) > MaxOffset) {
@@ -71,7 +92,7 @@ void images_list() {
 
 	while(curImage != NULL) {
 		print_fourcc(curImage->type);
-		bufferPrintf("(%d): %x %x %x\r\n", curImage->index, curImage->offset, curImage->length, curImage->padded);
+		bufferPrintf("(%d/%d): %x %x %x\r\n", curImage->index, curImage->hashMatch, curImage->offset, curImage->length, curImage->padded);
 		curImage = curImage->next;
 	}
 }
@@ -120,7 +141,11 @@ void images_duplicate(Image* image, uint32_t type, int index) {
 	crc32(&checksum, buffer, 0x64);
 	header->header_checksum = checksum;
 
+	calculateHash(header, header->hash);
+
 	nor_write(buffer, offset, totalLen);
+
+	free(buffer);
 
 	images_release();
 	images_setup();
@@ -164,10 +189,15 @@ void images_write(Image* image, void* data, unsigned int length) {
 	crc32(&checksum, writeBuffer, 0x64);
 	header->header_checksum = checksum;
 
+	calculateHash(header, header->hash);
+
 	nor_write(writeBuffer, image->offset, totalLen);
+
+	free(writeBuffer);
 
 	images_release();
 	images_setup();
+
 }
 
 unsigned int images_read(Image* image, void** data) {
@@ -180,5 +210,14 @@ unsigned int images_read(Image* image, void** data) {
 	nor_read(*data, image->offset + sizeof(Img2Header), image->length);
 	aes_838_decrypt(*data, image->length, NULL);
 	return image->length;
+}
+
+static void calculateHash(Img2Header* header, uint8_t* hash) {
+	SHA1_CTX context;
+	SHA1Init(&context);
+	SHA1Update(&context, (uint8_t*) header, 0x3E0);
+	SHA1Final(hash, &context);
+	memcpy(hash + 20, Img2HashPadding, 12);
+	aes_img2verify_encrypt(hash, 32, NULL);
 }
 

@@ -17,7 +17,8 @@ typedef struct Img2Header {
         uint32_t unknownLength;    /* 0x60 */ /* some sort of length field? */
         uint32_t header_checksum;  /* 0x64 */ /* standard crc32 on first 0x64 bytes */
         uint32_t unknownChecksum;  /* 0x68 */
-        uint8_t  unknown[0x394];   /* 0x68 */
+        uint8_t  unknown[0x374];   /* 0x6C */
+	uint8_t  hash[0x20];       /* 0x3E0 */
 } Img2Header;
 
 typedef struct IMG2 {
@@ -38,6 +39,7 @@ typedef struct Image {
 	uint32_t index;
 	uint32_t length;
 	uint32_t padded;
+	int hashMatch;
 } Image;
 
 static inline uint32_t fourcc(char* code) {

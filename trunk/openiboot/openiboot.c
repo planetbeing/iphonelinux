@@ -57,6 +57,29 @@ void OpenIBootStart() {
 	setup_openiboot();
 
 	images_list();
+	void* iboot;
+	images_read(images_get(fourcc("opib")), &iboot);
+
+	EnterCriticalSection();
+
+	CallArm((uint32_t) iboot);
+
+//	images_erase(images_get(fourcc("opib")));
+//	images_duplicate(images_get(fourcc("ibot")), fourcc("opib"), -1);
+//	images_write(images_get(fourcc("opib")), iboot, ibootLen);
+
+//	images_write(images_get(fourcc("ibot")), iboot, 0x22000);
+
+	free(iboot);
+	images_list();
+
+	bufferPrintf("done");
+
+
+//	images_duplicate(images_get(fourcc("ibot")), fourcc("opib"), -1);
+//	images_erase(images_get(fourcc("oibc")));
+//	images_write(images_get(fourcc("opib")), (uint8_t*) 0x18000000, 144436);
+//	images_list();
 
 	while(1) {
 		lcd_fill(0xFF0000);

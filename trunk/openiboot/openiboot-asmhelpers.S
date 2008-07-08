@@ -39,6 +39,9 @@
 .global CleanAndInvalidateCPUDataCache
 .global ClearCPUCaches
 
+.global CallArm
+.global CallThumb
+
 .global DebugReboot
 
 .global CurrentRunning
@@ -102,7 +105,15 @@ LeaveCriticalSection:
 LeaveCriticalSection_return:
 	POP	{PC}
 
+.thumb_func
+CallArm:
+	BX	R0
+
 .code 32
+
+
+CallThumb:
+	BX	R0
 
 @
 @	FIQ/IRQ Control

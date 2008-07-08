@@ -93,14 +93,11 @@ void nor_write(void* buffer, int offset, int len) {
 	nor_read(sectorsToChange, startSector * NORSectorSize, NORSectorSize * numSectors);
 
 	int offsetFromStart = offset - (startSector * NORSectorSize);
-	bufferPrintf("altering %d sectors: %d - %d\r\n", numSectors, startSector, endSector);
 
-	bufferPrintf("altering bytes %d - %d\r\n", offsetFromStart, offsetFromStart + len);
 	memcpy(sectorsToChange + offsetFromStart, buffer, len);
 
 	int i;
 	for(i = 0; i < numSectors; i++) {	
-		bufferPrintf("erasing and writing sector: %x\r\n", (i + startSector) * NORSectorSize);
 		nor_erase_sector((i + startSector) * NORSectorSize);
 		int j;
 		uint16_t* curSector = (uint16_t*)(sectorsToChange + (i * NORSectorSize));
