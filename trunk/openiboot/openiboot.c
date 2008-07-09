@@ -26,116 +26,24 @@
 static int setup_devices();
 static int setup_openiboot();
 
-Event testEvent;
-
-void testEventHandler(Event* event, void* opaque) {
-	bufferPrintf("Hello iBoot! Up time: %Ld seconds\r\n", timer_get_system_microtime() / 1000000);
-	bufferPrintf("ClockFrequency: %u Hz\r\n", (unsigned int) ClockFrequency);
-	bufferPrintf("MemoryFrequency: %u Hz\r\n", (unsigned int) MemoryFrequency);
-	bufferPrintf("BusFrequency: %u Hz\r\n", (unsigned int) BusFrequency);
-	bufferPrintf("UnknownFrequency: %u Hz\r\n", (unsigned int) UnknownFrequency);
-	bufferPrintf("PeripheralFrequency: %u Hz\r\n", (unsigned int) PeripheralFrequency);
-	bufferPrintf("DisplayFrequency: %u Hz\r\n", (unsigned int) DisplayFrequency);
-	bufferPrintf("FixedFrequency: %u Hz\r\n", (unsigned int) FixedFrequency);
-	bufferPrintf("TimebaseFrequency: %u Hz\r\n", (unsigned int) TimebaseFrequency);
-	bufferPrintf("PLL0 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[0]);
-	bufferPrintf("PLL1 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[1]);
-	bufferPrintf("PLL2 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[2]);
-	bufferPrintf("PLL3 Frequency: %u Hz\r\n", (unsigned int) PLLFrequencies[3]);
-
-	bufferPrintf("\n\n");
-
-	printf(getScrollback());
-
-	event_readd(event, 0);
-}
-
-
 void OpenIBootStart() {
-	int i;
-
 	setup_openiboot();
 
-	images_list();
 	void* iboot;
-	images_read(images_get(fourcc("opib")), &iboot);
 
-//	EnterCriticalSection();
+	if(images_get(fourcc("opib")) != NULL)
+		images_erase(images_get(fourcc("opib")));
 
-//	CallArm((uint32_t) iboot);
+	images_duplicate(images_get(fourcc("ibot")), fourcc("opib"), -1);
 
-//	images_erase(images_get(fourcc("opib")));
-//	images_duplicate(images_get(fourcc("ibot")), fourcc("opib"), -1);
-//	images_write(images_get(fourcc("opib")), iboot, ibootLen);
+	images_read(images_get(fourcc("ibot")), &iboot);
 
-//	images_write(images_get(fourcc("ibot")), iboot, 0x22000);
+	EnterCriticalSection();
 
-	free(iboot);
-	images_list();
+	CallArm((uint32_t) iboot);
 
-	bufferPrintf("done");
+	// should not reach here
 
-
-//	images_duplicate(images_get(fourcc("ibot")), fourcc("opib"), -1);
-//	images_erase(images_get(fourcc("oibc")));
-//	images_write(images_get(fourcc("opib")), (uint8_t*) 0x18000000, 144436);
-//	images_list();
-
-	while(1) {
-		lcd_fill(0xFF0000);
-		udelay(1000000);
-		lcd_fill(0x00FF00);
-		udelay(1000000);
-		lcd_fill(0x0000FF);
-		udelay(1000000);
-	}
-
-	uint8_t test[0x40];
-
-	uint8_t userkey[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0xE, 0x0F};
-
-	memcpy(test, "This is a test!", sizeof("This is a test!"));
-	for(i = 0; i < sizeof("This is a test!"); i++) {
-		bufferPrintf("%x ", (unsigned int) test[i]);
-	}
-	bufferPrintf("\r\n");
-	aes_encrypt(test, sizeof("This is a test!"), AESCustom, userkey, NULL);
-	for(i = 0; i < sizeof("This is a test!"); i++) {
-		bufferPrintf("%x ", (unsigned int) test[i]);
-	}
-	bufferPrintf("\r\n");
-	aes_decrypt(test, sizeof("This is a test!"), AESCustom, userkey, NULL);
-	for(i = 0; i < sizeof("This is a test!"); i++) {
-		bufferPrintf("%x ", (unsigned int) test[i]);
-	}
-	bufferPrintf("\r\n");
-
-
-	for(i = 0; i < 5; i++) {
-		bufferPrintf("Devices loaded. OpenIBoot starting in: %d\r\n", 5 - i);
-		printf("Devices loaded. OpenIBoot starting in: %d\r\n", 5 - i);
-		udelay(uSecPerSec);
-	}
-
-/*
-	uint16_t word;
-	word = nor_read_word(0x3000);
-	bufferPrintf("\r\nword at 0x3000: %x\r\n", (unsigned int) word);
-	nor_erase_sector(0x3000);
-	word = nor_read_word(0x3000);
-	bufferPrintf("word at 0x3000: %x\r\n\r\n", (unsigned int) word);
-	nor_write_word(0x3000, 0xc0de);
-	word = nor_read_word(0x3000);
-	bufferPrintf("word at 0x3000: %x\r\n\r\n", (unsigned int) word);
-*/
-	event_add(&testEvent, uSecPerSec, &testEventHandler, NULL);
-
-	while(TRUE) {
-		printf("heartbeat\r\n");
-		udelay(100000);
-	}
-  
-	DebugReboot();
 }
 
 static uint8_t* controlSendBuffer = NULL;
