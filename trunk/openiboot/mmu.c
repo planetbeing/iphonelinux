@@ -47,7 +47,7 @@ void initialize_pagetable() {
 	mmu_map_section(AMC0, AMC0, TRUE, TRUE);
 
 	// Make our own code cacheable and bufferable
-	mmu_map_section_range(OpenIBootLoad, OpenIBootEnd, OpenIBootLoad, TRUE, TRUE);
+	mmu_map_section_range(OpenIBootLoad, (uint32_t) &OpenIBootEnd, OpenIBootLoad, TRUE, TRUE);
 
 	// Make ROM buffer cacheable and bufferable
 	mmu_map_section(ROM, ROM, TRUE, TRUE);

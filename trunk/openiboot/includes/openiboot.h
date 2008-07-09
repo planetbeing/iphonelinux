@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+extern void* OpenIBootEnd;
+
 typedef enum Boolean {
 	FALSE = 0,
 	TRUE = 1

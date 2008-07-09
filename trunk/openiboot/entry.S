@@ -12,6 +12,7 @@
 .global ExceptionStackEnd
 .global GeneralStack
 .global GeneralStackEnd
+.global OpenIBootEnd
 
 .text
 
@@ -345,3 +346,8 @@ GeneralStackEnd:
 	.byte	0x0
 	.endr
 GeneralStack:
+
+.bss
+
+OpenIBootEnd:
+

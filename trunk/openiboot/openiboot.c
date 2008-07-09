@@ -60,9 +60,9 @@ void OpenIBootStart() {
 	void* iboot;
 	images_read(images_get(fourcc("opib")), &iboot);
 
-	EnterCriticalSection();
+//	EnterCriticalSection();
 
-	CallArm((uint32_t) iboot);
+//	CallArm((uint32_t) iboot);
 
 //	images_erase(images_get(fourcc("opib")));
 //	images_duplicate(images_get(fourcc("ibot")), fourcc("opib"), -1);
