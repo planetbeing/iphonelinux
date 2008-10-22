@@ -26,21 +26,41 @@
 static int setup_devices();
 static int setup_openiboot();
 
+extern uint8_t _binary_payload_bin_start;
+extern uint8_t _binary_payload_bin_end;
+extern uint8_t _binary_payload_bin_size;
+
+
 void OpenIBootStart() {
 	setup_openiboot();
 
+	while(TRUE) {
+	}
+
 	void* iboot;
+	void* ibootLoc = (void*) 0x09000000;
 
-	if(images_get(fourcc("opib")) != NULL)
-		images_erase(images_get(fourcc("opib")));
+	images_setup();
+	images_list();
 
-	images_duplicate(images_get(fourcc("ibot")), fourcc("opib"), -1);
+	int verify = images_verify(images_get(fourcc("opib")));
 
-	images_read(images_get(fourcc("ibot")), &iboot);
+	if(verify != 0) {
+		bufferPrintf("Image verification failed!\r\n");
+	} else {
+		bufferPrintf("Image verification successful!\r\n");
 
-	EnterCriticalSection();
+		unsigned int len = images_read(images_get(fourcc("opib")), &iboot);
 
-	CallArm((uint32_t) iboot);
+		memcpy(ibootLoc, iboot, len);
+
+		bufferPrintf("jumping to iboot at: %x\r\n", ibootLoc);
+
+		EnterCriticalSection();
+		CallArm((uint32_t) ibootLoc);
+	}
+
+	while(TRUE);
 
 	// should not reach here
 
@@ -59,11 +79,14 @@ static void controlReceived(uint32_t token) {
 	OpenIBootCmd* reply = (OpenIBootCmd*)controlSendBuffer;
 
 	if(cmd->command == OPENIBOOTCMD_DUMPBUFFER) {
-		int length = getScrollbackLen();
+		int length = getScrollbackLen(); // getScrollbackLen();// 0x80;
 		reply->command = OPENIBOOTCMD_DUMPBUFFER_LEN;
 		reply->dataLen = length;
 		usb_send_interrupt(3, controlSendBuffer, sizeof(OpenIBootCmd));
 	} else if(cmd->command == OPENIBOOTCMD_DUMPBUFFER_GOAHEAD) {
+/*		bufferFlush((char*) dataSendBuffer, 0x80);
+		usb_send_bulk(1, dataSendBuffer, 0x80);*/
+
 		left = cmd->dataLen;
 
 		size_t toRead = (left > USB_BYTES_AT_A_TIME) ? USB_BYTES_AT_A_TIME: left;
@@ -142,7 +165,23 @@ static int setup_devices() {
 	usb_start(enumerateHandler, startHandler);
 
 	spi_setup();
-	nor_setup();
+//	bufferPrintf("Before:\r\n");
+//	buffer_dump_memory(0x3e400000, 0x320);
+//	gpio_reset();
+/*	bufferPrintf("After:\r\n");
+	buffer_dump_memory2(0x3e400000, 0x320, 8);
+	power_ctrl(0x1000, ON);
+	clock_gate_switch(0x1E, ON);
+	int i = 0;
+//	uint32_t position = 0x20000000 + (0x40 * 645);
+	uint32_t position = 0x2000A000 + (0x40 * 290);
+	position = 0x2000e600;
+	for(i = 0; i < 10; i++) {
+		bufferDump(position, 0x40);
+		position += 0x40;
+	}
+	clock_gate_switch(0x1E, OFF);
+	power_ctrl(0x1000, OFF);*/
 
 	return 0;
 }
@@ -155,10 +194,10 @@ static int setup_openiboot() {
 
 	LeaveCriticalSection();
 
-	lcd_setup();
+	//lcd_setup();
 
 	aes_setup();
-	images_setup();
+	//images_setup();
 
 	return 0;
 }

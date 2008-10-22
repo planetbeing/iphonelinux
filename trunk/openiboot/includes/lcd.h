@@ -68,6 +68,7 @@ extern uint32_t LCDPanelID;
 
 int lcd_setup();
 void lcd_fill(uint32_t color);
+void syrah_quiesce();
 
 #endif
 

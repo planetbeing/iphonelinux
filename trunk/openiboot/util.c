@@ -126,6 +126,27 @@ void buffer_dump_memory(uint32_t start, int length) {
 	bufferPrintf("\r\n");
 }
 
+void buffer_dump_memory2(uint32_t start, int length, int width) {
+	uint32_t curPos = start;
+	int x = 0;
+	while(curPos < (start + length)) {
+		if(x == 0) {
+			bufferPrintf("0x%08x:", (unsigned int) curPos);
+		}
+		bufferPrintf(" %08x", (unsigned int) GET_REG(curPos));
+		if(x == (width - 1)) {
+			bufferPrintf("\r\n");
+			x = 0;
+		} else {
+			x++;
+		}
+
+		curPos += 4;
+	}
+
+	bufferPrintf("\r\n");
+}
+
 
 static char* MyBuffer= NULL;
 static char* pMyBuffer = NULL;
@@ -133,7 +154,31 @@ static size_t MyBufferLen = 0;
 
 #define SCROLLBACK_LEN (1024*4)
 
+void bufferDump(uint32_t location, unsigned int len) {
+	EnterCriticalSection();
+	if(pMyBuffer == NULL) {
+		MyBuffer = (char*) malloc(SCROLLBACK_LEN);
+		MyBufferLen = 0;
+		pMyBuffer = MyBuffer;
+	}
+
+	memcpy(pMyBuffer, &len, sizeof(uint32_t));
+	memcpy(pMyBuffer + sizeof(uint32_t), &location, sizeof(uint32_t));
+	memcpy(pMyBuffer + sizeof(uint32_t) + sizeof(uint32_t), (void*) location, len);
+	uint32_t crc = 0;
+	crc32(&crc, (void*) location, len);
+	*((uint32_t*)(pMyBuffer + sizeof(uint32_t) + sizeof(uint32_t) + len)) = crc;
+	int totalLen = sizeof(uint32_t) + sizeof(uint32_t) + len + sizeof(uint32_t);
+	if(totalLen % 0x80 != 0) {
+		totalLen += 0x80 - (totalLen % 0x80);
+	}
+	MyBufferLen += totalLen;
+	pMyBuffer += totalLen;
+	LeaveCriticalSection();
+}
+
 void bufferPrint(const char* toBuffer) {
+	uart_write(0, toBuffer, strlen(toBuffer));
 	EnterCriticalSection();
 	if(pMyBuffer == NULL) {
 		MyBuffer = (char*) malloc(SCROLLBACK_LEN);

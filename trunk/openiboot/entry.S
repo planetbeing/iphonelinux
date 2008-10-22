@@ -64,9 +64,9 @@ ArmReset_relocate:
 	LDR	R1, =_start				@ jump to the right place!
 	BX	R1
 
-ArmReset_zeroBSS:					@ Zero out the BSS/.data section
+ArmReset_zeroBSS:					@ Zero out the BSS section
 	LDR	R0, =OpenIBootEnd			@ everything between text and heap
-	LDR	R1, =HeapStart
+	LDR	R1, =_end
 	MOV	R2, #0
 
 ArmReset_zeroBSS_loop:

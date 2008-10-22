@@ -13,6 +13,7 @@ int strlen(const char* str);
 int putchar(int c);
 void dump_memory(uint32_t start, int length);
 void buffer_dump_memory(uint32_t start, int length);
+void buffer_dump_memory2(uint32_t start, int length, int width);
 void bufferPrint(const char* toBuffer);
 void bufferPrintf(const char* format, ...);
 void bufferFlush(char* destination, size_t length);

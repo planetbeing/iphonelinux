@@ -64,12 +64,13 @@ typedef enum USBUsageType {
 	USBExplicitFeedbackEndpoint = 2
 } USBUsageType;
 
-enum USBDescrptorType {
+enum USBDescriptorType {
 	USBDeviceDescriptorType = 1,
 	USBConfigurationDescriptorType = 2,
 	USBStringDescriptorType = 3,
 	USBInterfaceDescriptorType = 4,
-	USBEndpointDescriptorType = 5
+	USBEndpointDescriptorType = 5,
+	USBDeviceQualifierDescriptorType = 6
 };
 
 typedef void (*USBEndpointHandler)(uint32_t token);
@@ -143,6 +144,18 @@ typedef struct USBEndpointDescriptor {
 	uint16_t wMaxPacketSize;
 	uint8_t bInterval;
 } __attribute__ ((__packed__)) USBEndpointDescriptor;
+
+typedef struct USBDeviceQualifierDescriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint16_t bcdUSB;
+	uint8_t bDeviceClass;
+	uint8_t bDeviceSubClass;
+	uint8_t bDeviceProtocol;
+	uint8_t bMaxPacketSize;
+	uint8_t bNumConfigurations;
+	uint8_t bReserved;
+} __attribute__ ((__packed__)) USBDeviceQualifierDescriptor;
 
 typedef struct USBStringDescriptor {
 	uint8_t bLength;
@@ -232,6 +245,7 @@ void usb_receive_bulk(uint8_t endpoint, void* buffer, int bufferLen);
 void usb_receive_interrupt(uint8_t endpoint, void* buffer, int bufferLen);
 
 USBDeviceDescriptor* usb_get_device_descriptor();
+USBDeviceQualifierDescriptor* usb_get_device_qualifier_descriptor();
 USBConfigurationDescriptor* usb_get_configuration_descriptor(int index, uint8_t speed_id);
 USBStringDescriptor* usb_get_string_descriptor(int index);
 

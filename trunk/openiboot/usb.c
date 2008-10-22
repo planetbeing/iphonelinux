@@ -27,6 +27,7 @@ USBEPRegisters* OutEPRegs;
 static uint8_t currentlySending;
 
 static USBDeviceDescriptor deviceDescriptor;
+static USBDeviceQualifierDescriptor deviceQualifierDescriptor;
 
 static uint8_t numStringDescriptors;
 static USBStringDescriptor** stringDescriptors;
@@ -606,7 +607,14 @@ static void usbIRQHandler(uint32_t token) {
 										length = strDesc->bLength;
 									memcpy(controlSendBuffer, strDesc, length);
 									break;
+								case USBDeviceQualifierDescriptorType:
+									if(length > sizeof(USBDeviceQualifierDescriptor))
+										length = sizeof(USBDeviceQualifierDescriptor);
+
+									memcpy(controlSendBuffer, usb_get_device_qualifier_descriptor(), length);
+									break;
 								default:
+									bufferPrintf("Unknown descriptor request: %d\r\n", setupPacket->wValue >> 8);
 									if(usb_state < USBError) {
 										change_state(USBUnknownDescriptorRequest);
 									}
@@ -690,7 +698,7 @@ static void usbIRQHandler(uint32_t token) {
 
 }
 
-USBDeviceDescriptor* usb_get_device_descriptor() {
+static void create_descriptors() {
 	if(configurations == NULL) {
 		deviceDescriptor.bLength = sizeof(USBDeviceDescriptor);
 		deviceDescriptor.bDescriptorType = USBDeviceDescriptorType;
@@ -707,10 +715,26 @@ USBDeviceDescriptor* usb_get_device_descriptor() {
 		deviceDescriptor.iSerialNumber = addStringDescriptor("");
 		deviceDescriptor.bNumConfigurations = 0;
 
+		deviceQualifierDescriptor.bDescriptorType = USBDeviceDescriptorType;
+		deviceQualifierDescriptor.bcdUSB = USB_2_0;
+		deviceQualifierDescriptor.bDeviceClass = 0;
+		deviceQualifierDescriptor.bDeviceSubClass = 0;
+		deviceQualifierDescriptor.bDeviceProtocol = 0;
+		deviceDescriptor.bMaxPacketSize = USB_MAX_PACKETSIZE;
+		deviceDescriptor.bNumConfigurations = 0;
+
 		addConfiguration(1, addStringDescriptor("OpenIBoot Mode Configuration"), 0, 0, 500);
 	}
+}
 
+USBDeviceDescriptor* usb_get_device_descriptor() {
+	create_descriptors();
 	return &deviceDescriptor;
+}
+
+USBDeviceQualifierDescriptor* usb_get_device_qualifier_descriptor() {
+	create_descriptors();
+	return &deviceQualifierDescriptor;
 }
 
 static void setConfiguration(int i) {
@@ -798,6 +822,7 @@ static void releaseConfigurations() {
 static uint8_t addConfiguration(uint8_t bConfigurationValue, uint8_t iConfiguration, uint8_t selfPowered, uint8_t remoteWakeup, uint16_t maxPower) {
 	uint8_t newIndex = deviceDescriptor.bNumConfigurations;
 	deviceDescriptor.bNumConfigurations++;
+	deviceQualifierDescriptor.bNumConfigurations++;
 
 	configurations = (USBConfiguration*) realloc(configurations, sizeof(USBConfiguration) * deviceDescriptor.bNumConfigurations);
 	configurations[newIndex].descriptor.bLength = sizeof(USBConfigurationDescriptor);

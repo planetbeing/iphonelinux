@@ -13,7 +13,7 @@ typedef struct Img2Header {
         uint32_t dataLen;          /* 0x14 */
         uint32_t index;            /* 0x18 */
         uint32_t flags2;           /* 0x1c */ /* 0x01000000 has to be unset */
-        uint8_t  reserved[0x40];   /* 0x20 */
+        uint8_t  dataHash[0x40];   /* 0x20 */
         uint32_t unknownLength;    /* 0x60 */ /* some sort of length field? */
         uint32_t header_checksum;  /* 0x64 */ /* standard crc32 on first 0x64 bytes */
         uint32_t unknownChecksum;  /* 0x68 */
@@ -39,6 +39,7 @@ typedef struct Image {
 	uint32_t index;
 	uint32_t length;
 	uint32_t padded;
+	uint8_t dataHash[0x40];
 	int hashMatch;
 } Image;
 
@@ -55,7 +56,10 @@ void images_list();
 Image* images_get(uint32_t type);
 void images_release();
 void images_duplicate(Image* image, uint32_t type, int index);
+void images_duplicate_at(Image* image, uint32_t type, int index, int offset);
+void images_from_template(Image* image, uint32_t type, int index, void* dataBuffer, unsigned int len, int encrypt);
 void images_erase(Image* image);
-void images_write(Image* image, void* data, unsigned int length);
+void images_write(Image* image, void* data, unsigned int length, int encrypt);
 unsigned int images_read(Image* image, void** data);
+int images_verify(Image* image);
 

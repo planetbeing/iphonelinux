@@ -88,7 +88,6 @@ static const GammaTableDescriptor gammaTables[] =
 
 static int initDisplay();
 static int syrah_init();
-static void syrah_quiesce();
 static void initLCD(LCDInfo* info);
 static void setWindowBuffer(int window, uint32_t* buffer);
 static void configWindow(int window, int option28, int option16, int option12, int option0);
@@ -1011,8 +1010,18 @@ static int getPanelRegister(int reg) {
 	return buffer[0];
 }
 
-static void syrah_quiesce() {
-
+void syrah_quiesce() {
+	spi_set_baud(1, 1000000, SPIOption13Setting0, 1, 1, 1);
+	spi_set_baud(0, 500000, SPIOption13Setting0, 1, 0, 0);
+	enterRegisterMode();
+	udelay(1000);
+	setPanelRegister(0x55, 0x2);
+	udelay(40000);
+	setPanelRegister(0x7A, 0xDF);
+	setPanelRegister(0x7B, 0x1);
+	transmitShortCommandOnSPI1(0x10);
+	udelay(50000);
+	setPanelRegister(0x7B, 0x0);
 }
 
 static void framebuffer_fill(Framebuffer* framebuffer, int x, int y, int width, int height, int fill) {

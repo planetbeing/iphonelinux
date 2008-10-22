@@ -19,10 +19,12 @@
 
 static void* CurBreakValue = NULL;
 
+extern char _end;
+
 // Hacky sbrk implementation
 void* sbrk(uint32_t incr) {
 	if(CurBreakValue == NULL) {
-		CurBreakValue = (void*) HeapStart;
+		CurBreakValue = (void*) &_end;
 	}
 
 	void *oldBreakValue = CurBreakValue;
