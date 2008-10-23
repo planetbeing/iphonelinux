@@ -70,7 +70,9 @@ static uint8_t* controlSendBuffer = NULL;
 static uint8_t* controlRecvBuffer = NULL;
 static uint8_t* dataSendBuffer = NULL;
 static uint8_t* dataRecvBuffer = NULL;
+static uint8_t* dataRecvPtr = NULL;
 static size_t left = 0;
+static size_t rxLeft = 0;
 
 #define USB_BYTES_AT_A_TIME 0x80
 
@@ -83,34 +85,60 @@ static void controlReceived(uint32_t token) {
 		reply->command = OPENIBOOTCMD_DUMPBUFFER_LEN;
 		reply->dataLen = length;
 		usb_send_interrupt(3, controlSendBuffer, sizeof(OpenIBootCmd));
+		uartPrintf("got dumpbuffer cmd, returning length: %d\r\n", length);
 	} else if(cmd->command == OPENIBOOTCMD_DUMPBUFFER_GOAHEAD) {
-/*		bufferFlush((char*) dataSendBuffer, 0x80);
-		usb_send_bulk(1, dataSendBuffer, 0x80);*/
-
 		left = cmd->dataLen;
+
+		uartPrintf("got dumpbuffer goahead, writing length: %d\r\n", (int)left);
 
 		size_t toRead = (left > USB_BYTES_AT_A_TIME) ? USB_BYTES_AT_A_TIME: left;
 		bufferFlush((char*) dataSendBuffer, toRead);
 		usb_send_bulk(1, dataSendBuffer, toRead);
 		left -= toRead;
+	} else if(cmd->command == OPENIBOOTCMD_SENDCOMMAND) {
+		dataRecvPtr = dataRecvBuffer;
+		rxLeft = cmd->dataLen;
+
+		uartPrintf("got sendcommand, receiving length: %d\r\n", (int)rxLeft);
+
+		reply->command = OPENIBOOTCMD_SENDCOMMAND_GOAHEAD;
+		reply->dataLen = cmd->dataLen;
+		usb_send_interrupt(3, controlSendBuffer, sizeof(OpenIBootCmd));
+
+		size_t toRead = (rxLeft > USB_BYTES_AT_A_TIME) ? USB_BYTES_AT_A_TIME: rxLeft;
+		usb_receive_bulk(2, dataRecvPtr, toRead);
+		rxLeft -= toRead;
+		dataRecvPtr += toRead;
 	}
 
 	usb_receive_interrupt(4, controlRecvBuffer, sizeof(OpenIBootCmd));
 }
 
 static void dataReceived(uint32_t token) {
-
+	uartPrintf("receiving remainder: %d\r\n", (int)rxLeft);
+	if(rxLeft > 0) {
+		size_t toRead = (rxLeft > USB_BYTES_AT_A_TIME) ? USB_BYTES_AT_A_TIME: rxLeft;
+		usb_receive_bulk(2, dataRecvPtr, toRead);
+		rxLeft -= toRead;
+		dataRecvPtr += toRead;
+	} else {
+		*dataRecvPtr = '\0';
+		uartPrintf("received command: %s\r\n", dataRecvBuffer);
+	}	
 }
 
 static void dataSent(uint32_t token) {
-	size_t toRead = (left > USB_BYTES_AT_A_TIME) ? USB_BYTES_AT_A_TIME: left;
-	bufferFlush((char*) dataSendBuffer, toRead);
-	usb_send_bulk(1, dataSendBuffer, toRead);
-	left -= toRead;
+	uartPrintf("sending remainder: %d\r\n", (int)left);
+	if(left > 0) {
+		size_t toRead = (left > USB_BYTES_AT_A_TIME) ? USB_BYTES_AT_A_TIME: left;
+		bufferFlush((char*) dataSendBuffer, toRead);
+		usb_send_bulk(1, dataSendBuffer, toRead);
+		left -= toRead;
+	}	
 }
 
 static void controlSent(uint32_t token) {
-
+	uartPrintf("control sent\r\n");
 }
 
 static void enumerateHandler(USBInterface* interface) {

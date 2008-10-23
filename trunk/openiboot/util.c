@@ -178,7 +178,7 @@ void bufferDump(uint32_t location, unsigned int len) {
 }
 
 void bufferPrint(const char* toBuffer) {
-	uart_write(0, toBuffer, strlen(toBuffer));
+	uartPrint(toBuffer);
 	EnterCriticalSection();
 	if(pMyBuffer == NULL) {
 		MyBuffer = (char*) malloc(SCROLLBACK_LEN);
@@ -197,6 +197,10 @@ void bufferPrint(const char* toBuffer) {
 	memcpy(pMyBuffer, toBuffer, len + 1);
 	pMyBuffer += len;
 	LeaveCriticalSection();
+}
+
+void uartPrint(const char* toBuffer) {
+	uart_write(0, toBuffer, strlen(toBuffer));
 }
 
 void bufferPrintf(const char* format, ...) {
@@ -218,6 +222,17 @@ void bufferFlush(char* destination, size_t length) {
 	pMyBuffer -= length;
 	*pMyBuffer = '\0';
 	LeaveCriticalSection();
+}
+
+void uartPrintf(const char* format, ...) {
+	char buffer[1000];
+	buffer[0] = '\0';
+
+	va_list args;
+	va_start(args, format);
+	vsprintf(buffer, format, args);
+	va_end(args);
+	uartPrint(buffer);
 }
 
 char* getScrollback() {

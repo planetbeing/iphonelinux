@@ -16,6 +16,8 @@ void buffer_dump_memory(uint32_t start, int length);
 void buffer_dump_memory2(uint32_t start, int length, int width);
 void bufferPrint(const char* toBuffer);
 void bufferPrintf(const char* format, ...);
+void uartPrint(const char* toBuffer);
+void uartPrintf(const char* format, ...);
 void bufferFlush(char* destination, size_t length);
 char* getScrollback();
 size_t getScrollbackLen();

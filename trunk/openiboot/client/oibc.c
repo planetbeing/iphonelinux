@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <string.h>
 #include <usb.h>
 
 #define OPENIBOOTCMD_DUMPBUFFER 0
 #define OPENIBOOTCMD_DUMPBUFFER_LEN 1
 #define OPENIBOOTCMD_DUMPBUFFER_GOAHEAD 2
+#define OPENIBOOTCMD_SENDCOMMAND 3
+#define OPENIBOOTCMD_SENDCOMMAND_GOAHEAD 4
 
 typedef struct OpenIBootCmd {
 	uint32_t command;
@@ -59,23 +62,48 @@ done:
 
 	OpenIBootCmd cmd;
 	char* buffer;
+	int totalLen = 0;
 
 	cmd.command = OPENIBOOTCMD_DUMPBUFFER;
+	cmd.dataLen = 0;
 	usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
-	while(usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000) <= 0);
-	buffer = (char*) malloc(cmd.dataLen);
+	printf("usb_interrupt_read: %d\n", usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000));
+	totalLen = cmd.dataLen;
 
-	cmd.command = OPENIBOOTCMD_DUMPBUFFER_GOAHEAD;
-	usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
+	while(totalLen > 0) {
+		buffer = (char*) malloc(totalLen);
 
-	int read = 0;
-	while(read < cmd.dataLen) {
-		size_t toRead = (cmd.dataLen > 0x80) ? 0x80 : cmd.dataLen;
-		while(usb_bulk_read(device, 1, buffer + read, toRead, 1000) <= 0);
-		read += toRead;
+		cmd.command = OPENIBOOTCMD_DUMPBUFFER_GOAHEAD;
+		cmd.dataLen = totalLen;
+		usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
+
+		int read = 0;
+		while(read < totalLen) {
+			int left = (totalLen - read);
+			size_t toRead = (left > 0x80) ? 0x80 : left;
+			int hasRead;
+			printf("usb_bulk_read: %d\n", hasRead = usb_bulk_read(device, 1, buffer + read, toRead, 1000));
+			read += hasRead;
+		}
+		*(buffer + read) = '\0';
+		printf(buffer); fflush(stdout);
+
+		cmd.command = OPENIBOOTCMD_DUMPBUFFER;
+		cmd.dataLen = 0;
+		usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
+		printf("usb_interrupt_read: %d\n", usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000));
+		totalLen = cmd.dataLen;
 	}
-	*(buffer + read) = '\0';
-	printf(buffer); fflush(stdout);
+
+	char cmdStr[] = "Testing...";
+
+	cmd.command = OPENIBOOTCMD_SENDCOMMAND;
+	cmd.dataLen = strlen(cmdStr);
+	usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
+
+
+	printf("usb_interrupt_read: %d\n", usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000));
+	printf("usb_bulk_write: %d\n", usb_bulk_write(device, 2, cmdStr, cmd.dataLen, 1000));
 
 	usb_release_interface(device, i);
 	usb_close(device);

@@ -399,13 +399,17 @@ static void handleTxInterrupts(int endpoint) {
 		return;
 	}
 
+	//uartPrintf("\tendpoint %d has an TX interrupt\r\n", endpoint);
+
 	// clear pending interrupts
 	if((inInterruptStatus[endpoint] & USB_EPINT_INEPNakEff) == USB_EPINT_INEPNakEff) {
 		InEPRegs[endpoint].interrupt = USB_EPINT_INEPNakEff;
+		//uartPrintf("\t\tUSB_EPINT_INEPNakEff\r\n");
 	}
 
 	if((inInterruptStatus[endpoint] & USB_EPINT_INTknEPMis) == USB_EPINT_INTknEPMis) {
 		InEPRegs[endpoint].interrupt = USB_EPINT_INTknEPMis;
+		//uartPrintf("\t\tUSB_EPINT_INTknEPMis\r\n");
 
 		// clear the corresponding core interrupt
 		SET_REG(USB + GINTSTS, GET_REG(USB + GINTSTS) | GINTMSK_EPMIS);
@@ -413,24 +417,29 @@ static void handleTxInterrupts(int endpoint) {
 
 	if((inInterruptStatus[endpoint] & USB_EPINT_INTknTXFEmp) == USB_EPINT_INTknTXFEmp) {
 		InEPRegs[endpoint].interrupt = USB_EPINT_INTknTXFEmp;
+		//uartPrintf("\t\tUSB_EPINT_INTknTXFEmp\r\n");
 	}
 
 	if((inInterruptStatus[endpoint] & USB_EPINT_TimeOUT) == USB_EPINT_TimeOUT) {
 		InEPRegs[endpoint].interrupt = USB_EPINT_TimeOUT;
+		//uartPrintf("\t\tUSB_EPINT_TimeOUT\r\n");
 		currentlySending = 0xFF;
 		//ringBufferDequeue(txQueue);
 	}
 
 	if((inInterruptStatus[endpoint] & USB_EPINT_AHBErr) == USB_EPINT_AHBErr) {
 		InEPRegs[endpoint].interrupt = USB_EPINT_AHBErr;
+		//uartPrintf("\t\tUSB_EPINT_AHBErr\r\n");
 	}
 
 	if((inInterruptStatus[endpoint] & USB_EPINT_EPDisbld) == USB_EPINT_EPDisbld) {
 		InEPRegs[endpoint].interrupt = USB_EPINT_EPDisbld;
+		//uartPrintf("\t\tUSB_EPINT_EPDisbldr\n");
 	}
 
 	if((inInterruptStatus[endpoint] & USB_EPINT_XferCompl) == USB_EPINT_XferCompl) {
 		InEPRegs[endpoint].interrupt = USB_EPINT_XferCompl;
+		//uartPrintf("\t\tUSB_EPINT_XferCompl\n");
 		currentlySending = 0xFF;
 		advanceTxQueue();
 	}
@@ -438,6 +447,12 @@ static void handleTxInterrupts(int endpoint) {
 }
 
 static void handleRxInterrupts(int endpoint) {
+	if(!outInterruptStatus[endpoint]) {
+		return;
+	}
+
+	//uartPrintf("\tendpoint %d has an RX interrupt\r\n", endpoint);
+		
 	if((outInterruptStatus[endpoint] & USB_EPINT_Back2BackSetup) == USB_EPINT_Back2BackSetup) {
 		OutEPRegs[endpoint].interrupt = USB_EPINT_Back2BackSetup;
 	}
@@ -534,7 +549,7 @@ static void usbIRQHandler(uint32_t token) {
 	uint32_t status = GET_REG(USB + GINTSTS) & GET_REG(USB + GINTMSK);
 	int process = FALSE;
 
-//	bufferPrintf("<begin interrupt: %x>\r\n", status);
+	//uartPrintf("<begin interrupt: %x>\r\n", status);
 
 	if(status) {
 		process = TRUE;
@@ -614,7 +629,7 @@ static void usbIRQHandler(uint32_t token) {
 									memcpy(controlSendBuffer, usb_get_device_qualifier_descriptor(), length);
 									break;
 								default:
-									bufferPrintf("Unknown descriptor request: %d\r\n", setupPacket->wValue >> 8);
+									uartPrintf("Unknown descriptor request: %d\r\n", setupPacket->wValue >> 8);
 									if(usb_state < USBError) {
 										change_state(USBUnknownDescriptorRequest);
 									}
@@ -675,7 +690,9 @@ static void usbIRQHandler(uint32_t token) {
 					receiveControl(controlRecvBuffer, sizeof(USBSetupPacket));
 				}
 			} else {
+				//uartPrintf("\t<begin callEndpointHandlers>\r\n");
 				callEndpointHandlers();
+				//uartPrintf("\t<end callEndpointHandlers>\r\n");
 			}
 
 			process = TRUE;
@@ -694,7 +711,7 @@ static void usbIRQHandler(uint32_t token) {
 		status = GET_REG(USB + GINTSTS) & GET_REG(USB + GINTMSK);
 	}
 
-//	bufferPrintf("<end interrupt>\r\n");
+	//uartPrintf("<end interrupt>\r\n");
 
 }
 
@@ -790,7 +807,11 @@ USBConfigurationDescriptor* usb_get_configuration_descriptor(int index, uint8_t 
 }
 
 void usb_add_endpoint(USBInterface* interface, int endpoint, USBDirection direction, USBTransferType transferType) {
-	addEndpointDescriptor(interface, endpoint, direction, transferType, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(usb_speed), 0);
+	if(transferType == USBInterrupt) { 
+		addEndpointDescriptor(interface, endpoint, direction, transferType, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(usb_speed), 32);
+	} else {
+		addEndpointDescriptor(interface, endpoint, direction, transferType, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(usb_speed), 0);
+	}
 }
 
 static void initializeDescriptors() {
@@ -1025,7 +1046,7 @@ static int8_t ringBufferDequeue(RingBuffer* buffer) {
 		buffer->readPtr = buffer->bufferStart;
 	}
 
-//	bufferPrintf("queue(dequeue): %d %x %x %x %x\r\n", buffer->count, buffer->readPtr, buffer->writePtr, buffer->bufferStart, buffer->bufferEnd);
+	//uartPrintf("queue(dequeue): %d %x %x %x %x\r\n", buffer->count, buffer->readPtr, buffer->writePtr, buffer->bufferStart, buffer->bufferEnd);
 	LeaveCriticalSection();
 	return value;
 }
@@ -1045,7 +1066,7 @@ static int8_t ringBufferEnqueue(RingBuffer* buffer, uint8_t value) {
 		buffer->writePtr = buffer->bufferStart;
 	}
 
-//	bufferPrintf("queue(enqueue): %d %x %x %x %x\r\n", buffer->count, buffer->readPtr, buffer->writePtr, buffer->bufferStart, buffer->bufferEnd);
+	//uartPrintf("queue(enqueue): %d %x %x %x %x\r\n", buffer->count, buffer->readPtr, buffer->writePtr, buffer->bufferStart, buffer->bufferEnd);
 	LeaveCriticalSection();
 
 	return value;

@@ -202,6 +202,8 @@ typedef void (*USBEnumerateHandler)(USBInterface* interface);
 #define OPENIBOOTCMD_DUMPBUFFER 0
 #define OPENIBOOTCMD_DUMPBUFFER_LEN 1
 #define OPENIBOOTCMD_DUMPBUFFER_GOAHEAD 2
+#define OPENIBOOTCMD_SENDCOMMAND 3
+#define OPENIBOOTCMD_SENDCOMMAND_GOAHEAD 4
 
 typedef struct OpenIBootCmd {
 	uint32_t command;
