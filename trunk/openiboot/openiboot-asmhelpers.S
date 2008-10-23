@@ -42,7 +42,7 @@
 .global CallArm
 .global CallThumb
 
-.global DebugReboot
+.global Reboot
 
 .global CurrentRunning
 
@@ -255,9 +255,11 @@ ClearCPUCaches:
 	LDMFD	SP!, {LR}
 	BX	LR
 
-DebugReboot:
-	LDR	PC, =(0x20000000)
-	B	DebugReboot
+Reboot:
+	LDR	R0, =REBOOTCTRL
+	MOVLS	R1, #REBOOTVALUE
+	STR	R1, [R0]
+	B	Reboot
 
 .data
 

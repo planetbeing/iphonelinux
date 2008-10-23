@@ -20,6 +20,15 @@ void* memcpy(void* dest, const void* src, uint32_t size) {
 	return dest;
 }
 
+int strcmp(const char* s1, const char* s2) {
+	while(*s1 == *(s2++)) {
+		if(*(s1++) == '\0')
+			return 0;
+	}
+
+	return (*(const unsigned char *)s1 - *(const unsigned char *)(s2 - 1));
+}
+
 int memcmp(const void* s1, const void* s2, uint32_t size) {
 	uint32_t i;
 	const uint8_t* a = s1;

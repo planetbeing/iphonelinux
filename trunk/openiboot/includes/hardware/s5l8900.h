@@ -21,12 +21,14 @@
 #define PeripheralPort 0x38000000
 #define AMC0 0x22000000
 #define ROM 0x20000000
+#define REBOOTCTRL 0x3E300000
 
 /*
  *	Values
  */
 
 #define EDRAM_CLOCKGATE 0x1B
+#define REBOOTVALUE 0x100000
 
 #define DMA_ALIGN 0x40
 
