@@ -75,6 +75,13 @@ int strlen(const char* str) {
 	return ret;
 }
 
+int tolower(int c) {
+	if(c >= 'A' && c <= 'Z')
+		return c - 'A' + 'a';
+	else
+		return c;
+}
+
 int putchar(int c) {
 	char ch = (char) c;
 	if(uart_write(0, &ch, 1) == 0)
@@ -85,6 +92,89 @@ int putchar(int c) {
 
 int puts(const char *str) {
 	return uart_write(0, str, strlen(str));
+}
+
+unsigned long int parseNumber(const char* str) {
+	int base = 10;
+	if(*str == '0') {
+		if(*(str + 1) == 'x') {
+			base = 16;
+			str += 2;
+		}
+		if(*(str + 1) == 'o') {
+			base = 8;
+			str += 2;
+		}
+		if(*(str + 1) == 'd') {
+			base = 10;
+			str += 2;
+		}
+		if(*(str + 1) == 'b') {
+			base = 2;
+			str += 2;
+		}
+	}
+
+	return strtoul(str, NULL, base);
+}
+
+unsigned long int strtoul(const char* str, char** endptr, int base) {
+	if(base == 16) {
+		if(*str == '0' && *(str + 1) == 'x')
+			str += 2;
+	}
+
+	char maxDigit;
+
+	if(base <= 10) {
+		maxDigit = '0' + base - 1;
+	} else {
+		maxDigit = 'a' + base - 11;
+	}
+
+	const char *myEndPtr = str;
+	while(*myEndPtr != '\0' && ((*myEndPtr >= '0' && *myEndPtr <= '9') || (tolower(*myEndPtr) >= 'a' && tolower(*myEndPtr) <= maxDigit))) {
+		myEndPtr++;
+	}
+
+	if(endptr != NULL) {
+		*endptr = (char*) myEndPtr;
+	}
+
+	myEndPtr--;
+
+	unsigned long int result = 0;
+	unsigned long int currentPlace = 1;
+	while(myEndPtr >= str) {
+		if(*myEndPtr >= '0' && *myEndPtr <= '9') {
+			result += currentPlace * (*myEndPtr - '0');
+		} else if(tolower(*myEndPtr) >= 'a' && tolower(*myEndPtr) <= maxDigit) {
+			result += currentPlace * (10 + (tolower(*myEndPtr) - 'a'));
+		}
+
+		currentPlace *= base;
+		myEndPtr--;
+	}
+
+	return result;
+}
+
+char** tokenize(char* commandline, int* argc) {
+	static char* arguments[10];
+	int curArg = 1;
+	arguments[0] = commandline;
+	while(*commandline != '\0') {
+		if(*commandline == ' ') {
+			*commandline = '\0';
+			arguments[curArg] = commandline + 1;
+			curArg++;
+		}
+		commandline++;
+	}
+
+	*argc = curArg;
+
+	return arguments;
 }
 
 void dump_memory(uint32_t start, int length) {
@@ -186,8 +276,7 @@ void bufferDump(uint32_t location, unsigned int len) {
 	LeaveCriticalSection();
 }
 
-void bufferPrint(const char* toBuffer) {
-	uartPrint(toBuffer);
+void addToBuffer(const char* toBuffer, int len) {
 	EnterCriticalSection();
 	if(pMyBuffer == NULL) {
 		MyBuffer = (char*) malloc(SCROLLBACK_LEN);
@@ -195,7 +284,6 @@ void bufferPrint(const char* toBuffer) {
 		pMyBuffer = MyBuffer;
 		*pMyBuffer = '\0';
 	}
-	int len = strlen(toBuffer);
 	MyBufferLen += len;
 
 	if((MyBufferLen + 1) > SCROLLBACK_LEN) {
@@ -203,9 +291,16 @@ void bufferPrint(const char* toBuffer) {
 		MyBufferLen = SCROLLBACK_LEN;
 	}
 
-	memcpy(pMyBuffer, toBuffer, len + 1);
+	memcpy(pMyBuffer, toBuffer, len);
+	pMyBuffer[len] = '\0';
 	pMyBuffer += len;
 	LeaveCriticalSection();
+}
+
+void bufferPrint(const char* toBuffer) {
+	uartPrint(toBuffer);
+	int len = strlen(toBuffer);
+	addToBuffer(toBuffer, len);
 }
 
 void uartPrint(const char* toBuffer) {

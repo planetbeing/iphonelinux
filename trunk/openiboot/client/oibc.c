@@ -28,7 +28,9 @@ void* doOutput(void* threadid) {
 		cmd.command = OPENIBOOTCMD_DUMPBUFFER;
 		cmd.dataLen = 0;
 		usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
-		usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
+		if(usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000) < 0) {
+			exit(0);
+		}
 		totalLen = cmd.dataLen;
 
 		while(totalLen > 0) {
@@ -63,31 +65,56 @@ void* doOutput(void* threadid) {
 	pthread_exit(NULL);
 }
 
-void* doInput(void* threadid) {
+void sendBuffer(char* buffer, size_t size) {
 	OpenIBootCmd cmd;
+
+	cmd.command = OPENIBOOTCMD_SENDCOMMAND;
+	cmd.dataLen = size;
+
+	usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
+
+	while(1) {
+		usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
+		if(cmd.command == OPENIBOOTCMD_SENDCOMMAND_GOAHEAD)
+			break;
+	}
+
+	usb_bulk_write(device, 2, buffer, size, 1000);
+}
+
+void* doInput(void* threadid) {
 	char commandBuffer[0x80];
+
 	while(1) {
 		fgets(commandBuffer, sizeof(commandBuffer), stdin);
-		int commandLen = strlen(commandBuffer);
-		if(commandBuffer[commandLen - 1] == '\n') {
-			commandBuffer[commandLen] = '\0';
-			commandLen--;
+		char* fileBuffer = NULL;
+		int len = strlen(commandBuffer);
+		if(commandBuffer[len - 1] == '\n') {
+			commandBuffer[len - 1] = '\0';
+			len--;
+		}
+
+		if(commandBuffer[0] == '!') {
+			FILE* file = fopen(&commandBuffer[1], "rb");
+			if(!file) {
+				fprintf(stderr, "file not found: %s\n", &commandBuffer[1]);
+				continue;
+			}
+			fseek(file, 0, SEEK_END);
+			len = ftell(file);
+			fseek(file, 0, SEEK_SET);
+			fileBuffer = malloc(len);
+			fread(fileBuffer, 1, len, file);
+			fclose(file);
+
 		}
 
 		pthread_mutex_lock(&lock);
-
-		cmd.command = OPENIBOOTCMD_SENDCOMMAND;
-		cmd.dataLen = commandLen;
-		usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
-
-		while(1) {
-			usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
-			if(cmd.command == OPENIBOOTCMD_SENDCOMMAND_GOAHEAD)
-				break;
+		if(fileBuffer) {
+			sendBuffer(fileBuffer, len);
+		} else {
+			sendBuffer(commandBuffer, len);
 		}
-
-		usb_bulk_write(device, 2, commandBuffer, cmd.dataLen, 1000);
-
 		pthread_mutex_unlock(&lock);
 
 		pthread_yield();

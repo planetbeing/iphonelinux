@@ -22,6 +22,7 @@
 #include "images.h"
 
 #include "util.h"
+#include "commands.h"
 
 static int setup_devices();
 static int setup_openiboot();
@@ -33,6 +34,10 @@ extern uint8_t _binary_payload_bin_size;
 
 void OpenIBootStart() {
 	setup_openiboot();
+
+	bufferPrintf("---------------------------------------\r\n");
+	bufferPrintf("          WELCOME TO OPENIBOOT\r\n");
+	bufferPrintf("---------------------------------------\r\n");
 
 	while(TRUE) {
 	}
@@ -66,23 +71,51 @@ void OpenIBootStart() {
 
 }
 
-void processCommand(const char* command) {
-	if(strcmp(command, "reboot") == 0) {
-		Reboot();
-	} else {
-		bufferPrintf("unknown command: %s\r\n", command);
-	}
-}
-
 static uint8_t* controlSendBuffer = NULL;
 static uint8_t* controlRecvBuffer = NULL;
 static uint8_t* dataSendBuffer = NULL;
 static uint8_t* dataRecvBuffer = NULL;
+static uint8_t* commandRecvBuffer = NULL;
 static uint8_t* dataRecvPtr = NULL;
 static size_t left = 0;
 static size_t rxLeft = 0;
 
 #define USB_BYTES_AT_A_TIME 0x80
+
+void processCommand(char* command) {
+	if(dataRecvBuffer != commandRecvBuffer) {
+		// in file mode, but we just received the whole thing
+		dataRecvBuffer = commandRecvBuffer;
+		return;
+	}
+
+	int argc;
+	char** argv = tokenize(command, &argc);
+
+	if(strcmp(argv[0], "sendfile") == 0) {
+		if(argc >= 2) {
+			// enter file mode
+			dataRecvBuffer = (uint8_t*) parseNumber(argv[1]);
+			return;
+		}
+	}
+
+	OPIBCommand* curCommand = CommandList;
+
+	int success = FALSE;
+	while(curCommand->name != NULL) {
+		if(strcmp(argv[0], curCommand->name) == 0) {
+			curCommand->routine(argc, argv);
+			success = TRUE;
+			break;
+		}
+		curCommand++;
+	}
+
+	if(!success) {
+		bufferPrintf("unknown command: %s\r\n", command);
+	}
+}
 
 static void controlReceived(uint32_t token) {
 	OpenIBootCmd* cmd = (OpenIBootCmd*)controlRecvBuffer;
@@ -165,7 +198,7 @@ static void enumerateHandler(USBInterface* interface) {
 		dataSendBuffer = memalign(DMA_ALIGN, 0x80);
 
 	if(!dataRecvBuffer)
-		dataRecvBuffer = memalign(DMA_ALIGN, 0x80);
+		dataRecvBuffer = commandRecvBuffer = memalign(DMA_ALIGN, 0x80);
 }
 
 static void startHandler() {
