@@ -109,10 +109,13 @@ void nor_write(void* buffer, int offset, int len) {
 	free(sectorsToChange);
 }
 
+int getNORSectorSize() {
+	return NORSectorSize;
+}
+
 int nor_setup() {
 	probeNOR();
 
 	return 0;
 }
-
 

@@ -80,12 +80,16 @@ static uint8_t* dataRecvPtr = NULL;
 static size_t left = 0;
 static size_t rxLeft = 0;
 
+static uint8_t* sendFilePtr = NULL;
+static uint32_t sendFileBytesLeft = 0;
+
 #define USB_BYTES_AT_A_TIME 0x80
 
 void processCommand(char* command) {
 	if(dataRecvBuffer != commandRecvBuffer) {
 		// in file mode, but we just received the whole thing
 		dataRecvBuffer = commandRecvBuffer;
+		bufferPrintf("file received.\r\n");
 		return;
 	}
 
@@ -96,6 +100,15 @@ void processCommand(char* command) {
 		if(argc >= 2) {
 			// enter file mode
 			dataRecvBuffer = (uint8_t*) parseNumber(argv[1]);
+			return;
+		}
+	}
+
+	if(strcmp(argv[0], "getfile") == 0) {
+		if(argc >= 3) {
+			// enter file mode
+			sendFilePtr = (uint8_t*) parseNumber(argv[1]);
+			sendFileBytesLeft = parseNumber(argv[2]);
 			return;
 		}
 	}
@@ -122,7 +135,14 @@ static void controlReceived(uint32_t token) {
 	OpenIBootCmd* reply = (OpenIBootCmd*)controlSendBuffer;
 
 	if(cmd->command == OPENIBOOTCMD_DUMPBUFFER) {
-		int length = getScrollbackLen(); // getScrollbackLen();// 0x80;
+		int length;
+
+		if(sendFileBytesLeft > 0) {
+			length = sendFileBytesLeft;
+		} else {
+			length = getScrollbackLen(); // getScrollbackLen();// 0x80;
+		}
+
 		reply->command = OPENIBOOTCMD_DUMPBUFFER_LEN;
 		reply->dataLen = length;
 		usb_send_interrupt(3, controlSendBuffer, sizeof(OpenIBootCmd));
@@ -133,8 +153,17 @@ static void controlReceived(uint32_t token) {
 		//uartPrintf("got dumpbuffer goahead, writing length: %d\r\n", (int)left);
 
 		size_t toRead = (left > USB_BYTES_AT_A_TIME) ? USB_BYTES_AT_A_TIME: left;
-		bufferFlush((char*) dataSendBuffer, toRead);
-		usb_send_bulk(1, dataSendBuffer, toRead);
+		if(sendFileBytesLeft > 0) {
+			usb_send_bulk(1, sendFilePtr, toRead);
+			sendFilePtr += toRead;
+			sendFileBytesLeft -= toRead;
+			if(sendFileBytesLeft == 0) {
+				bufferPrintf("file sent.\r\n");
+			}
+		} else {
+			bufferFlush((char*) dataSendBuffer, toRead);
+			usb_send_bulk(1, dataSendBuffer, toRead);
+		}
 		left -= toRead;
 	} else if(cmd->command == OPENIBOOTCMD_SENDCOMMAND) {
 		dataRecvPtr = dataRecvBuffer;
@@ -172,8 +201,17 @@ static void dataSent(uint32_t token) {
 	//uartPrintf("sending remainder: %d\r\n", (int)left);
 	if(left > 0) {
 		size_t toRead = (left > USB_BYTES_AT_A_TIME) ? USB_BYTES_AT_A_TIME: left;
-		bufferFlush((char*) dataSendBuffer, toRead);
-		usb_send_bulk(1, dataSendBuffer, toRead);
+		if(sendFileBytesLeft > 0) {
+			usb_send_bulk(1, sendFilePtr, toRead);
+			sendFilePtr += toRead;
+			sendFileBytesLeft -= toRead;
+			if(sendFileBytesLeft == 0) {
+				bufferPrintf("file sent.\r\n");
+			}
+		} else {
+			bufferFlush((char*) dataSendBuffer, toRead);
+			usb_send_bulk(1, dataSendBuffer, toRead);
+		}
 		left -= toRead;
 	}	
 }

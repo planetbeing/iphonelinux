@@ -2,6 +2,7 @@
 #include <string.h>
 #include <usb.h>
 #include <pthread.h>
+#include <readline/readline.h>
 
 #define OPENIBOOTCMD_DUMPBUFFER 0
 #define OPENIBOOTCMD_DUMPBUFFER_LEN 1
@@ -31,12 +32,13 @@ void* doOutput(void* threadid) {
 		cmd.dataLen = 0;
 		usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
 		if(usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000) < 0) {
+			rl_deprep_terminal();
 			exit(0);
 		}
 		totalLen = cmd.dataLen;
 
 		while(totalLen > 0) {
-			buffer = (char*) malloc(totalLen);
+			buffer = (char*) malloc(totalLen + 1);
 
 			cmd.command = OPENIBOOTCMD_DUMPBUFFER_GOAHEAD;
 			cmd.dataLen = totalLen;
@@ -82,6 +84,8 @@ void* doOutput(void* threadid) {
 	pthread_exit(NULL);
 }
 
+#define MAX_TO_SEND 16384
+
 void sendBuffer(char* buffer, size_t size) {
 	OpenIBootCmd cmd;
 
@@ -96,20 +100,36 @@ void sendBuffer(char* buffer, size_t size) {
 			break;
 	}
 
-	usb_bulk_write(device, 2, buffer, size, 1000);
+	int toSend = 0;
+	while(size > 0) {
+		if(size <= MAX_TO_SEND)
+			toSend = size;
+		else
+			toSend = MAX_TO_SEND;
+
+		usb_bulk_write(device, 2, buffer, toSend, 1000);
+
+		size -= toSend;
+	}
 }
 
 void* doInput(void* threadid) {
-	char commandBuffer[0x80];
+	char* commandBuffer = NULL;
+	char toSendBuffer[0x80];
+
+	rl_basic_word_break_characters = " \t\n\"\\'`@$><=;|&{(~!:";
+	rl_completion_append_character = '\0';
 
 	while(1) {
-		fgets(commandBuffer, sizeof(commandBuffer), stdin);
+		if(commandBuffer != NULL)
+			free(commandBuffer);
+
+		commandBuffer = readline(NULL);
+		if(commandBuffer && *commandBuffer)
+			add_history(commandBuffer);
+
 		char* fileBuffer = NULL;
 		int len = strlen(commandBuffer);
-		if(commandBuffer[len - 1] == '\n') {
-			commandBuffer[len - 1] = '\0';
-			len--;
-		}
 
 		if(commandBuffer[0] == '!') {
 			char* atLoc = strchr(&commandBuffer[1], '@');
@@ -130,13 +150,13 @@ void* doInput(void* threadid) {
 			fclose(file);
 
 			if(atLoc != NULL) {
-				sprintf(commandBuffer, "sendfile %s", atLoc + 1);
+				sprintf(toSendBuffer, "sendfile %s", atLoc + 1);
 			} else {
-				sprintf(commandBuffer, "sendfile 0x09000000");
+				sprintf(toSendBuffer, "sendfile 0x09000000");
 			}
 
 			pthread_mutex_lock(&lock);
-			sendBuffer(commandBuffer, strlen(commandBuffer));
+			sendBuffer(toSendBuffer, strlen(toSendBuffer));
 			sendBuffer(fileBuffer, len);
 			pthread_mutex_unlock(&lock);
 		} else if(commandBuffer[0] == '~') {
@@ -151,7 +171,7 @@ void* doInput(void* threadid) {
 			sizeLoc++;
 
 			int toRead;
-			sscanf(sizeLoc, "%d", &toRead);
+			sscanf(sizeLoc, "%i", &toRead);
 
 			char* atLoc = strchr(&commandBuffer[1], '@');
 
@@ -165,13 +185,13 @@ void* doInput(void* threadid) {
 			}
 
 			if(atLoc != NULL) {
-				sprintf(commandBuffer, "getfile %s %d", atLoc + 1, toRead);
+				sprintf(toSendBuffer, "getfile %s %d", atLoc + 1, toRead);
 			} else {
-				sprintf(commandBuffer, "getfile 0x09000000 %d", toRead);
+				sprintf(toSendBuffer, "getfile 0x09000000 %d", toRead);
 			}
 
 			pthread_mutex_lock(&lock);
-			sendBuffer(commandBuffer, strlen(commandBuffer));
+			sendBuffer(toSendBuffer, strlen(toSendBuffer));
 			outputFile = file;
 			readIntoOutput = toRead;
 			pthread_mutex_unlock(&lock);

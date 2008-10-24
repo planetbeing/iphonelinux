@@ -20,7 +20,7 @@ void dump_memory(uint32_t start, int length);
 void buffer_dump_memory(uint32_t start, int length);
 void hexdump(uint32_t start, int length);
 void buffer_dump_memory2(uint32_t start, int length, int width);
-void addToBuffer(const char* toBuffer, int len);
+int addToBuffer(const char* toBuffer, int len);
 void bufferPrint(const char* toBuffer);
 void bufferPrintf(const char* format, ...);
 void uartPrint(const char* toBuffer);

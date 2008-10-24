@@ -1,5 +1,5 @@
 OIBC_OBJS = oibc.o
-LIBRARIES = -lusb -lpthread
+LIBRARIES = -lusb -lpthread -lreadline
 
 %.o:	%.c
 	$(CC) $(CFLAGS) -c $< -o $@

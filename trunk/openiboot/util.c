@@ -100,18 +100,18 @@ unsigned long int parseNumber(const char* str) {
 		if(*(str + 1) == 'x') {
 			base = 16;
 			str += 2;
-		}
-		if(*(str + 1) == 'o') {
+		} else if(*(str + 1) == 'o') {
 			base = 8;
 			str += 2;
-		}
-		if(*(str + 1) == 'd') {
+		} else if(*(str + 1) == 'd') {
 			base = 10;
 			str += 2;
-		}
-		if(*(str + 1) == 'b') {
+		} else if(*(str + 1) == 'b') {
 			base = 2;
 			str += 2;
+		} else {
+			base = 8;
+			str++;
 		}
 	}
 
@@ -325,7 +325,7 @@ void bufferDump(uint32_t location, unsigned int len) {
 	LeaveCriticalSection();
 }
 
-void addToBuffer(const char* toBuffer, int len) {
+int addToBuffer(const char* toBuffer, int len) {
 	EnterCriticalSection();
 	if(pMyBuffer == NULL) {
 		MyBuffer = (char*) malloc(SCROLLBACK_LEN);
@@ -333,6 +333,12 @@ void addToBuffer(const char* toBuffer, int len) {
 		pMyBuffer = MyBuffer;
 		*pMyBuffer = '\0';
 	}
+
+	if((MyBufferLen + len) > SCROLLBACK_LEN) {
+		LeaveCriticalSection();
+		return 0;
+	}
+
 	MyBufferLen += len;
 
 	if((MyBufferLen + 1) > SCROLLBACK_LEN) {
@@ -344,6 +350,8 @@ void addToBuffer(const char* toBuffer, int len) {
 	pMyBuffer[len] = '\0';
 	pMyBuffer += len;
 	LeaveCriticalSection();
+
+	return 1;
 }
 
 void bufferPrint(const char* toBuffer) {

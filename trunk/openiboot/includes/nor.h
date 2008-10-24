@@ -16,4 +16,6 @@ void nor_erase_sector(uint32_t offset);
 void nor_read(void* buffer, int offset, int len);
 void nor_write(void* buffer, int offset, int len);
 
+int getNORSectorSize();
+
 #endif
