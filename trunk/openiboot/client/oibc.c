@@ -16,6 +16,8 @@ typedef struct OpenIBootCmd {
 
 usb_dev_handle* device;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+FILE* outputFile = NULL;
+volatile size_t readIntoOutput = 0;
 
 void* doOutput(void* threadid) {
 	OpenIBootCmd cmd;
@@ -48,8 +50,23 @@ void* doOutput(void* threadid) {
 				hasRead = usb_bulk_read(device, 1, buffer + read, toRead, 1000);
 				read += hasRead;
 			}
+
+			int discarded = 0;
+			if(readIntoOutput > 0) {
+				if(readIntoOutput <= read) {
+					fwrite(buffer, 1, readIntoOutput, outputFile);
+					discarded += readIntoOutput;
+					readIntoOutput = 0;
+					fclose(outputFile);
+				} else {
+					fwrite(buffer, 1, read, outputFile);
+					discarded += read;
+					readIntoOutput -= read;
+				}
+			}
+
 			*(buffer + read) = '\0';
-			printf(buffer); fflush(stdout);
+			printf("%s", buffer + discarded); fflush(stdout);
 
 			cmd.command = OPENIBOOTCMD_DUMPBUFFER;
 			cmd.dataLen = 0;
@@ -95,6 +112,11 @@ void* doInput(void* threadid) {
 		}
 
 		if(commandBuffer[0] == '!') {
+			char* atLoc = strchr(&commandBuffer[1], '@');
+
+			if(atLoc != NULL)
+				*atLoc = '\0';
+
 			FILE* file = fopen(&commandBuffer[1], "rb");
 			if(!file) {
 				fprintf(stderr, "file not found: %s\n", &commandBuffer[1]);
@@ -107,15 +129,57 @@ void* doInput(void* threadid) {
 			fread(fileBuffer, 1, len, file);
 			fclose(file);
 
-		}
+			if(atLoc != NULL) {
+				sprintf(commandBuffer, "sendfile %s", atLoc + 1);
+			} else {
+				sprintf(commandBuffer, "sendfile 0x09000000");
+			}
 
-		pthread_mutex_lock(&lock);
-		if(fileBuffer) {
+			pthread_mutex_lock(&lock);
+			sendBuffer(commandBuffer, strlen(commandBuffer));
 			sendBuffer(fileBuffer, len);
+			pthread_mutex_unlock(&lock);
+		} else if(commandBuffer[0] == '~') {
+			char* sizeLoc = strchr(&commandBuffer[1], ':');
+
+			if(sizeLoc == NULL) {
+				fprintf(stderr, "must specify length to read\n");
+				continue;
+			}
+			
+			*sizeLoc = '\0';
+			sizeLoc++;
+
+			int toRead;
+			sscanf(sizeLoc, "%d", &toRead);
+
+			char* atLoc = strchr(&commandBuffer[1], '@');
+
+			if(atLoc != NULL)
+				*atLoc = '\0';
+
+			FILE* file = fopen(&commandBuffer[1], "wb");
+			if(!file) {
+				fprintf(stderr, "cannot open file: %s\n", &commandBuffer[1]);
+				continue;
+			}
+
+			if(atLoc != NULL) {
+				sprintf(commandBuffer, "getfile %s %d", atLoc + 1, toRead);
+			} else {
+				sprintf(commandBuffer, "getfile 0x09000000 %d", toRead);
+			}
+
+			pthread_mutex_lock(&lock);
+			sendBuffer(commandBuffer, strlen(commandBuffer));
+			outputFile = file;
+			readIntoOutput = toRead;
+			pthread_mutex_unlock(&lock);
 		} else {
+			pthread_mutex_lock(&lock);
 			sendBuffer(commandBuffer, len);
+			pthread_mutex_unlock(&lock);
 		}
-		pthread_mutex_unlock(&lock);
 
 		pthread_yield();
 	}
@@ -170,6 +234,9 @@ done:
 
 	pthread_t inputThread;
 	pthread_t outputThread;
+
+	printf("Client connected: !<filename>[@<address>] to send a file, ~<filename>[@<address>]:<len> to receive a file\n");
+	printf("---------------------------------------------------------------------------------------------------------\n");
 
 	pthread_create(&outputThread, NULL, doOutput, NULL);
 	pthread_create(&inputThread, NULL, doInput, NULL);

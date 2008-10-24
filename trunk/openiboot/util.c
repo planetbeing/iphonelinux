@@ -247,6 +247,55 @@ void buffer_dump_memory2(uint32_t start, int length, int width) {
 }
 
 
+void hexdump(uint32_t start, int length) {
+	uint32_t curPos = start;
+	int x = 0;
+
+	uint8_t line[16];
+	int idx = 0;
+
+	while(curPos < (start + length)) {
+		if(x == 0) {
+			bufferPrintf("%08x ", (unsigned int) curPos);
+		}
+		uint32_t mem = (uint32_t) GET_REG(curPos);
+		uint8_t* memBytes = (uint8_t*) &mem;
+ 
+		bufferPrintf(" %02x", (unsigned int)memBytes[0]);
+		bufferPrintf(" %02x", (unsigned int)memBytes[1]);
+		bufferPrintf(" %02x", (unsigned int)memBytes[2]);
+		bufferPrintf(" %02x", (unsigned int)memBytes[3]);
+
+		line[idx] = memBytes[0]; idx = (idx + 1) % 16;
+		line[idx] = memBytes[1]; idx = (idx + 1) % 16;
+		line[idx] = memBytes[2]; idx = (idx + 1) % 16;
+		line[idx] = memBytes[3]; idx = (idx + 1) % 16;
+
+		if(x == 1) {
+			bufferPrintf(" ");
+		}
+		if(x == 3) {
+			bufferPrintf("  |");
+			int i;
+			for(i = 0; i < 16; i++) {
+				if(line[i] >= 32 && line[i] <= 126) {
+					bufferPrintf("%c", line[i]);
+				} else {
+					bufferPrintf(".");
+				}
+			}
+			bufferPrintf("|\r\n");
+			x = 0;
+		} else {
+			x++;
+		}
+
+		curPos += 4;
+	}
+
+	bufferPrintf("\r\n");
+}
+
 static char* MyBuffer= NULL;
 static char* pMyBuffer = NULL;
 static size_t MyBufferLen = 0;
