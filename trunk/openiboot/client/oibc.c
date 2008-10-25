@@ -207,6 +207,14 @@ void* doInput(void* threadid) {
 }
 
 int main(int argc, char* argv[]) {
+
+#ifdef HAVE_GETEUID
+	if(geteuid() != 0) {
+		fprintf(stderr, "Must be root\n");
+		return 1;
+	}
+#endif
+
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
