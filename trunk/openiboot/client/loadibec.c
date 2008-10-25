@@ -179,7 +179,7 @@ done:
 	usb_set_altinterface(device, 1);
 
 	if(argc >= 2) {
-		if(strcmp(argv[1], "-i")) {
+		if(strcmp(argv[1], "-i") == 0) {
 			interactive(device);
 		} else {
 			send_file(device, argv[1]);
