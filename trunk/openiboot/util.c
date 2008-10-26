@@ -29,6 +29,14 @@ int strcmp(const char* s1, const char* s2) {
 	return (*(const unsigned char *)s1 - *(const unsigned char *)(s2 - 1));
 }
 
+char* strdup(const char* str) {
+	size_t len = strlen(str);
+	char* toRet = (char*) malloc(len + 1);
+	memcpy(toRet, str, len);
+	toRet[len] = '\0';
+	return toRet;
+}
+
 int memcmp(const void* s1, const void* s2, uint32_t size) {
 	uint32_t i;
 	const uint8_t* a = s1;
@@ -160,8 +168,9 @@ unsigned long int strtoul(const char* str, char** endptr, int base) {
 }
 
 char** tokenize(char* commandline, int* argc) {
-	static char* arguments[10];
+	char** arguments;
 	int curArg = 1;
+	arguments = (char**) malloc(sizeof(char*) * 10);
 	arguments[0] = commandline;
 	while(*commandline != '\0') {
 		if(*commandline == ' ') {

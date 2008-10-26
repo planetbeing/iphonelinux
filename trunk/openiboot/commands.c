@@ -3,6 +3,7 @@
 #include "commands.h"
 #include "util.h"
 #include "nor.h"
+#include "lcd.h"
 #include "images.h"
 #include "timer.h"
 
@@ -119,6 +120,7 @@ void cmd_go(int argc, char** argv) {
 
 	uint32_t address = parseNumber(argv[1]);
 	bufferPrintf("Jumping to 0x%x (interrupts disabled)\r\n", address);
+
 	udelay(100000);
 
 	EnterCriticalSection();

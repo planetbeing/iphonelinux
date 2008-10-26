@@ -125,8 +125,10 @@ void* doInput(void* threadid) {
 			free(commandBuffer);
 
 		commandBuffer = readline(NULL);
-		if(commandBuffer && *commandBuffer)
+		if(commandBuffer && *commandBuffer) {
 			add_history(commandBuffer);
+			write_history(".oibc-history");
+		}
 
 		char* fileBuffer = NULL;
 		int len = strlen(commandBuffer);
@@ -214,6 +216,8 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 #endif
+
+	read_history(".oibc-history");
 
 	usb_init();
 	usb_find_busses();

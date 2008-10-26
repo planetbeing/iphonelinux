@@ -31,6 +31,14 @@ extern uint8_t _binary_payload_bin_start;
 extern uint8_t _binary_payload_bin_end;
 extern uint8_t _binary_payload_bin_size;
 
+static void processCommand(char* command);
+
+typedef struct CommandQueue {
+	struct CommandQueue* next;
+	char* command;
+} CommandQueue;
+
+CommandQueue* commandQueue = NULL;
 
 void OpenIBootStart() {
 	setup_openiboot();
@@ -39,36 +47,47 @@ void OpenIBootStart() {
 	bufferPrintf("          WELCOME TO OPENIBOOT\r\n");
 	bufferPrintf("---------------------------------------\r\n");
 
+	// Process command queue
 	while(TRUE) {
-	}
-
-	void* iboot;
-	void* ibootLoc = (void*) 0x09000000;
-
-	images_setup();
-	images_list();
-
-	int verify = images_verify(images_get(fourcc("opib")));
-
-	if(verify != 0) {
-		bufferPrintf("Image verification failed!\r\n");
-	} else {
-		bufferPrintf("Image verification successful!\r\n");
-
-		unsigned int len = images_read(images_get(fourcc("opib")), &iboot);
-
-		memcpy(ibootLoc, iboot, len);
-
-		bufferPrintf("jumping to iboot at: %x\r\n", ibootLoc);
-
+		char* command = NULL;
+		CommandQueue* cur;
 		EnterCriticalSection();
-		CallArm((uint32_t) ibootLoc);
+		if(commandQueue != NULL) {
+			cur = commandQueue;
+			command = cur->command;
+			commandQueue = commandQueue->next;
+			free(cur);
+		}
+		LeaveCriticalSection();
+
+		if(command) {
+			processCommand(command);
+			free(command);
+		}
 	}
-
-	while(TRUE);
-
 	// should not reach here
 
+}
+
+static void addToCommandQueue(const char* command) {
+	EnterCriticalSection();
+	CommandQueue* toAdd = malloc(sizeof(CommandQueue));
+	toAdd->next = NULL;
+	toAdd->command = strdup(command);
+
+	CommandQueue* prev = NULL;
+	CommandQueue* cur = commandQueue;
+	while(cur != NULL) {
+		prev = cur;
+		cur = cur->next;
+	}
+
+	if(prev == NULL) {
+		commandQueue = toAdd;
+	} else {
+		prev->next = toAdd;
+	}
+	LeaveCriticalSection();
 }
 
 static uint8_t* controlSendBuffer = NULL;
@@ -85,13 +104,15 @@ static uint32_t sendFileBytesLeft = 0;
 
 #define USB_BYTES_AT_A_TIME 0x80
 
-void processCommand(char* command) {
+static void processCommand(char* command) {
+	EnterCriticalSection();
 	if(dataRecvBuffer != commandRecvBuffer) {
 		// in file mode, but we just received the whole thing
 		dataRecvBuffer = commandRecvBuffer;
 		bufferPrintf("file received.\r\n");
 		return;
 	}
+	LeaveCriticalSection();
 
 	int argc;
 	char** argv = tokenize(command, &argc);
@@ -99,7 +120,12 @@ void processCommand(char* command) {
 	if(strcmp(argv[0], "sendfile") == 0) {
 		if(argc >= 2) {
 			// enter file mode
-			dataRecvBuffer = (uint8_t*) parseNumber(argv[1]);
+			EnterCriticalSection();
+			if(dataRecvBuffer == commandRecvBuffer) {
+				dataRecvBuffer = (uint8_t*) parseNumber(argv[1]);
+			}
+			LeaveCriticalSection();
+			free(argv);
 			return;
 		}
 	}
@@ -107,8 +133,13 @@ void processCommand(char* command) {
 	if(strcmp(argv[0], "getfile") == 0) {
 		if(argc >= 3) {
 			// enter file mode
-			sendFilePtr = (uint8_t*) parseNumber(argv[1]);
-			sendFileBytesLeft = parseNumber(argv[2]);
+			EnterCriticalSection();
+			if(sendFileBytesLeft == 0) {
+				sendFilePtr = (uint8_t*) parseNumber(argv[1]);
+				sendFileBytesLeft = parseNumber(argv[2]);
+			}
+			LeaveCriticalSection();
+			free(argv);
 			return;
 		}
 	}
@@ -128,6 +159,8 @@ void processCommand(char* command) {
 	if(!success) {
 		bufferPrintf("unknown command: %s\r\n", command);
 	}
+
+	free(argv);
 }
 
 static void controlReceived(uint32_t token) {
@@ -193,7 +226,7 @@ static void dataReceived(uint32_t token) {
 		dataRecvPtr += toRead;
 	} else {
 		*dataRecvPtr = '\0';
-		processCommand((char*)dataRecvBuffer);
+		addToCommandQueue((char*)dataRecvBuffer);
 	}	
 }
 

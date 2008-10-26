@@ -182,6 +182,8 @@ static int initDisplay() {
 
 	installGammaTables(LCDPanelID);
 
+	enterRegisterMode();
+
 //	buffer_dump_memory(LCD + 0x400, 0x400);
 /*	buffer_dump_memory(LCD + 0x800, 0x400);
 	buffer_dump_memory(LCD + 0xC00, 0x400);*/
@@ -946,6 +948,7 @@ static void enterRegisterMode() {
 	int status;
 
 	do {
+		bufferPrintf("enter register mode try %d\r\n", tries);
 		transmitShortCommandOnSPI1(0xDE);
 		status = getPanelRegister(0x15);
 		tries += 1;
@@ -1017,16 +1020,24 @@ static int getPanelRegister(int reg) {
 
 void syrah_quiesce() {
 	bufferPrintf("syrah_quiesce()\r\n");
+	bufferPrintf("spi set baud()\r\n");
 	spi_set_baud(1, 1000000, SPIOption13Setting0, 1, 1, 1);
 	spi_set_baud(0, 500000, SPIOption13Setting0, 1, 0, 0);
+	bufferPrintf("enter register mode()\r\n");
 	enterRegisterMode();
 	udelay(1000);
+	bufferPrintf("setpanelregister 0x55()\r\n");
 	setPanelRegister(0x55, 0x2);
 	udelay(40000);
+	bufferPrintf("setpanelregister 0x7a()\r\n");
 	setPanelRegister(0x7A, 0xDF);
+	bufferPrintf("setpanelregister 0x7b()\r\n");
+	setPanelRegister(0x7B, 0x1);
+	bufferPrintf("tansmitcommandonspi1()\r\n");
 	setPanelRegister(0x7B, 0x1);
 	transmitShortCommandOnSPI1(0x10);
 	udelay(50000);
+	bufferPrintf("setpanelregister 0x7b()\r\n");
 	setPanelRegister(0x7B, 0x0);
 }
 
