@@ -108,7 +108,7 @@ void sendBuffer(char* buffer, size_t size) {
 			toSend = MAX_TO_SEND;
 
 		usb_bulk_write(device, 2, buffer, toSend, 1000);
-
+		buffer += toSend;
 		size -= toSend;
 	}
 }
@@ -161,6 +161,7 @@ void* doInput(void* threadid) {
 			sendBuffer(toSendBuffer, strlen(toSendBuffer));
 			sendBuffer(fileBuffer, len);
 			pthread_mutex_unlock(&lock);
+			free(fileBuffer);
 		} else if(commandBuffer[0] == '~') {
 			char* sizeLoc = strchr(&commandBuffer[1], ':');
 

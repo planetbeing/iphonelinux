@@ -69,8 +69,31 @@ void OpenIBootStart() {
 
 }
 
+static uint8_t* controlSendBuffer = NULL;
+static uint8_t* controlRecvBuffer = NULL;
+static uint8_t* dataSendBuffer = NULL;
+static uint8_t* dataRecvBuffer = NULL;
+static uint8_t* commandRecvBuffer = NULL;
+static uint8_t* dataRecvPtr = NULL;
+static size_t left = 0;
+static size_t rxLeft = 0;
+
+static uint8_t* sendFilePtr = NULL;
+static uint32_t sendFileBytesLeft = 0;
+
+#define USB_BYTES_AT_A_TIME 0x80
+
 static void addToCommandQueue(const char* command) {
 	EnterCriticalSection();
+
+	if(dataRecvBuffer != commandRecvBuffer) {
+		// in file mode, but we just received the whole thing
+		dataRecvBuffer = commandRecvBuffer;
+		bufferPrintf("file received.\r\n");
+		LeaveCriticalSection();
+		return;
+	}
+
 	CommandQueue* toAdd = malloc(sizeof(CommandQueue));
 	toAdd->next = NULL;
 	toAdd->command = strdup(command);
@@ -90,30 +113,7 @@ static void addToCommandQueue(const char* command) {
 	LeaveCriticalSection();
 }
 
-static uint8_t* controlSendBuffer = NULL;
-static uint8_t* controlRecvBuffer = NULL;
-static uint8_t* dataSendBuffer = NULL;
-static uint8_t* dataRecvBuffer = NULL;
-static uint8_t* commandRecvBuffer = NULL;
-static uint8_t* dataRecvPtr = NULL;
-static size_t left = 0;
-static size_t rxLeft = 0;
-
-static uint8_t* sendFilePtr = NULL;
-static uint32_t sendFileBytesLeft = 0;
-
-#define USB_BYTES_AT_A_TIME 0x80
-
 static void processCommand(char* command) {
-	EnterCriticalSection();
-	if(dataRecvBuffer != commandRecvBuffer) {
-		// in file mode, but we just received the whole thing
-		dataRecvBuffer = commandRecvBuffer;
-		bufferPrintf("file received.\r\n");
-		return;
-	}
-	LeaveCriticalSection();
-
 	int argc;
 	char** argv = tokenize(command, &argc);
 
