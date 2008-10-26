@@ -244,10 +244,15 @@ static void installGammaTable(int tableNo, uint8_t* table) {
 
 	bufferPrintf("old values: %x %x %x\r\n", baseReg, GET_REG(baseReg), GET_REG(baseReg + 0x3FC));
 
+	SET_REG(baseReg, 0x3FF);
+	SET_REG(baseReg + 0x3FC, 0x0);
+
+	bufferPrintf("new values: %x %x %x, should be 0x3FF, 0x0\r\n", baseReg, GET_REG(baseReg), GET_REG(baseReg + 0x3FC));
+
 	SET_REG(baseReg, 0);
 	SET_REG(baseReg + 0x3FC, 0x3FF);
 
-	bufferPrintf("new values: %x %x %x\r\n", baseReg, GET_REG(baseReg), GET_REG(baseReg + 0x3FC));
+	bufferPrintf("new values: %x %x %x, should be 0x0, 0x3FF\r\n", baseReg, GET_REG(baseReg), GET_REG(baseReg + 0x3FC));
 
 	gammaVar1 = 0;
 	gammaVar2 = 0;
@@ -467,7 +472,7 @@ static int calculateStrideLen(ColorSpace colorSpace, int extra, int width) {
 static void initLCD(LCDInfo* info) {
 	SET_REG(LCD + WND_CON, 1);
 
-	uint32_t buffer[0x100];
+	static uint32_t buffer[0x100];
 	int i;
 	for(i = 0; i < 0x100; i++) {
 		buffer[i] = 0;
@@ -635,7 +640,7 @@ static void configureLCDClock(LCDInfo* info) {
 }
 
 static void configureClockCON0(int OTFClockDivisor, int clockSource, int option4) {
-	bufferPrintf("otf clock divisor %d\r\n", OTFClockDivisor);
+	bufferPrintf("otf clock divisor: %d\r\n", OTFClockDivisor);
 
 	SET_REG(LCD + VIDCON0,
 		(GET_REG(LCD + VIDCON0) & ~((VIDCON0_CLOCKMASK << VIDCON0_CLOCKSHIFT)
@@ -652,7 +657,7 @@ static int syrah_init() {
 	spi_set_baud(1, 1000000, SPIOption13Setting0, 1, 1, 1);
 	spi_set_baud(0, 500000, SPIOption13Setting0, 1, 0, 0);
 
-	setCommandMode(OFF);
+	setCommandMode(ON);
 
 	gpio_pin_output(LCD_GPIO_MPL_RX_ENABLE, 0);
 	gpio_pin_output(LCD_GPIO_POWER_ENABLE, 0);
@@ -698,7 +703,7 @@ static int syrah_init() {
 	udelay(40000);
 
 	setPanelRegister(0x6D, 0x0);
-	setPanelRegister(0x36, 0x8);
+	transmitCommandOnSPI1(0x36, 0x8);
 	udelay(30000);
 
 	uint8_t lcdCommand[2];
@@ -1011,6 +1016,7 @@ static int getPanelRegister(int reg) {
 }
 
 void syrah_quiesce() {
+	bufferPrintf("syrah_quiesce()\r\n");
 	spi_set_baud(1, 1000000, SPIOption13Setting0, 1, 1, 1);
 	spi_set_baud(0, 500000, SPIOption13Setting0, 1, 0, 0);
 	enterRegisterMode();

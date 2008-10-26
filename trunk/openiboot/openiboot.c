@@ -272,6 +272,7 @@ static int setup_devices() {
 	usb_start(enumerateHandler, startHandler);
 
 	spi_setup();
+
 //	bufferPrintf("Before:\r\n");
 //	buffer_dump_memory(0x3e400000, 0x320);
 //	gpio_reset();
@@ -301,10 +302,10 @@ static int setup_openiboot() {
 
 	LeaveCriticalSection();
 
-	//lcd_setup();
+	lcd_setup();
 
 	aes_setup();
-	//images_setup();
+	images_setup();
 
 	return 0;
 }

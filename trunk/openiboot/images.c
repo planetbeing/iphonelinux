@@ -5,7 +5,6 @@
 #include "aes.h"
 #include "sha1.h"
 
-static const uint32_t IMG2Offset = 0x8400;
 static const uint32_t NOREnd = 0xF0000;
 
 Image* imageList = NULL;
@@ -20,8 +19,50 @@ static const uint8_t Img2HashPadding[] = {	0xAD, 0x2E, 0xE3, 0x8D, 0x2D, 0x9B, 0
 						0xC2, 0xBC, 0x47, 0x61, 0x6D, 0x65, 0x4F, 0x76, 0x65, 0x72,
 						0xA6, 0xA0, 0x99, 0x13};
 
+static int IsImg3 = FALSE;
+
 static void calculateHash(Img2Header* header, uint8_t* hash);
 static void calculateDataHash(void* buffer, int len, uint8_t* hash);
+
+static int img3_setup() {
+	Image* curImage = NULL;
+	AppleImg3RootHeader* rootHeader = (AppleImg3RootHeader*) malloc(sizeof(AppleImg3RootHeader));
+
+	uint32_t offset = ImagesStart;
+	uint32_t index = 0;
+	while(offset < NOREnd) {
+		nor_read(rootHeader, offset, sizeof(AppleImg3RootHeader));
+		if(rootHeader->base.magic != IMG3_MAGIC)
+			break;
+		
+		if(curImage == NULL) {
+			curImage = (Image*) malloc(sizeof(Image));
+			imageList = curImage;
+		} else {
+			curImage->next = (Image*) malloc(sizeof(Image));
+			curImage = curImage->next;
+		}
+
+		curImage->type = rootHeader->extra.name;
+		curImage->offset = offset;
+		curImage->length = rootHeader->base.dataSize;
+		curImage->padded = rootHeader->base.size;
+		curImage->index = index++;
+		curImage->hashMatch = TRUE;
+
+		curImage->next = NULL;
+
+		if((offset + curImage->padded) > MaxOffset) {
+			MaxOffset = offset + curImage->padded;
+		}
+
+		offset += curImage->padded;
+	}
+
+	free(rootHeader);
+
+	return 0;
+}
 
 int images_setup() {
 	IMG2* header;
@@ -32,10 +73,29 @@ int images_setup() {
 
 	header = (IMG2*) malloc(sizeof(IMG2));
 
-	nor_read(header, IMG2Offset, sizeof(IMG2));
+	uint32_t IMG2Offset = 0x0;
+	for(IMG2Offset = 0; IMG2Offset < NOREnd; IMG2Offset += 4096) {
+		nor_read(header, IMG2Offset, sizeof(IMG2));
+		if(header->signature == IMG2Signature) {
+			break;
+		}
+	}
 
 	SegmentSize = header->segmentSize;
 	ImagesStart = (header->imagesStart + header->dataStart) * SegmentSize;
+
+	AppleImg3Header* img3Header = (AppleImg3Header*) malloc(sizeof(AppleImg3Header));
+	nor_read(img3Header, ImagesStart, sizeof(AppleImg3Header));
+	if(img3Header->magic == IMG3_MAGIC) {
+		img3_setup();
+		free(img3Header);
+		free(header);
+		IsImg3 = TRUE;
+		return 0;
+	} else {
+		free(img3Header);
+		IsImg3 = FALSE;
+	}
 
 	curImg2 = (Img2Header*) malloc(sizeof(Img2Header));
 
@@ -97,7 +157,7 @@ void images_list() {
 
 	while(curImage != NULL) {
 		print_fourcc(curImage->type);
-		bufferPrintf("(%d/%d): %x %x %x\r\n", curImage->index, curImage->hashMatch, curImage->offset, curImage->length, curImage->padded);
+		bufferPrintf("(%d/%d): offset: 0x%x, length: 0x%x, padded: 0x%x\r\n", curImage->index, curImage->hashMatch, curImage->offset, curImage->length, curImage->padded);
 		curImage = curImage->next;
 	}
 }
@@ -299,9 +359,46 @@ unsigned int images_read(Image* image, void** data) {
 	}
 
 	*data = malloc(image->padded);
-	nor_read(*data, image->offset + sizeof(Img2Header), image->length);
-	aes_838_decrypt(*data, image->length, NULL);
-	return image->length;
+	if(!IsImg3) {
+		nor_read(*data, image->offset + sizeof(Img2Header), image->length);
+		aes_838_decrypt(*data, image->length, NULL);
+		return image->length;
+	} else {
+		nor_read(*data, image->offset, image->padded);
+
+		uint32_t dataOffset = 0;
+		uint32_t dataLength = 0;
+		uint32_t kbagOffset = 0;
+		uint32_t kbagLength = 0;
+		uint32_t offset = (uint32_t)(*data + sizeof(AppleImg3RootHeader));
+		while((offset - (uint32_t)(*data + sizeof(AppleImg3RootHeader))) < image->length) {
+			AppleImg3Header* header = (AppleImg3Header*) offset;
+			if(header->magic == IMG3_DATA_MAGIC) {
+				dataOffset = offset + sizeof(AppleImg3Header);
+				dataLength = header->dataSize;
+			}
+			if(header->magic == IMG3_KBAG_MAGIC) {
+				kbagOffset = offset + sizeof(AppleImg3Header);
+				kbagLength = header->dataSize;
+			}
+			offset += header->size;
+		}
+
+		AppleImg3KBAGHeader* kbag = (AppleImg3KBAGHeader*) kbagOffset;
+
+		if(kbag->key_modifier == 1) {
+			aes_decrypt((void*)(kbagOffset + sizeof(AppleImg3KBAGHeader)), 16 + (kbag->key_bits * 8), AESGID, NULL, NULL);
+		}
+
+		aes_decrypt((void*)dataOffset, (dataLength / 16) * 16, AESCustom, (uint8_t*)(kbagOffset + sizeof(AppleImg3KBAGHeader) + 16), (uint8_t*)(kbagOffset + sizeof(AppleImg3KBAGHeader)));
+
+		uint8_t* newBuf = malloc(dataLength);
+		memcpy(newBuf, (void*)dataOffset, dataLength);
+		free(*data);
+		*data = newBuf;
+
+		return dataLength;
+	}
 }
 
 static void calculateHash(Img2Header* header, uint8_t* hash) {

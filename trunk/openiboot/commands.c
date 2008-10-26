@@ -3,6 +3,8 @@
 #include "commands.h"
 #include "util.h"
 #include "nor.h"
+#include "images.h"
+#include "timer.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -90,6 +92,52 @@ void cmd_nor_erase(int argc, char** argv) {
 	bufferPrintf("Done.\r\n");
 }
 
+void cmd_images_list(int argc, char** argv) {
+	images_list();
+}
+
+void cmd_images_read(int argc, char** argv) {
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <type> <address>\r\n", argv[0]);
+		return;
+	}
+
+	Image* image = images_get(fourcc(argv[1]));
+	void* imageData;
+	size_t length = images_read(image, &imageData);
+	uint32_t address = parseNumber(argv[2]);
+	memcpy((void*)address, imageData, length);
+	free(imageData);
+	bufferPrintf("Read %d of %s to 0x%x - 0x%x\r\n", length, argv[1], address, address + length);
+}
+
+void cmd_go(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <address>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	bufferPrintf("Jumping to 0x%x (interrupts disabled)\r\n", address);
+	udelay(100000);
+
+	EnterCriticalSection();
+	CallArm(address);
+}
+
+void cmd_jump(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <address>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	bufferPrintf("Jumping to 0x%x\r\n", address);
+	udelay(100000);
+
+	CallArm(address);
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -107,6 +155,10 @@ OPIBCommand CommandList[] =
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},
+		{"images_list", "list the images available on NOR", cmd_images_list},
+		{"images_read", "read an image on NOR", cmd_images_read},
+		{"go", "jump to a specified address (interrupts disabled)", cmd_go},
+		{"jump", "jump to a specified address (interrupts enabled)", cmd_jump},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}
 	};

@@ -355,7 +355,9 @@ int addToBuffer(const char* toBuffer, int len) {
 }
 
 void bufferPrint(const char* toBuffer) {
-	uartPrint(toBuffer);
+	if(UartHasInit)
+		uartPrint(toBuffer);
+
 	int len = strlen(toBuffer);
 	addToBuffer(toBuffer, len);
 }

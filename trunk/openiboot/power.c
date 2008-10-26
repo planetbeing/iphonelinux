@@ -10,6 +10,7 @@ int power_setup() {
 
 	/* turn off everything */
 	int toReset = POWER_DEFAULT_DEVICES | POWER_VROM | POWER_LCD;
+	//int toReset = POWER_DEFAULT_DEVICES | POWER_VROM;
 	SET_REG(POWER + POWER_OFFCTRL, toReset);
 
 	/* wait for the new state to take effect */
