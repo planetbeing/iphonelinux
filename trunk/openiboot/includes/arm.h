@@ -4,5 +4,6 @@
 #include "openiboot.h"
 
 int arm_setup();
+void arm_disable_caches();
 
 #endif

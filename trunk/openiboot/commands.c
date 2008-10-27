@@ -6,6 +6,8 @@
 #include "lcd.h"
 #include "images.h"
 #include "timer.h"
+#include "mmu.h"
+#include "arm.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -124,6 +126,8 @@ void cmd_go(int argc, char** argv) {
 	udelay(100000);
 
 	EnterCriticalSection();
+	arm_disable_caches();
+	mmu_disable();
 	CallArm(address);
 }
 

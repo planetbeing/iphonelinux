@@ -37,3 +37,9 @@ int arm_setup() {
 	return 0;
 }
 
+void arm_disable_caches() {
+	CleanAndInvalidateCPUDataCache();
+	ClearCPUInstructionCache();
+	WriteControlRegisterConfigData(ReadControlRegisterConfigData() & ~ARM11_Control_INSTRUCTIONCACHE);	// Disable instruction cache
+	WriteControlRegisterConfigData(ReadControlRegisterConfigData() & ~ARM11_Control_DATACACHE);		// Disable data cache
+}
