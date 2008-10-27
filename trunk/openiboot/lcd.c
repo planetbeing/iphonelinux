@@ -244,17 +244,11 @@ static void installGammaTable(int tableNo, uint8_t* table) {
 			return;
 	}
 
-	bufferPrintf("old values: %x %x %x\r\n", baseReg, GET_REG(baseReg), GET_REG(baseReg + 0x3FC));
+	bufferPrintf("old value: %x\r\n", baseReg, GET_REG(baseReg + 0x3FC));
 
-	SET_REG(baseReg, 0x3FF);
-	SET_REG(baseReg + 0x3FC, 0x0);
+	SET_REG(baseReg + 0x3FC, 0xCC);
 
-	bufferPrintf("new values: %x %x %x, should be 0x3FF, 0x0\r\n", baseReg, GET_REG(baseReg), GET_REG(baseReg + 0x3FC));
-
-	SET_REG(baseReg, 0);
-	SET_REG(baseReg + 0x3FC, 0x3FF);
-
-	bufferPrintf("new values: %x %x %x, should be 0x0, 0x3FF\r\n", baseReg, GET_REG(baseReg), GET_REG(baseReg + 0x3FC));
+	bufferPrintf("new value: %x\r\n", baseReg, GET_REG(baseReg + 0x3FC));
 
 	gammaVar1 = 0;
 	gammaVar2 = 0;
@@ -654,7 +648,7 @@ static void configureClockCON0(int OTFClockDivisor, int clockSource, int option4
 }
 
 static int syrah_init() {
-	bufferPrintf("syrah_init() -- OMG-I'm-dreading-this-function code version I-Don't-Even-Know-What-The-Date-Is\r\n");
+	bufferPrintf("syrah_init() -- Hurray for displays\r\n");
 
 	spi_set_baud(1, 1000000, SPIOption13Setting0, 1, 1, 1);
 	spi_set_baud(0, 500000, SPIOption13Setting0, 1, 0, 0);
@@ -948,7 +942,6 @@ static void enterRegisterMode() {
 	int status;
 
 	do {
-		bufferPrintf("enter register mode try %d\r\n", tries);
 		transmitShortCommandOnSPI1(0xDE);
 		status = getPanelRegister(0x15);
 		tries += 1;
@@ -958,8 +951,6 @@ static void enterRegisterMode() {
 			break;
 		}
 	} while((status & 0x1) != 1);
-
-	bufferPrintf("enter register mode success!\r\n");
 }
 
 static void transmitCommandOnSPI0(int command, int subcommand) {
@@ -1020,24 +1011,17 @@ static int getPanelRegister(int reg) {
 
 void syrah_quiesce() {
 	bufferPrintf("syrah_quiesce()\r\n");
-	bufferPrintf("spi set baud()\r\n");
 	spi_set_baud(1, 1000000, SPIOption13Setting0, 1, 1, 1);
 	spi_set_baud(0, 500000, SPIOption13Setting0, 1, 0, 0);
-	bufferPrintf("enter register mode()\r\n");
 	enterRegisterMode();
 	udelay(1000);
-	bufferPrintf("setpanelregister 0x55()\r\n");
 	setPanelRegister(0x55, 0x2);
 	udelay(40000);
-	bufferPrintf("setpanelregister 0x7a()\r\n");
 	setPanelRegister(0x7A, 0xDF);
-	bufferPrintf("setpanelregister 0x7b()\r\n");
 	setPanelRegister(0x7B, 0x1);
-	bufferPrintf("tansmitcommandonspi1()\r\n");
 	setPanelRegister(0x7B, 0x1);
 	transmitShortCommandOnSPI1(0x10);
 	udelay(50000);
-	bufferPrintf("setpanelregister 0x7b()\r\n");
 	setPanelRegister(0x7B, 0x0);
 }
 
