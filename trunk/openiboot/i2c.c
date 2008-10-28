@@ -31,7 +31,7 @@ int i2c_setup() {
 	return 0;
 }
 
-I2CError i2c_rx(int bus, int iicaddr, uint8_t* registers, int num_regs, void* buffer, int len) {
+I2CError i2c_rx(int bus, int iicaddr, const uint8_t* registers, int num_regs, void* buffer, int len) {
 	I2C[bus].address = iicaddr;
 	I2C[bus].is_write = FALSE;
 	I2C[bus].registers = registers;
@@ -105,13 +105,13 @@ static I2CError i2c_readwrite(I2CInfo* i2c) {
 		} while(hardware_status != 0);
 
 		if(i2c->state == I2CDone) {
-			return i2c->error_code;
+			break;
 		}
 
 		do_i2c(i2c);
 	}
 
-	return 0;
+	return i2c->error_code;
 }
 
 static void do_i2c(I2CInfo* i2c) {
@@ -162,10 +162,7 @@ static void do_i2c(I2CInfo* i2c) {
 					proceed = TRUE;
 				} else {
 					i2c->operation_result = OPERATION_CONDITIONCHANGE;
-					i2c->current_iicstat = (i2c->current_iicstat
-						& ~((IICSTAT_MODE_MASK << IICSTAT_MODE_SHIFT) | (IICSTAT_STARTSTOPGEN_MASK << IICSTAT_STARTSTOPGEN_SHIFT)))
-						| (IICSTAT_MODE_MASTERRX << IICSTAT_MODE_SHIFT) | (IICSTAT_STARTSTOPGEN_STOP << IICSTAT_STARTSTOPGEN_SHIFT);
-					i2c->state = I2CSetup;
+					i2c->current_iicstat &= (IICSTAT_MODE_SLAVETX << IICSTAT_MODE_SHIFT) | (IICSTAT_STARTSTOPGEN_MASK << IICSTAT_STARTSTOPGEN_SHIFT);
 					SET_REG(i2c->register_IICSTAT, i2c->current_iicstat);
 					SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_INTPENDING);
 					i2c->state = I2CSetup;
@@ -216,11 +213,11 @@ static void do_i2c(I2CInfo* i2c) {
 				i2c->buffer[i2c->cursor++] = GET_REG(i2c->register_IICDS);
 				// fall into I2CRxSetup
 			case I2CRxSetup:
-				if(i2c->cursor == 0 || (GET_REG(i2c->register_IICSTAT) & IICSTAT_LASTRECEIVEDBIT) == 0) {
+				if(i2c->cursor != 0 || (GET_REG(i2c->register_IICSTAT) & IICSTAT_LASTRECEIVEDBIT) == 0) {
 					if(i2c->cursor != i2c->bufferLen) {
 						if((i2c->bufferLen - i2c->cursor) == 1) {
 							// last byte
-							i2c->iiccon_settings &= IICCON_ACKGEN;
+							i2c->iiccon_settings &= ~IICCON_ACKGEN;
 						}
 						i2c->operation_result = OPERATION_SEND;
 						SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_INTPENDING);
@@ -236,8 +233,11 @@ static void do_i2c(I2CInfo* i2c) {
 				break;
 			case I2CFinish:
 				i2c->operation_result = OPERATION_CONDITIONCHANGE;
-				i2c->current_iicstat &= ~((IICSTAT_STARTSTOPGEN_MASK << IICSTAT_STARTSTOPGEN_SHIFT) | (IICSTAT_MODE_MASK << IICSTAT_MODE_SHIFT));
-				i2c->current_iicstat |= IICSTAT_MODE_MASTERRX << IICSTAT_MODE_SHIFT;
+				i2c->current_iicstat &= ~(IICSTAT_STARTSTOPGEN_MASK << IICSTAT_STARTSTOPGEN_SHIFT);
+				if(i2c->is_write) {
+					// turn off the tx bit in the mode
+					i2c->current_iicstat &= ~(IICSTAT_MODE_SLAVETX << IICSTAT_MODE_SHIFT);
+				}
 				SET_REG(i2c->register_IICSTAT, i2c->current_iicstat);
 				SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_INTPENDING);
 				i2c->state =I2CDone;

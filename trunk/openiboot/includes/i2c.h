@@ -33,7 +33,7 @@ typedef struct I2CInfo {
 	uint32_t iiccon_settings;
 	uint32_t current_iicstat;
 	int num_regs;
-	uint8_t* registers;
+	const uint8_t* registers;
 	int bufferLen;
 	uint8_t* buffer;
 	uint32_t iic_scl_gpio;
@@ -50,7 +50,7 @@ typedef struct I2CInfo {
 } I2CInfo;
 
 int i2c_setup();
-I2CError i2c_rx(int bus, int iicaddr, uint8_t* registers, int num_regs, void* buffer, int len);
+I2CError i2c_rx(int bus, int iicaddr, const uint8_t* registers, int num_regs, void* buffer, int len);
 I2CError i2c_tx(int bus, int iicaddr, void* buffer, int len);
 
 #endif

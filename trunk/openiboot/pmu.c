@@ -56,7 +56,7 @@ int pmu_write_reg(int bus, int reg, int data, int verify) {
 int pmu_write_regs(const PMURegisterData* regs, int num) {
 	int i;
 	for(i = 0; i < num; i++) {
-		pmu_write_reg(regs[i].bus, regs[i].reg, regs[i].data, 0);
+		pmu_write_reg(regs[i].bus, regs[i].reg, regs[i].data, 1);
 	}
 
 	return 0;
