@@ -9,6 +9,7 @@
 #include "spi.h"
 #include "i2c.h"
 #include "timer.h"
+#include "pmu.h"
 
 static int lcd_has_init = FALSE;
 static int lcd_init_attempted = FALSE;
@@ -86,6 +87,19 @@ static const GammaTableDescriptor gammaTables[] =
 	}};
 
 
+static const PMURegisterData backlightOffData = {0x0, 0x29, 0x0};
+/*static const PMURegisterData backlightData[] = {
+	{0x0, 0x28, 0x22},
+	{0x0, 0x29, 0x1}
+};*/
+static const PMURegisterData backlightData[] = {
+	{0x0, 0x17, 0x1},
+	{0x0, 0x2A, 0x0},
+	{0x0, 0x28, 0x22},
+	{0x0, 0x29, 0x1},
+	{0x0, 0x2A, 0x6}
+};
+
 static int initDisplay();
 static int syrah_init();
 static void initLCD(LCDInfo* info);
@@ -121,7 +135,7 @@ static void installGammaTable(int tableNo, uint8_t* table);
 int lcd_setup() {
 	int backlightLevel = 0;
 
-	nextFramebuffer = 0xFE00000;
+	nextFramebuffer = 0xFD00000;
 	numWindows = 2;
 
 	if(!lcd_has_init) {
@@ -140,7 +154,7 @@ int lcd_setup() {
 		// get proper backlight level
 	}
 
-	// set backlight level
+	lcd_set_backlight_level(20);
 
 	return 0;
 }
@@ -175,14 +189,17 @@ static int initDisplay() {
 		return -1;
 
 
-	framebuffer_fill(&currentWindow->framebuffer, 0, 0, currentWindow->framebuffer.width, currentWindow->framebuffer.height, 0);
+	framebuffer_fill(&currentWindow->framebuffer, 0, 0, currentWindow->framebuffer.width, currentWindow->framebuffer.height, 0x0);
 
 	if(syrah_init() != 0)
 		return -1;
 
 	installGammaTables(LCDPanelID);
 
-	enterRegisterMode();
+	framebuffer_fill(&currentWindow->framebuffer, 0, 0, currentWindow->framebuffer.width, currentWindow->framebuffer.height/3, 0x00ff0000);
+	framebuffer_fill(&currentWindow->framebuffer, 0, currentWindow->framebuffer.height/3, currentWindow->framebuffer.width, currentWindow->framebuffer.height/3, 0x0000ff00);
+	framebuffer_fill(&currentWindow->framebuffer, 0, currentWindow->framebuffer.height * 2 / 3, currentWindow->framebuffer.width, currentWindow->framebuffer.height/3, 0x000000ff);
+
 
 //	buffer_dump_memory(LCD + 0x400, 0x400);
 /*	buffer_dump_memory(LCD + 0x800, 0x400);
@@ -243,12 +260,6 @@ static void installGammaTable(int tableNo, uint8_t* table) {
 		default:
 			return;
 	}
-
-	bufferPrintf("old value: %x\r\n", GET_REG(baseReg + 0x3FC));
-
-	SET_REG(baseReg + 0x3FC, 0xCC);
-
-	bufferPrintf("new value: %x\r\n", GET_REG(baseReg + 0x3FC));
 
 	gammaVar1 = 0;
 	gammaVar2 = 0;
@@ -924,17 +935,11 @@ static void resetLCD() {
 }
 
 static void setCommandMode(OnOff swt) {
-	uint8_t lcdCommand[2];
-
-	lcdCommand[0] = LCD_I2C_COMMAND;
-
 	if(swt) {
-		lcdCommand[1] = LCD_I2C_COMMANDMODE_ON;
+		pmu_write_reg(LCD_I2C_BUS, LCD_I2C_COMMAND, LCD_I2C_COMMANDMODE_ON, 0);
 	} else {
-		lcdCommand[1] = LCD_I2C_COMMANDMODE_OFF;
+		pmu_write_reg(LCD_I2C_BUS, LCD_I2C_COMMAND, LCD_I2C_COMMANDMODE_OFF, 0);
 	}
-
-	i2c_tx(LCD_I2C_BUS, LCD_I2C_ADDR, lcdCommand, sizeof(lcdCommand));
 }
 
 static void enterRegisterMode() {
@@ -1061,3 +1066,22 @@ static void hline_rgb888(Framebuffer* framebuffer, int start, int line_no, int l
 	}
 }
 
+void lcd_set_backlight_level(int level) {
+	if(level == 0) {
+		pmu_write_regs(&backlightOffData, 1);
+	} else { 
+		PMURegisterData myBacklightData[sizeof(backlightData)/sizeof(PMURegisterData)];
+
+		memcpy(myBacklightData, backlightData, sizeof(myBacklightData));
+
+		if(level <= LCD_MAX_BACKLIGHT) {
+			int i;
+			for(i = 0; i < (sizeof(myBacklightData)/sizeof(PMURegisterData)); i++) {
+				if(myBacklightData[i].reg == LCD_BACKLIGHT_REG) {
+					myBacklightData[i].data = level & LCD_BACKLIGHT_REGMASK;
+				}
+			}
+		}
+		pmu_write_regs(myBacklightData, sizeof(myBacklightData)/sizeof(PMURegisterData));
+	}
+}

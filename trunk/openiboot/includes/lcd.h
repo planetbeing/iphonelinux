@@ -69,6 +69,7 @@ extern uint32_t LCDPanelID;
 int lcd_setup();
 void lcd_fill(uint32_t color);
 void syrah_quiesce();
+void lcd_set_backlight_level(int level);
 
 #endif
 

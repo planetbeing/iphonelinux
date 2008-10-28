@@ -6,7 +6,6 @@
 // Device
 #define LCD 0x38900000
 #define LCD_I2C_BUS 0
-#define LCD_I2C_ADDR 0xE6
 
 // Registers
 #define LCD_0 0x0
@@ -62,6 +61,10 @@
 #define LCD_I2C_COMMANDMODE_OFF 0x15
 
 #define NUM_WINDOWS 3
+
+#define LCD_MAX_BACKLIGHT 45
+#define LCD_BACKLIGHT_REG 0x28
+#define LCD_BACKLIGHT_REGMASK 0x3F
 
 #endif
 
