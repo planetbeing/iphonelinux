@@ -105,6 +105,18 @@ ArmReset_loopForever:					@ shouldn't reach here
 	B	ArmReset_loopForever
 
 
+DebugReboot:						@ Write to the WDT register without memory access
+							@ This ought to cause a reboot same as the normal
+							@ Reboot function
+	MOV	R1, #0x1F
+	LSL	R1, R1, #8
+	ADD	R1, #1
+	LSL	R1, R1, #20
+	MOV	R0, #0
+	LSL	R0, R0, #20
+	STR	R0, [R1]
+	B	DebugReboot
+
 @
 @	Exception handlers (IRQ handlers)
 @

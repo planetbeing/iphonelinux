@@ -244,11 +244,11 @@ static void installGammaTable(int tableNo, uint8_t* table) {
 			return;
 	}
 
-	bufferPrintf("old value: %x\r\n", baseReg, GET_REG(baseReg + 0x3FC));
+	bufferPrintf("old value: %x\r\n", GET_REG(baseReg + 0x3FC));
 
 	SET_REG(baseReg + 0x3FC, 0xCC);
 
-	bufferPrintf("new value: %x\r\n", baseReg, GET_REG(baseReg + 0x3FC));
+	bufferPrintf("new value: %x\r\n", GET_REG(baseReg + 0x3FC));
 
 	gammaVar1 = 0;
 	gammaVar2 = 0;

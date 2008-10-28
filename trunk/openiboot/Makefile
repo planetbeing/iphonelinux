@@ -5,7 +5,7 @@ OBJCOPY = arm-elf-objcopy
 OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o i2c.o images.o sha1.o commands.o
 ASFLAGS += -mcpu=arm11
 ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
-LDFLAGS += -Ttext=0x18000000 --nostdlib
+LDFLAGS += -Ttext=0x00000000 --nostdlib
 LIBRARIES += -lgcc -nostdlib
 LIBRARY_PATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
 INC += -Iincludes
@@ -18,7 +18,7 @@ CFLAGS += -Wall -O3
 	$(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
 
 
-all:	openiboot.img2	openiboot.img3 openiboot.bin openiboot-iboot.img2
+all:	openiboot.img2	openiboot.img3 openiboot.bin openiboot-iboot.img3
 
 all-payload: openiboot-payload.img2 openiboot-payload.bin
 
@@ -43,9 +43,6 @@ openiboot.img2:	openiboot mk8900image/mk8900image
 openiboot.img3:	openiboot mk8900image/mk8900image
 	mk8900image/mk8900image openiboot openiboot.img3 mk8900image/template.img3
 
-openiboot-iboot.img2:
-	mk8900image/mk8900image openiboot openiboot-iboot.img2 mk8900image/iboot-template.img2
-
 openiboot-payload.bin: openiboot-payload mk8900image/mk8900image
 	mk8900image/mk8900image openiboot-payload openiboot-payload.bin
 
@@ -55,7 +52,6 @@ openiboot-payload.img2: openiboot-payload mk8900image/mk8900image
 clean:
 	-rm *.o
 	-rm openiboot
-	-rm openiboot-iboot.img2
 	-rm openiboot.img2
 	-rm openiboot.img3
 	-rm openiboot.bin

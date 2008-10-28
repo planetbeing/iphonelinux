@@ -1,7 +1,7 @@
 To run OpeniBoot:
 
 	1. Compile OpeniBoot (try the openiboot.img3 target to be loaded on 2.x phones)
-	2. Compile all in client/
+	2. Compile all in client/ (requires libusb, libreadline and pthread)
 	3. sudo client/loadibec openiboot.img3
 	4. Run the client: sudo ~/client/oibc
 
