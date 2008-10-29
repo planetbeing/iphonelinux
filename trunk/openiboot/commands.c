@@ -9,6 +9,7 @@
 #include "mmu.h"
 #include "arm.h"
 #include "gpio.h"
+#include "framebuffer.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -211,6 +212,10 @@ void cmd_echo(int argc, char** argv) {
 	bufferPrintf("\r\n");
 }
 
+void cmd_clear(int argc, char** argv) {
+	framebuffer_clear();
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -223,6 +228,7 @@ OPIBCommand CommandList[] =
 	{
 		{"reboot", "reboot the device", cmd_reboot},
 		{"echo", "echo back a line", cmd_echo},
+		{"clear", "clears the screen", cmd_clear},
 		{"md", "display a block of memory as 32-bit integers", cmd_md},
 		{"mw", "write a 32-bit dword into a memory address", cmd_mw},
 		{"mwb", "write a byte into a memory address", cmd_mwb},
