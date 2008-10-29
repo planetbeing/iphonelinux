@@ -88,10 +88,7 @@ static const GammaTableDescriptor gammaTables[] =
 
 
 static const PMURegisterData backlightOffData = {0x0, 0x29, 0x0};
-/*static const PMURegisterData backlightData[] = {
-	{0x0, 0x28, 0x22},
-	{0x0, 0x29, 0x1}
-};*/
+
 static const PMURegisterData backlightData[] = {
 	{0x0, 0x17, 0x1},
 	{0x0, 0x2A, 0x0},
@@ -133,15 +130,15 @@ static void installGammaTables(uint32_t panelID);
 static void installGammaTable(int tableNo, uint8_t* table);
 
 int lcd_setup() {
-	int backlightLevel = 0;
+	int backlightLevel = 20;
 
-	nextFramebuffer = 0xFD00000;
+	nextFramebuffer = 0x0fd00000;
 	numWindows = 2;
 
 	if(!lcd_has_init) {
 		if(!lcd_init_attempted) {
 			if(initDisplay() == 0) {
-				// get proper backlight level
+				backlightLevel = 20;
 			} else {
 				backlightLevel = 0;
 			}
@@ -154,7 +151,7 @@ int lcd_setup() {
 		// get proper backlight level
 	}
 
-	lcd_set_backlight_level(20);
+	lcd_set_backlight_level(backlightLevel);
 
 	return 0;
 }
@@ -195,15 +192,6 @@ static int initDisplay() {
 		return -1;
 
 	installGammaTables(LCDPanelID);
-
-	framebuffer_fill(&currentWindow->framebuffer, 0, 0, currentWindow->framebuffer.width, currentWindow->framebuffer.height/3, 0x00ff0000);
-	framebuffer_fill(&currentWindow->framebuffer, 0, currentWindow->framebuffer.height/3, currentWindow->framebuffer.width, currentWindow->framebuffer.height/3, 0x0000ff00);
-	framebuffer_fill(&currentWindow->framebuffer, 0, currentWindow->framebuffer.height * 2 / 3, currentWindow->framebuffer.width, currentWindow->framebuffer.height/3, 0x000000ff);
-
-
-//	buffer_dump_memory(LCD + 0x400, 0x400);
-/*	buffer_dump_memory(LCD + 0x800, 0x400);
-	buffer_dump_memory(LCD + 0xC00, 0x400);*/
 
 	return 0;
 }
@@ -269,6 +257,8 @@ static void installGammaTable(int tableNo, uint8_t* table) {
 	uint16_t r6 = 0;
 	uint8_t r8 = 0;
 
+	SET_REG(baseReg, 0x0);
+
 	uint32_t curReg = baseReg + 4;
 
 	int i;
@@ -306,6 +296,8 @@ static void installGammaTable(int tableNo, uint8_t* table) {
 
 		curReg += 4;
 	}
+	
+	SET_REG(curReg, 0x3ff);
 }
 
 static Window* createWindow(int zero0, int zero1, int width, int height, ColorSpace colorSpace) {
@@ -487,12 +479,12 @@ static void initLCD(LCDInfo* info) {
 
 	for(i = 0; i < NUM_WINDOWS; i++) {
 		setWindowBuffer(i, buffer);
-		configWindow(i, 0, 0, 1, 0);
 	}
 
-	SET_REG(LCD + 0xDC, 0);
-	SET_REG(LCD + 0xE4, 0);
-	SET_REG(LCD + 0xEC, 0);
+	for(i = 0; i < NUM_WINDOWS; i++) {
+		configWindow(i, 0, 0, 1, 0);
+		SET_REG(LCD + 0xDC + (i * 0x8), 0);
+	}
 
 	SET_REG(LCD + 0x1EC, 0);
 	SET_REG(LCD + 0x1F0, 0);

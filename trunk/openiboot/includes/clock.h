@@ -42,5 +42,7 @@ int clock_set_bottom_bits_38100000(Clock0ConfigCode code);
 int clock_setup();
 void clock_gate_switch(uint32_t gate, OnOff on_off);
 uint32_t clock_get_frequency(FrequencyBase freqBase);
+uint32_t clock_calculate_frequency(uint32_t pdiv, uint32_t mdiv, FrequencyBase freqBase);
+void clock_set_sdiv(int sdiv);
 
 #endif

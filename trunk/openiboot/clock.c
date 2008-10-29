@@ -225,3 +225,56 @@ uint32_t clock_get_frequency(FrequencyBase freqBase) {
 			return 0;
 	}
 }
+
+uint32_t clock_calculate_frequency(uint32_t pdiv, uint32_t mdiv, FrequencyBase freqBase) {
+	unsigned int y = clock_get_frequency(freqBase) / (0x1 << ClockSDiv);
+	uint64_t z = (((uint64_t) pdiv) * ((uint64_t) 1000000000)) / ((uint64_t) y);
+	uint64_t divResult = ((uint64_t)(1000000 * mdiv)) / z;
+	return divResult - 1;
+}
+
+static void clock0_reset_frequency() {
+	SET_REG(CLOCK0 + CLOCK0_ADJ1, (GET_REG(CLOCK0 + CLOCK0_ADJ1) & CLOCK0_ADJ_MASK) | clock_calculate_frequency(0x200C, 0x40, FrequencyBaseMemory));
+	SET_REG(CLOCK0 + CLOCK0_ADJ2, (GET_REG(CLOCK0 + CLOCK0_ADJ2) & CLOCK0_ADJ_MASK) | clock_calculate_frequency(0x1018, 0x4, FrequencyBaseBus));
+}
+
+void clock_set_sdiv(int sdiv) {
+	int oldClockSDiv = ClockSDiv;
+
+	if(sdiv < 1) {
+		sdiv = 0;
+	}
+
+	if(sdiv <= 2) {
+		ClockSDiv = sdiv;
+	}
+
+	if(oldClockSDiv < ClockSDiv) {
+		clock0_reset_frequency();
+	}
+
+	uint32_t clockCon = 0;
+	switch(ClockPLL) {
+		case 0:
+			clockCon = CLOCK1 + CLOCK1_PLL0CON;
+			break;
+		case 1:
+			clockCon = CLOCK1 + CLOCK1_PLL1CON;
+			break;
+		case 2:
+			clockCon = CLOCK1 + CLOCK1_PLL2CON;
+			break;
+		case 3:
+			clockCon = CLOCK1 + CLOCK1_PLL3CON;
+			break;
+	}
+
+	if(clockCon != 0) {
+		SET_REG(clockCon, (GET_REG(clockCon) & ~0x7) | ClockSDiv);
+	}
+
+	if(oldClockSDiv >= ClockSDiv) {
+		clock0_reset_frequency();
+	}
+}
+

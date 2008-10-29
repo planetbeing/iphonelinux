@@ -144,6 +144,43 @@ void cmd_jump(int argc, char** argv) {
 	CallArm(address);
 }
 
+void cmd_mwb(int argc, char** argv) {
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <address> <data>\r\n", argv[0]);
+		return;
+	}
+
+	uint8_t* address = (uint8_t*) parseNumber(argv[1]);
+	uint8_t data = parseNumber(argv[2]);
+	*address = data;
+	bufferPrintf("Written to 0x%x to 0x%x\r\n", (uint8_t)data, address);
+}
+
+void cmd_mw(int argc, char** argv) {
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <address> <data>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t* address = (uint32_t*) parseNumber(argv[1]);
+	uint32_t data = parseNumber(argv[2]);
+	*address = data;
+	bufferPrintf("Written to 0x%x to 0x%x\r\n", data, address);
+}
+
+void cmd_bgcolor(int argc, char** argv) {
+	if(argc < 4) {
+		bufferPrintf("Usage: %s <red> <green> <blue>\r\n", argv[0]);
+		return;
+	}
+
+	uint8_t red = parseNumber(argv[1]);
+	uint8_t blue = parseNumber(argv[2]);
+	uint8_t green = parseNumber(argv[3]);
+
+	lcd_fill((red << 16) | (green << 8) | blue);
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -156,6 +193,8 @@ OPIBCommand CommandList[] =
 	{
 		{"reboot", "reboot the device", cmd_reboot},
 		{"md", "display a block of memory as 32-bit integers", cmd_md},
+		{"mw", "write a 32-bit dword into a memory address", cmd_mw},
+		{"mwb", "write a byte into a memory address", cmd_mwb},
 		{"hexdump", "display a block of memory like 'hexdump -C'", cmd_hexdump},
 		{"cat", "dumps a block of memory", cmd_cat},
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
@@ -163,6 +202,7 @@ OPIBCommand CommandList[] =
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
+		{"bgcolor", "fill the framebuffer with a color", cmd_bgcolor},
 		{"go", "jump to a specified address (interrupts disabled)", cmd_go},
 		{"jump", "jump to a specified address (interrupts enabled)", cmd_jump},
 		{"help", "list the available commands", cmd_help},
