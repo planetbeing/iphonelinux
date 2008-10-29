@@ -8,6 +8,7 @@
 #include "timer.h"
 #include "mmu.h"
 #include "arm.h"
+#include "gpio.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -168,6 +169,16 @@ void cmd_mw(int argc, char** argv) {
 	bufferPrintf("Written to 0x%x to 0x%x\r\n", data, address);
 }
 
+void cmd_gpio_pinstate(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <port>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t port = parseNumber(argv[1]);
+	bufferPrintf("Pin 0x%x state: 0x%x\r\n", port, gpio_pin_state(port));
+}
+
 void cmd_bgcolor(int argc, char** argv) {
 	if(argc < 4) {
 		bufferPrintf("Usage: %s <red> <green> <blue>\r\n", argv[0]);
@@ -197,6 +208,7 @@ OPIBCommand CommandList[] =
 		{"mwb", "write a byte into a memory address", cmd_mwb},
 		{"hexdump", "display a block of memory like 'hexdump -C'", cmd_hexdump},
 		{"cat", "dumps a block of memory", cmd_cat},
+		{"gpio_pinstate", "get the state of a GPIO pin", cmd_gpio_pinstate},
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},

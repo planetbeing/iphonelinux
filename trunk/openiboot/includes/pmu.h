@@ -11,6 +11,7 @@ typedef struct PMURegisterData {
 
 int pmu_setup();
 int pmu_get_gpmem_reg(int bus, int reg, uint8_t* out);
+int pmu_get_reg(int bus, int reg);
 int pmu_write_reg(int bus, int reg, int data, int verify);
 int pmu_write_regs(const PMURegisterData* regs, int num);
 

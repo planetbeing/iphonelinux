@@ -32,6 +32,16 @@ int pmu_get_gpmem_reg(int bus, int reg, uint8_t* out) {
 	return 0;	
 }
 
+int pmu_get_reg(int bus, int reg) {
+	uint8_t registers[1];
+	uint8_t out[1];
+
+	registers[0] = reg;
+
+	i2c_rx(bus, PMU_GETADDR, registers, 1, out, 1);
+	return out[0];
+}
+
 int pmu_write_reg(int bus, int reg, int data, int verify) {
 	uint8_t command[2];
 

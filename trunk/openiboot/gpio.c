@@ -1,6 +1,7 @@
 #include "openiboot.h"
 #include "gpio.h"
 #include "hardware/gpio.h"
+#include "clock.h"
 
 static GPIORegisters* GPIORegs;
 
@@ -15,6 +16,8 @@ int gpio_setup() {
 	}
 
 	// iBoot also sets up interrupt handlers, but those are never unmasked
+	
+	clock_gate_switch(GPIO_CLOCKGATE, ON);
 
 	return 0;
 }
