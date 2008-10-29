@@ -1,0 +1,17 @@
+PCF <-> OIF Conversion
+----------------------
+
+X11 PCF font files are too heavy-weight to use in OpenIBoot, though many of
+the terminal font files we could use is in this format. This utility converts
+fixed-width, Terminal pcf fonts to a more compact format I just made up. This
+format just has the width and height of each character, and then a bitstream
+of the bitmaps of all the characters from 0x00 to 0xff, row by row.
+
+The resulting data is small enough to be included in openiboot after being
+passed through bin2c.
+
+I know this code is a mess, but I don't foresee it being used more than once
+or twice. Even so, the unpolished code is dumped here for reference.
+
+See the commands themselves for usage.
+
