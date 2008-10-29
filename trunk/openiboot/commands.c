@@ -192,6 +192,25 @@ void cmd_bgcolor(int argc, char** argv) {
 	lcd_fill((red << 16) | (green << 8) | blue);
 }
 
+void cmd_backlight(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <0-45>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t level = parseNumber(argv[1]);
+	lcd_set_backlight_level(level);
+	bufferPrintf("backlight set to %d\r\n", level);
+}
+
+void cmd_echo(int argc, char** argv) {
+	int i;
+	for(i = 1; i < argc; i++) {
+		bufferPrintf("%s ", argv[i]);
+	}
+	bufferPrintf("\r\n");
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -203,6 +222,7 @@ void cmd_help(int argc, char** argv) {
 OPIBCommand CommandList[] = 
 	{
 		{"reboot", "reboot the device", cmd_reboot},
+		{"echo", "echo back a line", cmd_echo},
 		{"md", "display a block of memory as 32-bit integers", cmd_md},
 		{"mw", "write a 32-bit dword into a memory address", cmd_mw},
 		{"mwb", "write a byte into a memory address", cmd_mwb},
@@ -215,6 +235,7 @@ OPIBCommand CommandList[] =
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
 		{"bgcolor", "fill the framebuffer with a color", cmd_bgcolor},
+		{"backlight", "set the backlight level", cmd_backlight},
 		{"go", "jump to a specified address (interrupts disabled)", cmd_go},
 		{"jump", "jump to a specified address (interrupts enabled)", cmd_jump},
 		{"help", "list the available commands", cmd_help},

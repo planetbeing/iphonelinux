@@ -3,6 +3,7 @@
 #include "uart.h"
 #include "util.h"
 #include "openiboot-asmhelpers.h"
+#include "framebuffer.h"
 
 void* memset(void* x, int fill, uint32_t size) {
 	uint32_t i;
@@ -367,6 +368,9 @@ void bufferPrint(const char* toBuffer) {
 	if(UartHasInit)
 		uartPrint(toBuffer);
 
+	if(FramebufferHasInit)
+		framebuffer_print(toBuffer);
+
 	int len = strlen(toBuffer);
 	addToBuffer(toBuffer, len);
 }
@@ -405,6 +409,17 @@ void uartPrintf(const char* format, ...) {
 	vsprintf(buffer, format, args);
 	va_end(args);
 	uartPrint(buffer);
+}
+
+void fbPrintf(const char* format, ...) {
+	char buffer[1000];
+	buffer[0] = '\0';
+
+	va_list args;
+	va_start(args, format);
+	vsprintf(buffer, format, args);
+	va_end(args);
+	framebuffer_print(buffer);
 }
 
 char* getScrollback() {

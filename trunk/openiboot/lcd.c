@@ -17,7 +17,9 @@ static int lcd_init_attempted = FALSE;
 const static LCDInfo optC = {FrequencyBaseDisplay, 10800000, 320, 15, 15, 16, 480, 4, 4, 4, 1, 0, 0, 0, 0};
 static LCDInfo curTimings;
 
-static Window* currentWindow;
+Window* currentWindow;
+
+volatile uint32_t* CurFramebuffer;
 
 static int numWindows = 0;
 static uint32_t nextFramebuffer = 0;
@@ -130,7 +132,7 @@ static void installGammaTables(uint32_t panelID);
 static void installGammaTable(int tableNo, uint8_t* table);
 
 int lcd_setup() {
-	int backlightLevel = 20;
+	int backlightLevel = 0;
 
 	nextFramebuffer = 0x0fd00000;
 	numWindows = 2;
@@ -152,6 +154,8 @@ int lcd_setup() {
 	}
 
 	lcd_set_backlight_level(backlightLevel);
+
+	CurFramebuffer = currentWindow->framebuffer.buffer;
 
 	return 0;
 }

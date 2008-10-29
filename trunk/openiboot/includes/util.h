@@ -26,6 +26,7 @@ void bufferPrint(const char* toBuffer);
 void bufferPrintf(const char* format, ...);
 void uartPrint(const char* toBuffer);
 void uartPrintf(const char* format, ...);
+void fbPrintf(const char* format, ...);
 void bufferFlush(char* destination, size_t length);
 char* getScrollback();
 size_t getScrollbackLen();

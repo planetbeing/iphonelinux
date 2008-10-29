@@ -338,6 +338,8 @@ static int setup_openiboot() {
 	clock_set_sdiv(0);
 	lcd_setup();
 
+	framebuffer_setup();
+
 	aes_setup();
 	images_setup();
 

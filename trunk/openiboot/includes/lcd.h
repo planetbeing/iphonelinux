@@ -66,6 +66,9 @@ extern int LCDInitRegisterCount;
 extern const uint16_t* LCDInitRegisters;
 extern uint32_t LCDPanelID;
 
+extern Window* currentWindow;
+extern volatile uint32_t* CurFramebuffer;
+
 int lcd_setup();
 void lcd_fill(uint32_t color);
 void syrah_quiesce();
