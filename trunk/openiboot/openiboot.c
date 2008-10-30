@@ -23,6 +23,7 @@
 
 #include "util.h"
 #include "commands.h"
+#include "framebuffer.h"
 #include "menu.h"
 
 static int setup_devices();

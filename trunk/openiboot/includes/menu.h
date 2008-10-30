@@ -1,5 +1,5 @@
-#ifndef FRAMEBUFFER_H
-#define FRAMEBUFFER_H
+#ifndef MENU_H
+#define MENU_H
 
 #include "openiboot.h"
 
