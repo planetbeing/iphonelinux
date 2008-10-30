@@ -23,6 +23,7 @@
 
 #include "util.h"
 #include "commands.h"
+#include "menu.h"
 
 static int setup_devices();
 static int setup_openiboot();
@@ -42,6 +43,8 @@ CommandQueue* commandQueue = NULL;
 
 void OpenIBootStart() {
 	setup_openiboot();
+
+	menu_setup();
 
 	bufferPrintf("---------------------------------------\r\n");
 	bufferPrintf("          WELCOME TO OPENIBOOT\r\n");

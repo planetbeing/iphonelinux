@@ -116,6 +116,7 @@ static void setLayer(int window, int zero0, int zero1);
 
 static void framebuffer_fill(Framebuffer* framebuffer, int x, int y, int width, int height, int fill);
 static void hline_rgb888(Framebuffer* framebuffer, int start, int line_no, int length, int fill);
+static void vline_rgb888(Framebuffer* framebuffer, int start, int line_no, int length, int fill);
 
 static void setCommandMode(OnOff swt);
 static void transmitCommandOnSPI0(int command, int subcommand);
@@ -363,6 +364,7 @@ static void createFramebuffer(Framebuffer* framebuffer, uint32_t framebufferAddr
 	framebuffer->lineWidth = lineWidth;
 	framebuffer->colorSpace = colorSpace;
 	framebuffer->hline = hline_rgb888;
+	framebuffer->vline = vline_rgb888;
 }
 
 static void setWindow(int window, int zero0, int zero1, ColorSpace colorSpace, int width1, uint32_t framebuffer, int zero2, int width2, int zero3, int height) {
@@ -1057,8 +1059,22 @@ static void hline_rgb888(Framebuffer* framebuffer, int start, int line_no, int l
 	fill = fill & 0xffffff;	// no alpha
 	line = &framebuffer->buffer[line_no * framebuffer->lineWidth];
 
-	for(i = start; i < length; i++) {
+	int stop = start + length;
+	for(i = start; i < stop; i++) {
 		line[i] = fill;
+	}
+}
+
+static void vline_rgb888(Framebuffer* framebuffer, int start, int line_no, int length, int fill) {
+	int i;
+	volatile uint32_t* line;
+
+	fill = fill & 0xffffff;	// no alpha
+	line = &framebuffer->buffer[line_no];
+
+	int stop = start + length;
+	for(i = start; i < stop; i++) {
+		line[i * framebuffer->lineWidth] = fill;
 	}
 }
 

@@ -14,6 +14,7 @@ static uint32_t FBWidth;
 static uint32_t FBHeight;
 
 int FramebufferHasInit = FALSE;
+static int DisplayText = FALSE;
 
 inline int getCharPixel(OpenIBootFont* font, int ch, int x, int y) {
 	register int bitIndex = ((font->width * font->height) * ch) + (font->width * y) + x;
@@ -33,6 +34,10 @@ int framebuffer_setup() {
 	framebuffer_clear();
 	FramebufferHasInit = TRUE;
 	return 0;
+}
+
+void framebuffer_setdisplaytext(int onoff) {
+	DisplayText = onoff;
 }
 
 void framebuffer_clear() {
@@ -84,6 +89,9 @@ static void scrollup() {
 }
 
 void framebuffer_putc(int c) {
+	if(!DisplayText)
+		return;
+
 	if(c == '\r') {
 		X = 0;
 	} else if(c == '\n') {
@@ -113,5 +121,22 @@ void framebuffer_putc(int c) {
 	if(Y == THeight) {
 		scrollup();
 	}
+}
+
+void framebuffer_draw_image(uint32_t* image, int x, int y, int width, int height) {
+	register uint32_t sx;
+	register uint32_t sy;
+	for(sy = 0; sy < height; sy++) {
+		for(sx = 0; sx < width; sx++) {
+			*(PixelFromCoords(sx + x, sy + y)) = image[(sy * width) + sx];
+		}
+	}
+}
+
+void framebuffer_draw_rect(uint32_t color, int x, int y, int width, int height) {
+	currentWindow->framebuffer.hline(&currentWindow->framebuffer, x, y, width, color);
+	currentWindow->framebuffer.hline(&currentWindow->framebuffer, x, y + height, width, color);
+	currentWindow->framebuffer.vline(&currentWindow->framebuffer, y, x, height, color);
+	currentWindow->framebuffer.vline(&currentWindow->framebuffer, y, x + width, height, color);
 }
 

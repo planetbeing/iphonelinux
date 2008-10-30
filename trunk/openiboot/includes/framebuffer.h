@@ -15,6 +15,7 @@ typedef struct OpenIBootFont {
 extern int FramebufferHasInit;
 
 int framebuffer_setup();
+void framebuffer_setdisplaytext(int onoff);
 int framebuffer_width();
 int framebuffer_height();
 int framebuffer_x();
@@ -23,5 +24,7 @@ void framebuffer_putc(int c);
 void framebuffer_print(const char* str);
 void framebuffer_setloc(int x, int y);
 void framebuffer_clear();
+void framebuffer_draw_image(uint32_t* image, int x, int y, int width, int height);
+void framebuffer_draw_rect(uint32_t color, int x, int y, int width, int height);
 
 #endif

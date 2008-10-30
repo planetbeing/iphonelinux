@@ -30,6 +30,7 @@ typedef struct LCDInfo {
 struct Framebuffer;
 
 typedef void (*HLineFunc)(struct Framebuffer* framebuffer, int start, int line_no, int length, int fill);
+typedef void (*VLineFunc)(struct Framebuffer* framebuffer, int start, int line_no, int length, int fill);
 
 typedef struct Framebuffer {
 	volatile uint32_t* buffer;
@@ -38,6 +39,7 @@ typedef struct Framebuffer {
 	uint32_t lineWidth;
 	ColorSpace colorSpace;
 	HLineFunc hline;
+	VLineFunc vline;
 } Framebuffer;
 
 typedef struct Window {
