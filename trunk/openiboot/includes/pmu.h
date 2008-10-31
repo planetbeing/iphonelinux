@@ -9,6 +9,13 @@ typedef struct PMURegisterData {
 	uint8_t data;
 } PMURegisterData;
 
+
+#define PMU_IBOOTSTATE 0xF
+#define PMU_IBOOTDEBUG 0x0
+#define PMU_IBOOTSTAGE 0x1
+#define PMU_IBOOTERRORCOUNT 0x2
+#define PMU_IBOOTERRORSTAGE 0x3
+
 int pmu_setup();
 int pmu_get_gpmem_reg(int bus, int reg, uint8_t* out);
 int pmu_get_reg(int bus, int reg);

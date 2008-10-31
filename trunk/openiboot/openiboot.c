@@ -26,6 +26,7 @@
 #include "commands.h"
 #include "framebuffer.h"
 #include "menu.h"
+#include "pmu.h"
 
 static int setup_devices();
 static int setup_openiboot();

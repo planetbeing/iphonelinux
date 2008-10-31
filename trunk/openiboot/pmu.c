@@ -18,7 +18,7 @@ int pmu_get_gpmem_reg(int bus, int reg, uint8_t* out) {
 	if((GPMemCachedPresent & (0x1 << reg)) == 0) {
 		uint8_t registers[1];
 
-		registers[0] = reg;
+		registers[0] = reg + 0x67;
 
 		if(i2c_rx(bus, PMU_GETADDR, registers, 1, &GPMemCache[reg], 1) != 0) {
 			return -1;
