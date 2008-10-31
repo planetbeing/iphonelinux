@@ -72,3 +72,19 @@ int pmu_write_regs(const PMURegisterData* regs, int num) {
 	return 0;
 }
 
+int pmu_get_battery_voltage() {
+	int bus = 0;
+	pmu_write_reg(bus, PMU_ADCC3, 0, FALSE);
+	pmu_write_reg(bus, PMU_ADCC3, 0, FALSE);
+	udelay(30);
+	pmu_write_reg(bus, PMU_ADCC2, 0, FALSE);
+	pmu_write_reg(bus, PMU_ADCC1, PMU_ADCC1_ADCSTART | (PMU_ADCC1_ADC_AV_16 << PMU_ADCC1_ADC_AV_SHIFT) | (PMU_ADCC1_ADCINMUX_BATSNS_DIV << PMU_ADCC1_ADCINMUX_SHIFT), FALSE);
+	udelay(30000);
+	uint8_t lower = pmu_get_reg(bus, PMU_ADCS3);
+	if((lower & 0x80) == 0x80) {
+		uint8_t upper = pmu_get_reg(bus, PMU_ADCS1);
+		return ((upper << 2) | (lower & 0x3)) * 6000 / 1023;
+	} else {
+		return -1;
+	}
+}

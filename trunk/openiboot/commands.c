@@ -12,6 +12,7 @@
 #include "framebuffer.h"
 #include "actions.h"
 #include "nvram.h"
+#include "pmu.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -238,6 +239,10 @@ void cmd_install(int argc, char** argv) {
 	images_install(&_start, (uint32_t)&OpenIBootEnd - (uint32_t)&_start);
 }
 
+void cmd_pmu_voltage(int argc, char** argv) {
+	bufferPrintf("battery voltage: %d mV\r\n", pmu_get_battery_voltage());
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -263,6 +268,7 @@ OPIBCommand CommandList[] =
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
+		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},
 		{"printenv", "list the environment variables in nvram", cmd_printenv},
 		{"setenv", "sets an environment variable", cmd_setenv},
 		{"saveenv", "saves the environment variables in nvram", cmd_saveenv},
