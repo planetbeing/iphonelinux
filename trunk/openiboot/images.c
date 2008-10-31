@@ -455,10 +455,13 @@ void images_install(void* newData, size_t newDataLen) {
 
 	if(!isUpgrade) {
 		bufferPrintf("Performing installation... (%d bytes)\r\n", newDataLen);
+
 		ImageDataList* ibox = malloc(sizeof(ImageDataList));
 		ibox->type = fourcc("ibox");
 		ibox->data = iboot->data;
 		ibox->next = iboot->next;
+		images_change_type(ibox->data, ibox->type);
+
 		iboot->next = ibox;
 		iboot->data = images_inject_img3(iboot->data, newData, newDataLen);
 	} else {
@@ -491,6 +494,11 @@ void images_install(void* newData, size_t newDataLen) {
 
 	images_release();
 	images_setup();
+}
+
+void images_change_type(const void* img3Data, uint32_t type) {
+	AppleImg3RootHeader* header = (AppleImg3RootHeader*) img3Data;
+	header->extra.name = type;
 }
 
 void* images_inject_img3(const void* img3Data, const void* newData, size_t newDataLen) {
