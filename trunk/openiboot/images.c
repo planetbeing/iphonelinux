@@ -460,10 +460,10 @@ void images_install(void* newData, size_t newDataLen) {
 		ibox->type = fourcc("ibox");
 		ibox->data = iboot->data;
 		ibox->next = iboot->next;
-		images_change_type(ibox->data, ibox->type);
 
 		iboot->next = ibox;
 		iboot->data = images_inject_img3(iboot->data, newData, newDataLen);
+		images_change_type(ibox->data, ibox->type);
 	} else {
 		bufferPrintf("Performing upgrade... (%d bytes)\r\n", newDataLen);
 		void* newIBoot = images_inject_img3(iboot->data, newData, newDataLen);
@@ -494,6 +494,8 @@ void images_install(void* newData, size_t newDataLen) {
 
 	images_release();
 	images_setup();
+
+	bufferPrintf("Refreshed image list\r\n");
 }
 
 void images_change_type(const void* img3Data, uint32_t type) {
