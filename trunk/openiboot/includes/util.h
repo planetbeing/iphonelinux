@@ -32,6 +32,7 @@ char* getScrollback();
 size_t getScrollbackLen();
 
 uint32_t crc32(uint32_t* ckSum, const void *buffer, size_t len);
+uint32_t adler32(uint8_t *buf, int32_t len);
 
 #include "printf.h"
 #include "malloc-2.8.3.h"

@@ -175,6 +175,16 @@ Image* images_get(uint32_t type) {
 	return NULL;
 }
 
+void images_append(void* data, int len) {
+	nor_write(data, MaxOffset, len);
+	images_release();
+	images_setup();
+}
+
+void images_rewind() {
+	MaxOffset = ImagesStart;
+}
+
 void images_release() {
 	Image* curImage = imageList;
 	Image* toRelease = NULL;

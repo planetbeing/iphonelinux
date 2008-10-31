@@ -97,4 +97,6 @@ void images_erase(Image* image);
 void images_write(Image* image, void* data, unsigned int length, int encrypt);
 unsigned int images_read(Image* image, void** data);
 int images_verify(Image* image);
+void images_append(void* data, int len);
+void images_rewind();
 

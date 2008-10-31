@@ -10,6 +10,8 @@
 #include "arm.h"
 #include "gpio.h"
 #include "framebuffer.h"
+#include "actions.h"
+#include "nvram.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -127,10 +129,7 @@ void cmd_go(int argc, char** argv) {
 
 	udelay(100000);
 
-	EnterCriticalSection();
-	arm_disable_caches();
-	mmu_disable();
-	CallArm(address);
+	chainload(address);
 }
 
 void cmd_jump(int argc, char** argv) {
@@ -216,6 +215,25 @@ void cmd_clear(int argc, char** argv) {
 	framebuffer_clear();
 }
 
+void cmd_printenv(int argc, char** argv) {
+	nvram_listvars();
+}
+
+void cmd_setenv(int argc, char** argv) {
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <name> <value>\r\n", argv[0]);
+		return;
+	}
+
+	nvram_setvar(argv[1], argv[2]);
+	bufferPrintf("Set %s = %s\r\n", argv[1], argv[2]);
+}
+
+void cmd_saveenv(int argc, char** argv) {
+	nvram_save();
+	bufferPrintf("Environment saved\r\n");
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -240,6 +258,9 @@ OPIBCommand CommandList[] =
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
+		{"printenv", "list the environment variables in nvram", cmd_printenv},
+		{"setenv", "sets an environment variable", cmd_setenv},
+		{"saveenv", "saves the environment variables in nvram", cmd_saveenv},
 		{"bgcolor", "fill the framebuffer with a color", cmd_bgcolor},
 		{"backlight", "set the backlight level", cmd_backlight},
 		{"go", "jump to a specified address (interrupts disabled)", cmd_go},

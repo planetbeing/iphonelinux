@@ -20,6 +20,7 @@
 #include "lcd.h"
 #include "tasks.h"
 #include "images.h"
+#include "nvram.h"
 
 #include "util.h"
 #include "commands.h"
@@ -345,7 +346,10 @@ static int setup_openiboot() {
 	framebuffer_setup();
 
 	aes_setup();
+
+	nor_setup();
 	images_setup();
+	nvram_setup();
 
 	return 0;
 }

@@ -7,9 +7,7 @@
 #include "images/console.h"
 #include "images/iphoneos.h"
 #include "images.h"
-#include "openiboot-asmhelpers.h"
-#include "arm.h"
-#include "mmu.h"
+#include "actions.h"
 
 static uint32_t FBWidth;
 static uint32_t FBHeight;
@@ -88,10 +86,7 @@ int menu_setup() {
 		Image* image = images_get(fourcc("ibox"));
 		void* imageData;
 		images_read(image, &imageData);
-		EnterCriticalSection();
-		arm_disable_caches();
-		mmu_disable();
-		CallArm((uint32_t)imageData);
+		chainload((uint32_t)imageData);
 	}
 
 	if(Selection == MenuSelectionConsole) {
