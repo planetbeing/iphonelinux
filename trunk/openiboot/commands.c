@@ -234,6 +234,10 @@ void cmd_saveenv(int argc, char** argv) {
 	bufferPrintf("Environment saved\r\n");
 }
 
+void cmd_install(int argc, char** argv) {
+	images_install(&_start, (uint32_t)&OpenIBootEnd - (uint32_t)&_start);
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -244,6 +248,7 @@ void cmd_help(int argc, char** argv) {
 
 OPIBCommand CommandList[] = 
 	{
+		{"install", "install openiboot onto the device", cmd_install},
 		{"reboot", "reboot the device", cmd_reboot},
 		{"echo", "echo back a line", cmd_echo},
 		{"clear", "clears the screen", cmd_clear},

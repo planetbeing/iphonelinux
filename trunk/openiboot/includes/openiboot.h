@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+extern void* _start;
 extern void* OpenIBootEnd;
 
 typedef enum Boolean {

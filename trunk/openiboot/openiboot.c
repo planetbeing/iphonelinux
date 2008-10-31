@@ -48,9 +48,9 @@ void OpenIBootStart() {
 
 	menu_setup();
 
-	bufferPrintf("---------------------------------------\r\n");
-	bufferPrintf("          WELCOME TO OPENIBOOT\r\n");
-	bufferPrintf("---------------------------------------\r\n");
+	bufferPrintf("-----------------------------------------------\r\n");
+	bufferPrintf("              WELCOME TO OPENIBOOT\r\n");
+	bufferPrintf("-----------------------------------------------\r\n");
 
 	// Process command queue
 	while(TRUE) {

@@ -176,9 +176,19 @@ Image* images_get(uint32_t type) {
 }
 
 void images_append(void* data, int len) {
-	nor_write(data, MaxOffset, len);
-	images_release();
-	images_setup();
+	if(MaxOffset >= 0xfc000 || (MaxOffset + len) >= 0xfc000) {
+		bufferPrintf("writing image of size %d at %x would overflow NOR!\r\n", len, MaxOffset);
+	} else {
+		nor_write(data, MaxOffset, len);
+
+		// Destroy any following image
+		if((MaxOffset + len) < 0xfc000) {
+			uint8_t zero = 0;
+			nor_write(&zero, MaxOffset + len, 1);
+		}
+		images_release();
+		images_setup();
+	}
 }
 
 void images_rewind() {
@@ -397,7 +407,7 @@ unsigned int images_read(Image* image, void** data) {
 		AppleImg3KBAGHeader* kbag = (AppleImg3KBAGHeader*) kbagOffset;
 
 		if(kbag->key_modifier == 1) {
-			aes_decrypt((void*)(kbagOffset + sizeof(AppleImg3KBAGHeader)), 16 + (kbag->key_bits * 8), AESGID, NULL, NULL);
+			aes_decrypt((void*)(kbagOffset + sizeof(AppleImg3KBAGHeader)), 16 + (kbag->key_bits / 8), AESGID, NULL, NULL);
 		}
 
 		aes_decrypt((void*)dataOffset, (dataLength / 16) * 16, AESCustom, (uint8_t*)(kbagOffset + sizeof(AppleImg3KBAGHeader) + 16), (uint8_t*)(kbagOffset + sizeof(AppleImg3KBAGHeader)));
@@ -409,6 +419,148 @@ unsigned int images_read(Image* image, void** data) {
 
 		return dataLength;
 	}
+}
+
+void images_install(void* newData, size_t newDataLen) {
+	ImageDataList* list = NULL;
+	ImageDataList* cur = NULL;
+	ImageDataList* iboot = NULL;
+
+	int isUpgrade = FALSE;
+
+	Image* curImage = imageList;
+
+	bufferPrintf("Reading images...\r\n");
+	while(curImage != NULL) {
+		if(cur == NULL) {
+			list = cur = malloc(sizeof(ImageDataList));
+		} else {
+			cur->next = malloc(sizeof(ImageDataList));
+			cur = cur->next;
+		}
+
+		cur->type = curImage->type;
+		cur->next = NULL;
+		cur->data = malloc(curImage->padded);
+		nor_read(cur->data, curImage->offset, curImage->padded);
+
+		if(cur->type == fourcc("ibox")) {
+			isUpgrade = TRUE;
+		} else if(cur->type == fourcc("ibot")) {
+			iboot = cur;
+		}
+
+		curImage = curImage->next;
+	}
+
+	if(!isUpgrade) {
+		bufferPrintf("Performing installation... (%d bytes)\r\n", newDataLen);
+		ImageDataList* ibox = malloc(sizeof(ImageDataList));
+		ibox->type = fourcc("ibox");
+		ibox->data = iboot->data;
+		ibox->next = iboot->next;
+		iboot->next = ibox;
+		iboot->data = images_inject_img3(iboot->data, newData, newDataLen);
+	} else {
+		bufferPrintf("Performing upgrade... (%d bytes)\r\n", newDataLen);
+		void* newIBoot = images_inject_img3(iboot->data, newData, newDataLen);
+		free(iboot->data);
+		iboot->data = newIBoot;
+	}
+
+
+	bufferPrintf("Flashing...\r\n");
+
+	images_rewind();
+	while(list != NULL) {
+		cur = list;
+		list = list->next;
+		AppleImg3RootHeader* header = (AppleImg3RootHeader*) cur->data;
+
+		bufferPrintf("Flashing: ");
+		print_fourcc(cur->type);
+		bufferPrintf(" (%x, %d bytes)\r\n", cur->data, header->base.size);
+
+		images_append(cur->data, header->base.size);
+
+		free(cur->data);
+		free(cur);
+	}
+
+	bufferPrintf("Done with installation!\r\n");
+
+	images_release();
+	images_setup();
+}
+
+void* images_inject_img3(const void* img3Data, const void* newData, size_t newDataLen) {
+	uint8_t IVKey[16 + (256 / 8)];
+	uint8_t* IV = IVKey;
+	uint8_t* Key = &IVKey[16];
+
+	uint32_t dataOffset = 0;
+	uint32_t dataLength = 0;
+	uint32_t kbagOffset = 0;
+	uint32_t kbagLength = 0;
+	uint32_t offset = (uint32_t)(img3Data + sizeof(AppleImg3RootHeader));
+
+	size_t contentsLength = ((AppleImg3RootHeader*) img3Data)->base.dataSize;
+
+	while((offset - (uint32_t)(img3Data + sizeof(AppleImg3RootHeader))) < contentsLength) {
+		AppleImg3Header* header = (AppleImg3Header*) offset;
+		if(header->magic == IMG3_DATA_MAGIC) {
+			dataOffset = offset + sizeof(AppleImg3Header);
+			dataLength = header->size;
+		}
+		if(header->magic == IMG3_KBAG_MAGIC) {
+			kbagOffset = offset + sizeof(AppleImg3Header);
+			kbagLength = header->dataSize;
+		}
+		offset += header->size;
+	}
+
+	AppleImg3KBAGHeader* kbag = (AppleImg3KBAGHeader*) kbagOffset;
+
+	if(kbag->key_modifier == 1) {
+		memcpy(IVKey, (void*)(kbagOffset + sizeof(AppleImg3KBAGHeader)), 16 + (kbag->key_bits / 8));
+		aes_decrypt(IVKey, 16 + (kbag->key_bits / 8), AESGID, NULL, NULL);
+	}
+
+	void* newImg3 = malloc(sizeof(AppleImg3RootHeader));
+
+	memcpy(newImg3, img3Data, sizeof(AppleImg3RootHeader));
+	AppleImg3RootHeader* rootHeader = (AppleImg3RootHeader*) newImg3;
+
+	rootHeader->base.dataSize = rootHeader->base.dataSize - dataLength + (((newDataLen + 3)/4)*4) + sizeof(AppleImg3Header);
+	rootHeader->base.size = (((rootHeader->base.dataSize + sizeof(AppleImg3RootHeader)) + 0x3F)/0x40)*0x40;
+	newImg3 = realloc(newImg3, rootHeader->base.size);
+	rootHeader = (AppleImg3RootHeader*) newImg3;
+	void* cursor = newImg3 + sizeof(AppleImg3RootHeader);
+	memset(cursor, 0, rootHeader->base.size - sizeof(AppleImg3RootHeader));
+
+	offset = (uint32_t)(img3Data + sizeof(AppleImg3RootHeader));
+	while((offset - (uint32_t)(img3Data + sizeof(AppleImg3RootHeader))) < contentsLength) {
+		AppleImg3Header* header = (AppleImg3Header*) offset;
+		if(header->magic == IMG3_DATA_MAGIC) {
+			memcpy(cursor, (void*) offset, sizeof(AppleImg3Header));
+			AppleImg3Header* newHeader = (AppleImg3Header*) cursor;
+			newHeader->dataSize = newDataLen;
+			newHeader->size = sizeof(AppleImg3Header) + (((newHeader->dataSize + 3)/4)*4);
+
+			memcpy(cursor + sizeof(AppleImg3Header), newData, newDataLen);
+			aes_encrypt(cursor + sizeof(AppleImg3Header), (newDataLen / 16) * 16, AESCustom, Key, IV);
+			cursor += newHeader->size;
+		} else {
+			if(header->magic == IMG3_SHSH_MAGIC) {
+				rootHeader->extra.shshOffset = (uint32_t)cursor - (uint32_t)newImg3 - sizeof(AppleImg3RootHeader);
+			}
+			memcpy(cursor, (void*) offset, header->size);
+			cursor += header->size;
+		}
+		offset += header->size;
+	}
+
+	return newImg3;
 }
 
 static void calculateHash(Img2Header* header, uint8_t* hash) {

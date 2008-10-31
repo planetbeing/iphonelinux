@@ -9,3 +9,7 @@ void chainload(uint32_t address) {
 	mmu_disable();
 	CallArm(address);
 }
+/*
+void upgrade() {
+	Image*
+}*/

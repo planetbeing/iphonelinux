@@ -78,6 +78,12 @@ typedef struct Image {
 	int hashMatch;
 } Image;
 
+typedef struct ImageDataList {
+	uint32_t type;
+	void* data;
+	struct ImageDataList* next;
+} ImageDataList;
+
 static inline uint32_t fourcc(char* code) {
 	return (code[0] << 24) | (code[1] << 16) | (code[2] << 8) | code[3];
 }
@@ -99,4 +105,6 @@ unsigned int images_read(Image* image, void** data);
 int images_verify(Image* image);
 void images_append(void* data, int len);
 void images_rewind();
+void* images_inject_img3(const void* img3Data, const void* newData, size_t newDataLen);
+void images_install(void* newData, size_t newDataLen);
 
