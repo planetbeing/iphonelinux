@@ -73,13 +73,13 @@ int pmu_write_regs(const PMURegisterData* regs, int num) {
 	return 0;
 }
 
-int pmu_get_battery_voltage() {
+int query_adc(int flags) {
 	int bus = 0;
 	pmu_write_reg(bus, PMU_ADCC3, 0, FALSE);
 	pmu_write_reg(bus, PMU_ADCC3, 0, FALSE);
 	udelay(30);
 	pmu_write_reg(bus, PMU_ADCC2, 0, FALSE);
-	pmu_write_reg(bus, PMU_ADCC1, PMU_ADCC1_ADCSTART | (PMU_ADCC1_ADC_AV_16 << PMU_ADCC1_ADC_AV_SHIFT) | (PMU_ADCC1_ADCINMUX_BATSNS_DIV << PMU_ADCC1_ADCINMUX_SHIFT), FALSE);
+	pmu_write_reg(bus, PMU_ADCC1, PMU_ADCC1_ADCSTART | (PMU_ADCC1_ADC_AV_16 << PMU_ADCC1_ADC_AV_SHIFT) | (PMU_ADCC1_ADCINMUX_BATSNS_DIV << PMU_ADCC1_ADCINMUX_SHIFT) | flags, FALSE);
 	udelay(30000);
 	uint8_t lower = pmu_get_reg(bus, PMU_ADCS3);
 	if((lower & 0x80) == 0x80) {
@@ -90,18 +90,22 @@ int pmu_get_battery_voltage() {
 	}
 }
 
+int pmu_get_battery_voltage() {
+	return query_adc(0);
+}
+
 static PowerSupplyType identify_usb_charger() {
 	int dn;
 	int dp;
 
 	gpio_pin_output(PMU_GPIO_CHARGER_IDENTIFY_DN, 1);
-	dn = pmu_get_battery_voltage();
+	dn = query_adc(PMU_ADCC1_ADCINMUX_ADCIN2_DIV << PMU_ADCC1_ADCINMUX_SHIFT);
 	if(dn < 0)
 		dn = 0;
 	gpio_pin_output(PMU_GPIO_CHARGER_IDENTIFY_DN, 0);
 
 	gpio_pin_output(PMU_GPIO_CHARGER_IDENTIFY_DP, 1);
-	dp = pmu_get_battery_voltage();
+	dp = query_adc(PMU_ADCC1_ADCINMUX_ADCIN2_DIV << PMU_ADCC1_ADCINMUX_SHIFT);
 	if(dp < 0)
 		dp = 0;
 	gpio_pin_output(PMU_GPIO_CHARGER_IDENTIFY_DP, 0);
@@ -111,6 +115,7 @@ static PowerSupplyType identify_usb_charger() {
 	}
 
 	int x = (dn * 1000) / dp;
+	bufferPrintf("dn: %d, dp: %d, x: %d\r\n", dn, dp, x);
 	if((x - 1291) <= 214) {
 		return PowerSupplyTypeUSBBrick1000mA;
 	}
