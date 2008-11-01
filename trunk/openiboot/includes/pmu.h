@@ -9,6 +9,14 @@ typedef struct PMURegisterData {
 	uint8_t data;
 } PMURegisterData;
 
+typedef enum PowerSupplyType {
+	PowerSupplyTypeError,
+	PowerSupplyTypeBattery,
+	PowerSupplyTypeFirewire,
+	PowerSupplyTypeUSBHost,
+	PowerSupplyTypeUSBBrick500mA,
+	PowerSupplyTypeUSBBrick1000mA
+} PowerSupplyType;
 
 #define PMU_IBOOTSTATE 0xF
 #define PMU_IBOOTDEBUG 0x0
@@ -22,5 +30,7 @@ int pmu_get_reg(int bus, int reg);
 int pmu_write_reg(int bus, int reg, int data, int verify);
 int pmu_write_regs(const PMURegisterData* regs, int num);
 int pmu_get_battery_voltage();
+PowerSupplyType pmu_get_power_supply();
+
 
 #endif

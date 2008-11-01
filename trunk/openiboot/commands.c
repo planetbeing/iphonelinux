@@ -243,6 +243,37 @@ void cmd_pmu_voltage(int argc, char** argv) {
 	bufferPrintf("battery voltage: %d mV\r\n", pmu_get_battery_voltage());
 }
 
+void cmd_pmu_powersupply(int argc, char** argv) {
+	PowerSupplyType power = pmu_get_power_supply();
+	bufferPrintf("power supply type: ");
+	switch(power) {
+		case PowerSupplyTypeError:
+			bufferPrintf("Unknown");
+			break;
+			
+		case PowerSupplyTypeBattery:
+			bufferPrintf("Battery");
+			break;
+			
+		case PowerSupplyTypeFirewire:
+			bufferPrintf("Firewire");
+			break;
+			
+		case PowerSupplyTypeUSBHost:
+			bufferPrintf("USB host");
+			break;
+			
+		case PowerSupplyTypeUSBBrick500mA:
+			bufferPrintf("500 mA brick");
+			break;
+			
+		case PowerSupplyTypeUSBBrick1000mA:
+			bufferPrintf("1000 mA brick");
+			break;
+	}
+	bufferPrintf("\r\n");
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -269,6 +300,7 @@ OPIBCommand CommandList[] =
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
 		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},
+		{"pmu_powersupply", "get the power supply type", cmd_pmu_powersupply},
 		{"printenv", "list the environment variables in nvram", cmd_printenv},
 		{"setenv", "sets an environment variable", cmd_setenv},
 		{"saveenv", "saves the environment variables in nvram", cmd_saveenv},

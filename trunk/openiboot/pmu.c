@@ -3,6 +3,7 @@
 #include "hardware/pmu.h"
 #include "i2c.h"
 #include "timer.h"
+#include "gpio.h"
 
 static uint32_t GPMemCachedPresent = 0;
 static uint8_t GPMemCache[PMU_MAXREG + 1];
@@ -88,3 +89,50 @@ int pmu_get_battery_voltage() {
 		return -1;
 	}
 }
+
+static PowerSupplyType identify_usb_charger() {
+	int dn;
+	int dp;
+
+	gpio_pin_output(PMU_GPIO_CHARGER_IDENTIFY_DN, 1);
+	dn = pmu_get_battery_voltage();
+	if(dn < 0)
+		dn = 0;
+	gpio_pin_output(PMU_GPIO_CHARGER_IDENTIFY_DN, 0);
+
+	gpio_pin_output(PMU_GPIO_CHARGER_IDENTIFY_DP, 1);
+	dp = pmu_get_battery_voltage();
+	if(dp < 0)
+		dp = 0;
+	gpio_pin_output(PMU_GPIO_CHARGER_IDENTIFY_DP, 0);
+
+	if(dn < 99 || dp < 99) {
+		return PowerSupplyTypeUSBHost;
+	}
+
+	int x = (dn * 1000) / dp;
+	if((x - 1291) <= 214) {
+		return PowerSupplyTypeUSBBrick1000mA;
+	}
+
+	if((x - 901) <= 219 && dn <= 367 ) {
+		return PowerSupplyTypeUSBBrick500mA;
+	} else {
+		return PowerSupplyTypeUSBHost;
+	}
+}
+
+PowerSupplyType pmu_get_power_supply() {
+	int mbcs1 = pmu_get_reg(0, PMU_MBCS1);
+
+	if(mbcs1 & PMU_MBCS1_ADAPTPRES)
+		return PowerSupplyTypeFirewire;
+
+	if(mbcs1 & PMU_MBCS1_USBOK)
+		return identify_usb_charger();
+	else
+		return PowerSupplyTypeBattery;
+
+
+}
+
