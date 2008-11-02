@@ -46,6 +46,7 @@ CommandQueue* commandQueue = NULL;
 
 void OpenIBootStart() {
 	setup_openiboot();
+	pmu_charge_settings(TRUE, FALSE, FALSE);
 
 	menu_setup();
 

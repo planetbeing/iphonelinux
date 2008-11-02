@@ -115,7 +115,6 @@ static PowerSupplyType identify_usb_charger() {
 	}
 
 	int x = (dn * 1000) / dp;
-	bufferPrintf("dn: %d, dp: %d, x: %d\r\n", dn, dp, x);
 	if((x - 1291) <= 214) {
 		return PowerSupplyTypeUSBBrick1000mA;
 	}
@@ -139,5 +138,35 @@ PowerSupplyType pmu_get_power_supply() {
 		return PowerSupplyTypeBattery;
 
 
+}
+
+void pmu_charge_settings(int UseUSB, int SuspendUSB, int StopCharger) {
+	PowerSupplyType type = pmu_get_power_supply();
+
+	if(type != PowerSupplyTypeUSBHost)	// No need to suspend USB, since we're not plugged into a USB host
+		SuspendUSB = FALSE;
+
+	if(SuspendUSB)
+		gpio_pin_output(PMU_GPIO_CHARGER_USB_SUSPEND, 1);
+	else
+		gpio_pin_output(PMU_GPIO_CHARGER_USB_SUSPEND, 0);
+
+	if(StopCharger) {
+		gpio_pin_output(PMU_GPIO_CHARGER_SUSPEND, 1);
+		gpio_pin_output(PMU_GPIO_CHARGER_SHUTDOWN, 1);
+	} else {
+		gpio_pin_output(PMU_GPIO_CHARGER_SUSPEND, 0);
+		gpio_pin_output(PMU_GPIO_CHARGER_SHUTDOWN, 0);
+	}
+
+	if(type == PowerSupplyTypeUSBBrick500mA || type == PowerSupplyTypeUSBBrick1000mA || (type == PowerSupplyTypeUSBHost && UseUSB))
+		gpio_pin_output(PMU_GPIO_CHARGER_USB_500_1000, 1);
+	else
+		gpio_pin_output(PMU_GPIO_CHARGER_USB_500_1000, 0);
+
+	if(type == PowerSupplyTypeUSBBrick1000mA)
+		gpio_pin_output(PMU_GPIO_CHARGER_USB_1000, 1);
+	else
+		gpio_pin_output(PMU_GPIO_CHARGER_USB_1000, 0);
 }
 

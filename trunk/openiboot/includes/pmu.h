@@ -31,6 +31,6 @@ int pmu_write_reg(int bus, int reg, int data, int verify);
 int pmu_write_regs(const PMURegisterData* regs, int num);
 int pmu_get_battery_voltage();
 PowerSupplyType pmu_get_power_supply();
-
+void pmu_charge_settings(int UseUSB, int SuspendUSB, int StopCharger);
 
 #endif

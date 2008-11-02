@@ -274,6 +274,24 @@ void cmd_pmu_powersupply(int argc, char** argv) {
 	bufferPrintf("\r\n");
 }
 
+void cmd_pmu_charge(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <on|off>\r\n", argv[0]);
+		return;
+	}
+
+	if(strcmp(argv[1], "on") == 0) {
+		pmu_charge_settings(TRUE, FALSE, FALSE);
+		bufferPrintf("Charger on\r\n");
+	} else if(strcmp(argv[1], "off") == 0) {
+		pmu_charge_settings(FALSE, FALSE, TRUE);
+		bufferPrintf("Charger off\r\n");
+	} else {
+		bufferPrintf("Usage: %s <on|off>\r\n", argv[0]);
+		return;
+	}
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -301,6 +319,7 @@ OPIBCommand CommandList[] =
 		{"images_read", "read an image on NOR", cmd_images_read},
 		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},
 		{"pmu_powersupply", "get the power supply type", cmd_pmu_powersupply},
+		{"pmu_charge", "turn on and off the power charger", cmd_pmu_charge},
 		{"printenv", "list the environment variables in nvram", cmd_printenv},
 		{"setenv", "sets an environment variable", cmd_setenv},
 		{"saveenv", "saves the environment variables in nvram", cmd_saveenv},
