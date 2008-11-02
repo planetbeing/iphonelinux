@@ -246,3 +246,10 @@ void udelay(uint64_t delay) {
 	while((timer_get_system_microtime() - startTime) < delay);
 }
 
+int has_elapsed(uint64_t startTime, uint64_t elapsedTime) {
+	if((timer_get_system_microtime() - startTime) >= elapsedTime)
+		return TRUE;
+	else
+		return FALSE;
+}
+

@@ -27,6 +27,7 @@
 #include "framebuffer.h"
 #include "menu.h"
 #include "pmu.h"
+#include "nand.h"
 
 static int setup_devices();
 static int setup_openiboot();
@@ -352,6 +353,8 @@ static int setup_openiboot() {
 	nor_setup();
 	images_setup();
 	nvram_setup();
+
+	nand_setup();
 
 	return 0;
 }
