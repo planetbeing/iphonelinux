@@ -45,7 +45,7 @@ because that's the default location and already is in the path.
 	mkdir binutils-build
 	cd binutils-build
 	../binutils-2.17/configure --target=arm-elf --prefix=/usr/local \
-		--enable-interwork --enable-multilib
+		--enable-interwork --enable-multilib --disable-werror
 	make -j2 all
 	sudo make install
 	cd ..
