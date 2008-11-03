@@ -49,7 +49,14 @@ void OpenIBootStart() {
 	setup_openiboot();
 	pmu_charge_settings(TRUE, FALSE, FALSE);
 
-	menu_setup();
+	const char* hideMenu = nvram_getvar("opib-hide-menu");
+	if(hideMenu && (strcmp(hideMenu, "1") == 0 || strcmp(hideMenu, "true") == 0)) {
+		framebuffer_setdisplaytext(TRUE);
+		framebuffer_clear();
+		bufferPrintf("Boot menu hidden. Use 'setenv opib-hide-menu false' and then 'saveenv' to unhide.\r\n");
+	} else {
+		menu_setup();
+	}
 
 	nand_setup();
 
