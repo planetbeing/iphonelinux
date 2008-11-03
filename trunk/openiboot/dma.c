@@ -63,7 +63,7 @@ static void dmaIRQHandler(uint32_t controller) {
 	uint32_t intTCClearReg;
 	uint32_t intTCStatus;
 
-	if(controller == 0) {
+	if(controller == 1) {
 		intTCStatusReg = DMAC0 + DMACIntTCStatus;
 		intTCClearReg = DMAC0 + DMACIntTCClear;
 	} else {
@@ -75,9 +75,13 @@ static void dmaIRQHandler(uint32_t controller) {
 
 	int channel;
 	for(channel = 0; channel < DMA_NUMCHANNELS; channel++) {
-		if((intTCStatusReg & (1 << channel)) != 0) {
+		if((intTCStatus & (1 << channel)) != 0) {
 			dispatchRequest(&requests[controller - 1][channel]);
-			SET_REG(intTCClearReg, intTCStatusReg & (1 << channel));
+			if(controller == 1)
+				Controller0FreeChannels[channel] = 0;
+			else if(controller == 2)
+				Controller1FreeChannels[channel] = 0;
+			SET_REG(intTCClearReg, 1 << channel);
 		}
 		
 	}
@@ -243,8 +247,8 @@ int dma_perform(uint32_t Source, uint32_t Destination, int size, int continueLis
 			if(DMALists[*controller - 1][*channel])
 				free(DMALists[*controller - 1][*channel]);
 
-			struct DMALinkedList* item = DMALists[*controller - 1][*channel] = malloc(((transfers + 0xDFF) / 0xE00) * 0x10);
-			SET_REG(regLLI, (uint32_t)(DMALists[*controller - 1][*channel]));
+			DMALinkedList* item = DMALists[*controller - 1][*channel] = malloc(((transfers + 0xDFF) / 0xE00) * sizeof(DMALinkedList));
+			SET_REG(regLLI, (uint32_t)item);
 			do {
 				transfers -= 0xE00;
 				
@@ -270,6 +274,7 @@ int dma_perform(uint32_t Source, uint32_t Destination, int size, int continueLis
 			} while(transfers > 0xE00);
 
 			CleanAndInvalidateCPUDataCache();
+			transfers = 0xE00;
 		} else {
 			SET_REG(regLLI, 0);
 		}

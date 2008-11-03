@@ -15,13 +15,15 @@ typedef struct DMARequest {
 typedef struct DMALinkedList {
     uint32_t source;	
     uint32_t destination;
-    uint32_t control;
     struct DMALinkedList* next;
+    uint32_t control;
 } DMALinkedList;
 
 #define DMA_MEMORY 25
 
 int dma_setup();
+int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int Destination, int DestinationTransferWidth, int DestinationBurstSize, int* controller, int* channel);
+int dma_perform(uint32_t Source, uint32_t Destination, int size, int continueList, int* controller, int* channel);
 
 #endif
 

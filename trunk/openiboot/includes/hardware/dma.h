@@ -55,7 +55,7 @@
 #define DMAC0Configuration_FLOWCNTRL_P2M 0x2
 #define DMAC0Configuration_FLOWCNTRL_P2P 0x3
 #define DMAC0Configuration_CHANNELENABLED (1 << 0)
-#define DMAC0Configuration_TERMINALCOUNTINTERRUPTMASK (1 < 15)
+#define DMAC0Configuration_TERMINALCOUNTINTERRUPTMASK (1 << 15)
 
 #endif
 

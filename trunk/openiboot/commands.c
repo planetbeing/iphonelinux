@@ -13,6 +13,7 @@
 #include "actions.h"
 #include "nvram.h"
 #include "pmu.h"
+#include "dma.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -292,6 +293,23 @@ void cmd_pmu_charge(int argc, char** argv) {
 	}
 }
 
+void cmd_dma(int argc, char** argv) {
+	if(argc < 4) {
+		bufferPrintf("Usage: %s <source> <dest> <size>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t source = parseNumber(argv[1]);
+	uint32_t dest = parseNumber(argv[2]);
+	uint32_t size = parseNumber(argv[3]);
+
+	int controller = 0;
+	int channel = 0;
+	bufferPrintf("dma_request: %d\r\n", dma_request(DMA_MEMORY, 4, 8, DMA_MEMORY, 4, 8, &controller, &channel));
+	bufferPrintf("dma_perform: %d\r\n", dma_perform(source, dest, size, FALSE, &controller, &channel));
+
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -312,6 +330,7 @@ OPIBCommand CommandList[] =
 		{"hexdump", "display a block of memory like 'hexdump -C'", cmd_hexdump},
 		{"cat", "dumps a block of memory", cmd_cat},
 		{"gpio_pinstate", "get the state of a GPIO pin", cmd_gpio_pinstate},
+		{"dma", "perform a DMA transfer", cmd_dma},
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},
