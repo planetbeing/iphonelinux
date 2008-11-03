@@ -5,10 +5,8 @@
 #define ERROR_BUSY 0x15
 
 typedef struct DMARequest {
-	uint32_t field_0;
-	uint32_t field_4;
-	void* field_8;
-	void* field_C;
+	int started;
+	int done;
 	// TODO: fill this thing out
 } DMARequest;
 
@@ -24,6 +22,7 @@ typedef struct DMALinkedList {
 int dma_setup();
 int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int Destination, int DestinationTransferWidth, int DestinationBurstSize, int* controller, int* channel);
 int dma_perform(uint32_t Source, uint32_t Destination, int size, int continueList, int* controller, int* channel);
+int dma_finish(int controller, int channel, int timeout);
 
 #endif
 

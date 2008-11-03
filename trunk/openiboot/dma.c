@@ -3,6 +3,7 @@
 #include "util.h"
 #include "hardware/dma.h"
 #include "clock.h"
+#include "timer.h"
 #include "interrupt.h"
 #include "openiboot-asmhelpers.h"
 
@@ -33,17 +34,17 @@ static const uint32_t PeripheralLookupTable[][DMA_NUMCONTROLLERS] = {
 	{0x00, 0x00}
 };
 
-static DMARequest requests[DMA_NUMCONTROLLERS][DMA_NUMCHANNELS];
+static volatile DMARequest requests[DMA_NUMCONTROLLERS][DMA_NUMCHANNELS];
 static DMALinkedList* DMALists[DMA_NUMCONTROLLERS][DMA_NUMCHANNELS];
 
 static DMALinkedList StaticDMALists[DMA_NUMCONTROLLERS][DMA_NUMCHANNELS];
 
-static void dispatchRequest(DMARequest *request);
+static void dispatchRequest(volatile DMARequest *request);
 
 static void dmaIRQHandler(uint32_t controller);
 
-static int Controller0FreeChannels[DMA_NUMCHANNELS] = {0};
-static int Controller1FreeChannels[DMA_NUMCHANNELS] = {0};
+static volatile int Controller0FreeChannels[DMA_NUMCHANNELS] = {0};
+static volatile int Controller1FreeChannels[DMA_NUMCHANNELS] = {0};
 
 int dma_setup() {
 	clock_gate_switch(DMAC0_CLOCKGATE, ON);
@@ -77,10 +78,6 @@ static void dmaIRQHandler(uint32_t controller) {
 	for(channel = 0; channel < DMA_NUMCHANNELS; channel++) {
 		if((intTCStatus & (1 << channel)) != 0) {
 			dispatchRequest(&requests[controller - 1][channel]);
-			if(controller == 1)
-				Controller0FreeChannels[channel] = 0;
-			else if(controller == 2)
-				Controller1FreeChannels[channel] = 0;
 			SET_REG(intTCClearReg, 1 << channel);
 		}
 		
@@ -115,14 +112,6 @@ static int getFreeChannel(int* controller, int* channel) {
 	return ERROR_BUSY;
 }
 
-static DMARequest* initRequest(DMARequest* request, int arg1, int arg2) {
-	request->field_C = &request->field_8;
-	request->field_8 = &request->field_8;
-	request->field_0 = arg2;
-	request->field_4 = arg1;
-	return request;
-}
-
 int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int Destination, int DestinationTransferWidth, int DestinationBurstSize, int* controller, int* channel) {
 	if(*controller == 0) {
 		*controller = ControllerLookupTable[Source] & ControllerLookupTable[Destination];
@@ -132,7 +121,8 @@ int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int De
 		}
 
 		while(getFreeChannel(controller, channel) == ERROR_BUSY);
-		initRequest(&requests[*controller][*channel], 1, 0);
+		requests[*controller][*channel].started = TRUE;
+		requests[*controller][*channel].done = FALSE;
 	}
 
 	uint32_t DMACControl;
@@ -292,9 +282,26 @@ int dma_perform(uint32_t Source, uint32_t Destination, int size, int continueLis
 	return 0;
 }
 
-static void dispatchRequest(DMARequest *request) {
-	EnterCriticalSection();
-	LeaveCriticalSection();
+int dma_finish(int controller, int channel, int timeout) {
+	uint32_t startTime = timer_get_system_microtime();
+	while(!requests[controller - 1][channel].done) {
+		if(has_elapsed(startTime, timeout * 1000)) {
+			return -1;
+		}
+	}
+
+	requests[controller - 1][channel].started = FALSE;
+	requests[controller - 1][channel].done = FALSE;
+	if(controller == 1)
+		Controller0FreeChannels[channel] = 0;
+	else if(controller == 2)
+		Controller1FreeChannels[channel] = 0;
+
+	return 0;
+}
+
+static void dispatchRequest(volatile DMARequest *request) {
 	// TODO: Implement this
+	request->done = TRUE;
 }
 

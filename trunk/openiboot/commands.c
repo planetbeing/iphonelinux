@@ -306,8 +306,8 @@ void cmd_dma(int argc, char** argv) {
 	int controller = 0;
 	int channel = 0;
 	bufferPrintf("dma_request: %d\r\n", dma_request(DMA_MEMORY, 4, 8, DMA_MEMORY, 4, 8, &controller, &channel));
-	bufferPrintf("dma_perform: %d\r\n", dma_perform(source, dest, size, FALSE, &controller, &channel));
-
+	bufferPrintf("dma_perform(controller: %d, channel %d): %d\r\n", controller, channel, dma_perform(source, dest, size, FALSE, &controller, &channel));
+	bufferPrintf("dma_finish(controller: %d, channel %d): %d\r\n", controller, channel, dma_finish(controller, channel, 500));
 }
 
 void cmd_help(int argc, char** argv) {
