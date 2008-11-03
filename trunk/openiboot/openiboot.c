@@ -51,6 +51,8 @@ void OpenIBootStart() {
 
 	menu_setup();
 
+	nand_setup();
+
 	bufferPrintf("-----------------------------------------------\r\n");
 	bufferPrintf("              WELCOME TO OPENIBOOT\r\n");
 	bufferPrintf("-----------------------------------------------\r\n");
@@ -353,8 +355,6 @@ static int setup_openiboot() {
 	nor_setup();
 	images_setup();
 	nvram_setup();
-
-	nand_setup();
 
 	return 0;
 }
