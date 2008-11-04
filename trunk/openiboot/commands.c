@@ -14,6 +14,7 @@
 #include "nvram.h"
 #include "pmu.h"
 #include "dma.h"
+#include "nand.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -310,6 +311,19 @@ void cmd_dma(int argc, char** argv) {
 	bufferPrintf("dma_finish(controller: %d, channel %d): %d\r\n", controller, channel, dma_finish(controller, channel, 500));
 }
 
+void cmd_nand_read(int argc, char** argv) {
+	if(argc < 4) {
+		bufferPrintf("Usage: %s <address> <bank> <page>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t bank = parseNumber(argv[2]);
+	uint32_t page = parseNumber(argv[3]);
+	bufferPrintf("reading bank %d, page %d into %x\r\n", bank, page, address);
+	bufferPrintf("FIL_Read: %x\r\n", FIL_Read(bank, page, (uint8_t*) address, NULL, 0, 0));
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -331,6 +345,7 @@ OPIBCommand CommandList[] =
 		{"cat", "dumps a block of memory", cmd_cat},
 		{"gpio_pinstate", "get the state of a GPIO pin", cmd_gpio_pinstate},
 		{"dma", "perform a DMA transfer", cmd_dma},
+		{"nand_read", "read a page of NAND into RAM", cmd_nand_read},
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},

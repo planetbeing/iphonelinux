@@ -4,6 +4,7 @@
 #include "openiboot.h"
 
 #define ERROR_ARG 0x80010000
+#define ERROR_NAND 0x80020000
 #define ERROR_TIMEOUT 0x1F
 
 typedef struct NANDDeviceType {
@@ -33,7 +34,7 @@ typedef struct NANDData {
 	uint16_t userSubBlksTotal;
 	uint32_t userPagesTotal;
 	uint16_t blocksPerBank;
-	uint16_t eccBufSize;
+	uint16_t bytesPerPage;
 	uint16_t bytesPerSpare;
 	uint16_t field_22;
 	uint32_t field_24;
@@ -44,5 +45,6 @@ typedef struct NANDData {
 } NANDData;
 
 int nand_setup();
+int FIL_Read(int bank, int page, uint8_t* buffer, uint8_t* spare, int arg4, int arg5);
 
 #endif

@@ -3,6 +3,7 @@
 
 #define ERROR_DMA 0x13
 #define ERROR_BUSY 0x15
+#define ERROR_ALIGN 0x9
 
 typedef struct DMARequest {
 	int started;
@@ -18,6 +19,7 @@ typedef struct DMALinkedList {
 } DMALinkedList;
 
 #define DMA_MEMORY 25
+#define DMA_NAND 8
 
 int dma_setup();
 int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int Destination, int DestinationTransferWidth, int DestinationBurstSize, int* controller, int* channel);

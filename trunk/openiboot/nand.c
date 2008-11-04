@@ -4,6 +4,8 @@
 #include "timer.h"
 #include "clock.h"
 #include "util.h"
+#include "openiboot-asmhelpers.h"
+#include "dma.h"
 
 static int banksTable[NAND_NUM_BANKS];
 
@@ -54,7 +56,7 @@ static int wait_for_ready(int timeout) {
 		return 0;
 	}
 
-	uint32_t startTime = timer_get_system_microtime();
+	uint64_t startTime = timer_get_system_microtime();
 	while((GET_REG(NAND + NAND_STATUS) & NAND_STATUS_READY) == 0) {
 		if(has_elapsed(startTime, timeout * 1000)) {
 			return ERROR_TIMEOUT;
@@ -70,7 +72,7 @@ static int wait_for_status_bit_2(int timeout) {
 		return 0;
 	}
 
-	uint32_t startTime = timer_get_system_microtime();
+	uint64_t startTime = timer_get_system_microtime();
 	while((GET_REG(NAND + NAND_STATUS) & (1 << 2)) == 0) {
 		if(has_elapsed(startTime, timeout * 1000)) {
 			return ERROR_TIMEOUT;
@@ -88,7 +90,7 @@ static int wait_for_status_bit_3(int timeout) {
 		return 0;
 	}
 
-	uint32_t startTime = timer_get_system_microtime();
+	uint64_t startTime = timer_get_system_microtime();
 	while((GET_REG(NAND + NAND_STATUS) & (1 << 3)) == 0) {
 		if(has_elapsed(startTime, timeout * 1000)) {
 			return ERROR_TIMEOUT;
@@ -101,7 +103,7 @@ static int wait_for_status_bit_3(int timeout) {
 }
 
 static int bank_reset_helper(int bank, int timeout) {
-	uint32_t startTime = timer_get_system_microtime();
+	uint64_t startTime = timer_get_system_microtime();
 	if(NANDBankResetSetting)
 		bank = 0;
 	else
@@ -136,6 +138,48 @@ static int bank_reset(int bank, int timeout) {
 		udelay(1000);
 		return ret;
 	}
+}
+
+static int bank_setup(int bank) {
+	SET_REG(NAND + NAND_CONFIG,
+			((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
+			| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
+
+	uint32_t toTest = 1 << (bank + 4);
+	if((GET_REG(NAND + NAND_STATUS) & toTest) != 0) {
+		SET_REG(NAND + NAND_STATUS, toTest);
+	}
+
+	SET_REG(NAND + NAND_CON, NAND_CON_SETTING1); 
+	SET_REG(NAND + NAND_CONFIG2, NAND_CONFIG2_SETTING2);
+	wait_for_ready(500);
+
+	uint64_t startTime = timer_get_system_microtime();
+	while(TRUE) {
+		SET_REG(NAND + NAND_TRANSFERSIZE, 0);
+		SET_REG(NAND + NAND_CON, NAND_CON_BEGINTRANSFER);
+
+		if(wait_for_status_bit_3(500) != 0) {
+			bufferPrintf("nand: bank_setup: wait for status bit 3 timed out\r\n");
+			return ERROR_TIMEOUT;
+		}
+
+
+		uint32_t data = GET_REG(NAND + NAND_DMA_SOURCE);
+		SET_REG(NAND + NAND_CON, NAND_CON_SETTING2);
+		if((data & (1 << 6)) == 0) {
+			if(has_elapsed(startTime, 500 * 1000)) {
+				bufferPrintf("nand: bank_setup: wait for bit 6 of DMA timed out\r\n");
+				return ERROR_TIMEOUT;
+			}
+		} else {
+			break;
+		}
+	}
+
+	SET_REG(NAND + NAND_CONFIG2, NAND_CONFIG2_SETTING2);
+	wait_for_ready(500);
+	return 0;
 }
 
 int nand_setup() {
@@ -174,16 +218,16 @@ int nand_setup() {
 
 		SET_REG(NAND + NAND_CONFIG4, 0);
 		SET_REG(NAND + NAND_CONFIG3, 0);
-		SET_REG(NAND + NAND_CON, (1 << 0));
+		SET_REG(NAND + NAND_CON, NAND_CON_SETUPTRANSFER);
 
 		wait_for_status_bit_2(500);
 		bank_reset_helper(bank, 100);
 
-		SET_REG(NAND + NAND_CONFIG5, (1 << 3));
-		SET_REG(NAND + NAND_CON, (1 << 1));
+		SET_REG(NAND + NAND_TRANSFERSIZE, 8);
+		SET_REG(NAND + NAND_CON, NAND_CON_BEGINTRANSFER);
 
 		wait_for_status_bit_3(500);
-		uint32_t id = GET_REG(NAND + NAND_ID);
+		uint32_t id = GET_REG(NAND + NAND_DMA_SOURCE);
 		const NANDDeviceType* candidate = SupportedDevices;
 		while(candidate->id != 0) {
 			if(candidate->id == id) {
@@ -260,7 +304,7 @@ int nand_setup() {
 	}
 
 	Data.field_4 = 5;
-	Data.eccBufSize = SECTOR_SIZE * Data.sectorsPerPage;
+	Data.bytesPerPage = SECTOR_SIZE * Data.sectorsPerPage;
 	Data.pagesPerBank = Data.pagesPerBlock * Data.blocksPerBank;
 	Data.pagesTotal = Data.pagesPerBank * Data.banksTotal;
 	Data.pagesPerSubBlk = Data.pagesPerBlock * Data.banksTotal;
@@ -292,11 +336,115 @@ int nand_setup() {
 	bufferPrintf("nand: SECTORS_PER_PAGE: %d\r\n", Data.sectorsPerPage);
 	bufferPrintf("nand: BYTES_PER_SPARE: %d\r\n", Data.bytesPerSpare);
 
-	aTemporaryReadEccBuf = (uint8_t*) malloc(Data.eccBufSize);
+	aTemporaryReadEccBuf = (uint8_t*) malloc(Data.bytesPerPage);
 	memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
 
 	aTemporarySBuf = (uint8_t*) malloc(Data.bytesPerSpare);
 
 	return 0;
+}
+
+static int transferFromFlash(void* buffer, int size) {
+	int controller;
+	int channel;
+
+	if((((uint32_t)buffer) & 0x3) != 0) {
+		// the buffer needs to be aligned for DMA, last two bits have to be clear
+		return ERROR_ALIGN;
+	}
+
+	SET_REG(NAND + NAND_CONFIG, GET_REG(NAND + NAND_CONFIG) | (1 << NAND_CONFIG_DMASETTINGSHIFT));
+	SET_REG(NAND + NAND_TRANSFERSIZE, size - 1);
+	SET_REG(NAND + NAND_CON, NAND_CON_BEGINTRANSFER);
+
+	CleanCPUDataCache();
+
+	dma_request(DMA_NAND, 4, 4, DMA_MEMORY, 4, 4, &controller, &channel);
+	dma_perform(DMA_NAND, (uint32_t)buffer, size, 0, &controller, &channel);
+
+	if(dma_finish(controller, channel, 500) != 0) {
+		bufferPrintf("nand: dma timed out\r\n");
+		return ERROR_TIMEOUT;
+	}
+
+	if(wait_for_status_bit_3(500) != 0) {
+		bufferPrintf("nand: waiting for status bit 3 timed out\r\n");
+		return ERROR_TIMEOUT;
+	}
+
+	SET_REG(NAND + NAND_CON, NAND_CON_SETTING1);
+
+	CleanAndInvalidateCPUDataCache();
+
+	return 0;
+}
+
+int FIL_Read(int bank, int page, uint8_t* buffer, uint8_t* spare, int arg4, int arg5) {
+	if(bank >= Data.banksTotal)
+		return ERROR_ARG;
+
+	if(page >= Data.pagesPerBank)
+		return ERROR_ARG;
+
+	if(buffer == NULL && spare == NULL)
+		return ERROR_ARG;
+
+	SET_REG(NAND + NAND_CONFIG,
+		((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
+		| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
+
+	SET_REG(NAND + NAND_CONFIG2, 0);
+	if(wait_for_ready(500) != 0) {
+		bufferPrintf("nand: bank setting failed\r\n");
+		goto FIL_read_error;
+	}
+
+	SET_REG(NAND + NAND_CONFIG4, NAND_CONFIG4_TRANSFERSETTING);
+
+	if(buffer) {
+		SET_REG(NAND + NAND_CONFIG3, page << 16); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number
+
+	} else {
+		SET_REG(NAND + NAND_CONFIG3, page << 16 | Data.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number	
+	}
+
+	SET_REG(NAND + NAND_CON, NAND_CON_SETUPTRANSFER);
+	if(wait_for_status_bit_2(500) != 0) {
+		bufferPrintf("nand: setup transfer failed\r\n");
+		goto FIL_read_error;
+	}
+	
+	SET_REG(NAND + NAND_CONFIG2, NAND_CONFIG2_SETTING1);
+	if(wait_for_ready(500) != 0) {
+		bufferPrintf("nand: setting config2 failed\r\n");
+		goto FIL_read_error;
+	}
+
+	if(bank_setup(bank) != 0) {
+		bufferPrintf("nand: bank setup failed\r\n");
+		goto FIL_read_error;
+	}
+
+	if(buffer) {
+		if(transferFromFlash(buffer, Data.bytesPerPage) != 0) {
+			bufferPrintf("nand: transferFromFlash failed\r\n");
+			goto FIL_read_error;
+		}
+	}
+
+	if(transferFromFlash(aTemporarySBuf, Data.bytesPerSpare) != 0)
+		goto FIL_read_error;
+
+	/*if(arg4) {
+		if(buffer) {
+		}
+	}*/
+	return 0;
+
+FIL_read_error:
+	bank_reset(bank, 100);
+	return ERROR_NAND;
 }
 
