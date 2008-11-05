@@ -70,6 +70,8 @@ void* doOutput(void* threadid) {
 			*(buffer + read) = '\0';
 			printf("%s", buffer + discarded); fflush(stdout);
 
+			free(buffer);
+
 			cmd.command = OPENIBOOTCMD_DUMPBUFFER;
 			cmd.dataLen = 0;
 			usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
