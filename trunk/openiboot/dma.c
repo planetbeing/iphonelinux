@@ -147,11 +147,15 @@ int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int De
 
 	int x;
 	for(x = 0; x < 7; x++) {
-		if((1 << x) == SourceBurstSize) {
+		if((1 << (x + 1)) >= SourceBurstSize) {
 			config |= x << DMAC0Control0_SBSIZESHIFT;
+			break;
 		}
-		if((1 << x) == DestinationBurstSize) {
+	}
+	for(x = 0; x < 7; x++) {
+		if((1 << (x + 1)) >= DestinationBurstSize) {
 			config |= x << DMAC0Control0_DBSIZESHIFT;
+			break;
 		}
 	}
 

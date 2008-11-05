@@ -335,6 +335,7 @@ int nand_setup() {
 	bufferPrintf("nand: PAGES_PER_BANK: %d\r\n", Data.pagesPerBank);
 	bufferPrintf("nand: SECTORS_PER_PAGE: %d\r\n", Data.sectorsPerPage);
 	bufferPrintf("nand: BYTES_PER_SPARE: %d\r\n", Data.bytesPerSpare);
+	bufferPrintf("nand: BYTES_PER_PAGE: %d\r\n", Data.bytesPerPage);
 
 	aTemporaryReadEccBuf = (uint8_t*) malloc(Data.bytesPerPage);
 	memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
@@ -345,8 +346,8 @@ int nand_setup() {
 }
 
 static int transferFromFlash(void* buffer, int size) {
-	int controller;
-	int channel;
+	int controller = 0;
+	int channel = 0;
 
 	if((((uint32_t)buffer) & 0x3) != 0) {
 		// the buffer needs to be aligned for DMA, last two bits have to be clear
