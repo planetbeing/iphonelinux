@@ -128,7 +128,7 @@ static int bank_reset(int bank, int timeout) {
 			((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
 			| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
 
-	SET_REG(NAND + NAND_CONFIG2, NAND_CONFIG2_RESET);
+	SET_REG(NAND + NAND_CMD, NAND_CMD_RESET);
 
 	int ret = wait_for_ready(timeout);
 	if(ret == 0) {
@@ -152,7 +152,7 @@ static int bank_setup(int bank) {
 	}
 
 	SET_REG(NAND + NAND_CON, NAND_CON_SETTING1); 
-	SET_REG(NAND + NAND_CONFIG2, NAND_CONFIG2_SETTING2);
+	SET_REG(NAND + NAND_CMD, NAND_CMD_SETTING2);
 	wait_for_ready(500);
 
 	uint64_t startTime = timer_get_system_microtime();
@@ -178,7 +178,7 @@ static int bank_setup(int bank) {
 		}
 	}
 
-	SET_REG(NAND + NAND_CONFIG2, 0);
+	SET_REG(NAND + NAND_CMD, 0);
 	wait_for_ready(500);
 	return 0;
 }
@@ -213,7 +213,7 @@ int nand_setup() {
 			((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
 			| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
 
-		SET_REG(NAND + NAND_CONFIG2, NAND_CONFIG2_SETTING1);
+		SET_REG(NAND + NAND_CMD, NAND_CMD_ID);
 
 		wait_for_ready(500);
 
@@ -508,7 +508,7 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 		((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
 		| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
 
-	SET_REG(NAND + NAND_CONFIG2, 0);
+	SET_REG(NAND + NAND_CMD, 0);
 	if(wait_for_ready(500) != 0) {
 		bufferPrintf("nand: bank setting failed\r\n");
 		goto FIL_read_error;
@@ -531,7 +531,7 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 		goto FIL_read_error;
 	}
 	
-	SET_REG(NAND + NAND_CONFIG2, NAND_CONFIG2_TRANSFERSETTING);
+	SET_REG(NAND + NAND_CMD, NAND_CMD_READ);
 	if(wait_for_ready(500) != 0) {
 		bufferPrintf("nand: setting config2 failed\r\n");
 		goto FIL_read_error;
