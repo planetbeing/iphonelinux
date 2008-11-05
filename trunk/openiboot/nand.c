@@ -177,7 +177,7 @@ static int bank_setup(int bank) {
 		}
 	}
 
-	SET_REG(NAND + NAND_CONFIG2, NAND_CONFIG2_SETTING2);
+	SET_REG(NAND + NAND_CONFIG2, 0);
 	wait_for_ready(500);
 	return 0;
 }
@@ -417,7 +417,7 @@ int FIL_Read(int bank, int page, uint8_t* buffer, uint8_t* spare, int arg4, int 
 		goto FIL_read_error;
 	}
 	
-	SET_REG(NAND + NAND_CONFIG2, NAND_CONFIG2_SETTING1);
+	SET_REG(NAND + NAND_CONFIG2, NAND_CONFIG2_TRANSFERSETTING);
 	if(wait_for_ready(500) != 0) {
 		bufferPrintf("nand: setting config2 failed\r\n");
 		goto FIL_read_error;
