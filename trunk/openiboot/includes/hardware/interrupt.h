@@ -18,6 +18,7 @@
 // Registers
 
 #define VICIRQSTATUS 0x000
+#define VICRAWINTR 0x8
 #define VICINTSELECT 0xC
 #define VICINTENABLE 0x10
 #define VICINTENCLEAR 0x14

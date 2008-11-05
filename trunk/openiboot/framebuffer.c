@@ -68,6 +68,9 @@ void framebuffer_setloc(int x, int y) {
 }
 
 void framebuffer_print(const char* str) {
+	if(!DisplayText)
+		return;
+
 	size_t len = strlen(str);
 	int i;
 	for(i = 0; i < len; i++) {

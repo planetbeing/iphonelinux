@@ -6,15 +6,16 @@
 #include "util.h"
 #include "openiboot-asmhelpers.h"
 #include "dma.h"
+#include "hardware/interrupt.h"
 
 static int banksTable[NAND_NUM_BANKS];
 
-static int NandSetting = 0;
+static int ECCType = 0;
 static uint8_t NANDSetting1;
 static uint8_t NANDSetting2;
 static uint8_t NANDSetting3;
 static uint8_t NANDSetting4;
-static uint32_t NANDSetting5;
+static uint32_t TotalECCDataSize;
 static uint32_t NANDSetting6;
 static int NumValidBanks = 0;
 static const int NANDBankResetSetting = 1;
@@ -202,7 +203,7 @@ int nand_setup() {
 	const NANDDeviceType* nandType = NULL;
 
 	SET_REG(NAND + NAND_SETUP, 0);
-	SET_REG(NAND + NAND_SETUP, GET_REG(NAND + NAND_SETUP) | (NandSetting << 4));
+	SET_REG(NAND + NAND_SETUP, GET_REG(NAND + NAND_SETUP) | (ECCType << 4));
 
 	for(bank = 0; bank < NAND_NUM_BANKS; bank++) {
 		bank_reset(bank, 100);
@@ -285,14 +286,14 @@ int nand_setup() {
 	}
 
 	if(nandType->unk3 == 6) {
-		NandSetting = 4;
-		NANDSetting5 = Data.sectorsPerPage * 15;
+		ECCType = 4;
+		TotalECCDataSize = Data.sectorsPerPage * 15;
 	} else if(nandType->unk3 == 8) {
-		NandSetting = 8;
-		NANDSetting5 = Data.sectorsPerPage * 20;
+		ECCType = 8;
+		TotalECCDataSize = Data.sectorsPerPage * 20;
 	} else if(nandType->unk3 == 4) {
-		NandSetting = 0;
-		NANDSetting5 = Data.sectorsPerPage * 10;
+		ECCType = 0;
+		TotalECCDataSize = Data.sectorsPerPage * 10;
 	}
 
 	if(nandType->unk4 == 6) {
@@ -380,7 +381,120 @@ static int transferFromFlash(void* buffer, int size) {
 	return 0;
 }
 
-int FIL_Read(int bank, int page, uint8_t* buffer, uint8_t* spare, int arg4, int arg5) {
+static void ecc_perform(int setting, int sectors, uint8_t* sectorData, uint8_t* eccData) {
+	SET_REG(NANDECC + NANDECC_CLEARINT, 1);
+	SET_REG(NANDECC + NANDECC_SETUP, ((sectors - 1) & 0x3) | setting);
+	SET_REG(NANDECC + NANDECC_DATA, (uint32_t) sectorData);
+	SET_REG(NANDECC + NANDECC_ECC, (uint32_t) eccData);
+
+	CleanCPUDataCache();
+
+	SET_REG(NANDECC + NANDECC_START, 1);
+}
+
+static int wait_for_ecc_interrupt(int timeout) {
+	uint64_t startTime = timer_get_system_microtime();
+	uint32_t mask = (1 << (NANDECC_INT - VIC_InterruptSeparator));
+	while((GET_REG(VIC1 + VICRAWINTR) & mask) == 0) {
+		if(has_elapsed(startTime, timeout * 1000)) {
+			return ERROR_TIMEOUT;
+		}
+	}
+
+	SET_REG(NANDECC + NANDECC_CLEARINT, 1);
+
+	if((GET_REG(VIC1 + VICRAWINTR) & mask) == 0) {
+		return 0;
+	} else {
+		return ERROR_TIMEOUT;
+	}
+}
+
+static int ecc_finish() {
+	int ret;
+	if((ret = wait_for_ecc_interrupt(500)) != 0) {
+		bufferPrintf("nand: ecc timed out\r\n");
+		return ret;
+	}
+
+	if((GET_REG(NANDECC + NANDECC_STATUS) & 0x1) != 0) {
+		bufferPrintf("nand: ecc failed\r\n");
+		return ERROR_ECC;
+	}
+
+	return 0;
+}
+
+static int checkECC(int setting, uint8_t* data, uint8_t* ecc) {
+	int eccSize = 0;
+
+	if(setting == 4) {
+		eccSize = 15;
+	} else if(setting == 8) {
+		eccSize = 20;
+	} else if(setting == 0) {
+		eccSize = 10;
+	} else {
+		return ERROR_ECC;
+	}
+
+	uint8_t* dataPtr = data;
+	uint8_t* eccPtr = ecc;
+	int sectorsLeft = Data.sectorsPerPage;
+
+	while(sectorsLeft > 0) {
+		int toCheck;
+		if(sectorsLeft > 4)
+			toCheck = 4;
+		else
+			toCheck = sectorsLeft;
+
+		if(LargePages) {
+			// If there are more than 4 sectors in a page...
+			int i;
+			for(i = 0; i < toCheck; i++) {
+				// loop through each sector that we have to check this time's ECC
+				uint8_t* x = &eccPtr[eccSize * i]; // first byte of ECC
+				uint8_t* y = x + eccSize - 1; // last byte of ECC
+				while(x < y) {
+					// swap the byte order of them
+					uint8_t t = *y;
+					*y = *x;
+					*x = t;
+					x++;
+					y--;
+				}
+			}
+		}
+
+		ecc_perform(setting, toCheck, dataPtr, eccPtr);
+		if(ecc_finish() != 0)
+			return ERROR_ECC;
+
+		dataPtr += toCheck * SECTOR_SIZE;
+		eccPtr += toCheck * eccSize;
+		sectorsLeft -= toCheck;
+	}
+
+	return 0;
+}
+
+static int isBadBlock(uint8_t* buffer, int size) {
+	int i;
+	int found = 0;
+	for(i = 0; i < size; i++) {
+		if(buffer[i] != 0xFF) {
+			found++;
+		}
+	}
+
+	if(found <= 1)
+		return 1;
+	else
+		return 0;
+}
+
+int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBadBlocks) {
 	if(bank >= Data.banksTotal)
 		return ERROR_ARG;
 
@@ -407,7 +521,7 @@ int FIL_Read(int bank, int page, uint8_t* buffer, uint8_t* spare, int arg4, int 
 		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number
 
 	} else {
-		SET_REG(NAND + NAND_CONFIG3, page << 16 | Data.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + NAND_CONFIG3, (page << 16) | Data.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
 		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number	
 	}
 
@@ -438,10 +552,37 @@ int FIL_Read(int bank, int page, uint8_t* buffer, uint8_t* spare, int arg4, int 
 	if(transferFromFlash(aTemporarySBuf, Data.bytesPerSpare) != 0)
 		goto FIL_read_error;
 
-	/*if(arg4) {
+	int eccFailed = 0;
+	if(doECC) {
 		if(buffer) {
+			eccFailed = (checkECC(ECCType, buffer, aTemporarySBuf + 0xC) != 0);
 		}
-	}*/
+
+		memcpy(aTemporaryReadEccBuf, aTemporarySBuf, 0xC);
+		ecc_perform(ECCType, 1, aTemporaryReadEccBuf, aTemporarySBuf + 0xC + TotalECCDataSize);
+		if(ecc_finish() != 0) {
+			memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
+			eccFailed |= 1;
+		}
+	}
+
+	if(spare) {
+		if(doECC) {
+			// We can only copy the first 12 bytes because the rest is probably changed by the ECC check routine
+			memcpy(spare, aTemporaryReadEccBuf, 0xC);
+		} else {
+			memcpy(spare, aTemporarySBuf, Data.bytesPerSpare);
+		}
+	}
+
+	if(eccFailed || checkBadBlocks) {
+		if(isBadBlock(aTemporarySBuf, Data.bytesPerSpare) != 0) {
+			return ERROR_BADBLOCK;
+		} else if(eccFailed) {
+			return ERROR_NAND;
+		}
+	}
+
 	return 0;
 
 FIL_read_error:

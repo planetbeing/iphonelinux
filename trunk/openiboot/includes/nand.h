@@ -6,6 +6,8 @@
 #define ERROR_ARG 0x80010000
 #define ERROR_NAND 0x80020000
 #define ERROR_TIMEOUT 0x1F
+#define ERROR_ECC 0x17
+#define ERROR_BADBLOCK 0x1
 
 typedef struct NANDDeviceType {
 	uint32_t id;
@@ -45,6 +47,6 @@ typedef struct NANDData {
 } NANDData;
 
 int nand_setup();
-int FIL_Read(int bank, int page, uint8_t* buffer, uint8_t* spare, int arg4, int arg5);
+int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBadBlocks);
 
 #endif

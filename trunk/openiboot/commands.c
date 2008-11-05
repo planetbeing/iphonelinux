@@ -321,7 +321,24 @@ void cmd_nand_read(int argc, char** argv) {
 	uint32_t bank = parseNumber(argv[2]);
 	uint32_t page = parseNumber(argv[3]);
 	bufferPrintf("reading bank %d, page %d into %x\r\n", bank, page, address);
-	bufferPrintf("FIL_Read: %x\r\n", FIL_Read(bank, page, (uint8_t*) address, NULL, 0, 0));
+	bufferPrintf("nand_read: %x\r\n", nand_read(bank, page, (uint8_t*) address, NULL, TRUE, FALSE));
+}
+
+void cmd_text(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <on|off>\r\n", argv[0]);
+		return;
+	}
+
+	if(strcmp(argv[1], "on") == 0) {
+		framebuffer_setdisplaytext(ON);
+		bufferPrintf("Text display ON\r\n");
+	} else if(strcmp(argv[1], "off") == 0) {
+		framebuffer_setdisplaytext(OFF);
+		bufferPrintf("Text display OFF\r\n");
+	} else {
+		bufferPrintf("Unrecognized option: %s\r\n", argv[1]);
+	}
 }
 
 void cmd_help(int argc, char** argv) {
@@ -338,6 +355,7 @@ OPIBCommand CommandList[] =
 		{"reboot", "reboot the device", cmd_reboot},
 		{"echo", "echo back a line", cmd_echo},
 		{"clear", "clears the screen", cmd_clear},
+		{"text", "turns text display on or off", cmd_text},
 		{"md", "display a block of memory as 32-bit integers", cmd_md},
 		{"mw", "write a 32-bit dword into a memory address", cmd_mw},
 		{"mwb", "write a byte into a memory address", cmd_mwb},

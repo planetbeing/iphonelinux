@@ -5,8 +5,11 @@
 
 // Device
 #define NAND 0x38A00000
+#define NANDECC 0x38F00000
 #define NAND_CLOCK_GATE1 0x8
 #define NAND_CLOCK_GATE2 0xC
+#define NANDECC_INT 0x2B
+
 
 // Registers
 #define NAND_CONFIG 0x0
@@ -19,6 +22,13 @@
 #define NAND_STATUS 0x48
 #define NAND_DMA_SOURCE 0x80
 #define NAND_SETUP 0x100
+
+#define NANDECC_DATA 0x4
+#define NANDECC_ECC 0x8
+#define NANDECC_START 0xC
+#define NANDECC_STATUS 0x10
+#define NANDECC_SETUP 0x14
+#define NANDECC_CLEARINT 0x40
 
 // Values
 
