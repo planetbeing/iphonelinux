@@ -413,12 +413,10 @@ static int wait_for_ecc_interrupt(int timeout) {
 static int ecc_finish() {
 	int ret;
 	if((ret = wait_for_ecc_interrupt(500)) != 0) {
-		bufferPrintf("nand: ecc timed out\r\n");
 		return ret;
 	}
 
 	if((GET_REG(NANDECC + NANDECC_STATUS) & 0x1) != 0) {
-		bufferPrintf("nand: ecc failed\r\n");
 		return ERROR_ECC;
 	}
 

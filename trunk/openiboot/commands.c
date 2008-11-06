@@ -313,15 +313,31 @@ void cmd_dma(int argc, char** argv) {
 
 void cmd_nand_read(int argc, char** argv) {
 	if(argc < 4) {
-		bufferPrintf("Usage: %s <address> <bank> <page>\r\n", argv[0]);
+		bufferPrintf("Usage: %s <address> <bank> <page> [pages]\r\n", argv[0]);
 		return;
 	}
 
 	uint32_t address = parseNumber(argv[1]);
 	uint32_t bank = parseNumber(argv[2]);
 	uint32_t page = parseNumber(argv[3]);
-	bufferPrintf("reading bank %d, page %d into %x\r\n", bank, page, address);
-	bufferPrintf("nand_read: %x\r\n", nand_read(bank, page, (uint8_t*) address, NULL, TRUE, FALSE));
+	uint32_t pages = 1;
+	if(argc >= 5) {
+		pages = parseNumber(argv[4]);
+	}
+
+	bufferPrintf("reading bank %d, pages %d - %d into %x\r\n", bank, page, page + pages - 1, address);
+	
+	while(pages > 0) {	
+		int ret = nand_read(bank, page, (uint8_t*) address, NULL, TRUE, FALSE);
+		if(ret != 0)
+			bufferPrintf("nand_read: %x\r\n", ret);
+
+		pages--;
+		page++;
+		address += 0x1000;
+	}
+
+	bufferPrintf("done!");
 }
 
 void cmd_text(int argc, char** argv) {
