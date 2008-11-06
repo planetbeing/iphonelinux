@@ -326,6 +326,7 @@ void cmd_nand_read(int argc, char** argv) {
 	}
 
 	bufferPrintf("reading bank %d, pages %d - %d into %x\r\n", bank, page, page + pages - 1, address);
+	NANDData* Data = nand_get_geometry();
 	
 	while(pages > 0) {	
 		int ret = nand_read(bank, page, (uint8_t*) address, NULL, TRUE, FALSE);
@@ -334,10 +335,40 @@ void cmd_nand_read(int argc, char** argv) {
 
 		pages--;
 		page++;
-		address += 0x1000;
+		address += Data->bytesPerSpare;
 	}
 
-	bufferPrintf("done!");
+	bufferPrintf("done!\r\n");
+}
+
+void cmd_nand_read_spare(int argc, char** argv) {
+	if(argc < 4) {
+		bufferPrintf("Usage: %s <address> <bank> <page> [pages]\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t bank = parseNumber(argv[2]);
+	uint32_t page = parseNumber(argv[3]);
+	uint32_t pages = 1;
+	if(argc >= 5) {
+		pages = parseNumber(argv[4]);
+	}
+
+	bufferPrintf("reading bank %d, pages %d - %d spare into %x\r\n", bank, page, page + pages - 1, address);
+	NANDData* Data = nand_get_geometry();
+	
+	while(pages > 0) {	
+		int ret = nand_read(bank, page, NULL, (uint8_t*) address, FALSE, FALSE);
+		if(ret != 0)
+			bufferPrintf("nand_read: %x\r\n", ret);
+
+		pages--;
+		page++;
+		address += Data->bytesPerSpare;
+	}
+
+	bufferPrintf("done!\r\n");
 }
 
 void cmd_text(int argc, char** argv) {
@@ -380,6 +411,7 @@ OPIBCommand CommandList[] =
 		{"gpio_pinstate", "get the state of a GPIO pin", cmd_gpio_pinstate},
 		{"dma", "perform a DMA transfer", cmd_dma},
 		{"nand_read", "read a page of NAND into RAM", cmd_nand_read},
+		{"nand_read_spare", "read a page of NAND's spare into RAM", cmd_nand_read_spare},
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},

@@ -547,8 +547,10 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 		}
 	}
 
-	if(transferFromFlash(aTemporarySBuf, Data.bytesPerSpare) != 0)
+	if(transferFromFlash(aTemporarySBuf, Data.bytesPerSpare) != 0) {
+		bufferPrintf("nand: transferFromFlash for spare failed\r\n");
 		goto FIL_read_error;
+	}
 
 	int eccFailed = 0;
 	if(doECC) {
@@ -586,5 +588,9 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 FIL_read_error:
 	bank_reset(bank, 100);
 	return ERROR_NAND;
+}
+
+NANDData* nand_get_geometry() {
+	return &Data;
 }
 

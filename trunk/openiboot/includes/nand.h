@@ -48,5 +48,6 @@ typedef struct NANDData {
 
 int nand_setup();
 int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBadBlocks);
+NANDData* nand_get_geometry();
 
 #endif
