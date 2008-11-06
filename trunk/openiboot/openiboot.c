@@ -28,6 +28,7 @@
 #include "menu.h"
 #include "pmu.h"
 #include "nand.h"
+#include "ftl.h"
 
 static int setup_devices();
 static int setup_openiboot();
@@ -59,6 +60,7 @@ void OpenIBootStart() {
 	}
 
 	nand_setup();
+	ftl_setup();
 
 	bufferPrintf("-----------------------------------------------\r\n");
 	bufferPrintf("              WELCOME TO OPENIBOOT\r\n");

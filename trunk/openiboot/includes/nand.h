@@ -20,8 +20,8 @@ typedef struct NANDDeviceType {
 	uint8_t NANDSetting3;
 	uint8_t NANDSetting4;
 	uint32_t userSubBlksTotal;
-	uint32_t unk3;
-	uint32_t unk4;
+	uint32_t ecc1;
+	uint32_t ecc2;
 } NANDDeviceType;
 
 typedef struct NANDData {
@@ -48,6 +48,7 @@ typedef struct NANDData {
 
 int nand_setup();
 int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBadBlocks);
+int nand_read_alternate_ecc(int bank, int page, uint8_t* buffer);
 NANDData* nand_get_geometry();
 
 #endif

@@ -16,7 +16,7 @@ static uint8_t NANDSetting2;
 static uint8_t NANDSetting3;
 static uint8_t NANDSetting4;
 static uint32_t TotalECCDataSize;
-static uint32_t NANDSetting6;
+static uint32_t ECCType2;
 static int NumValidBanks = 0;
 static const int NANDBankResetSetting = 1;
 static int LargePages;
@@ -285,23 +285,23 @@ int nand_setup() {
 		LargePages = FALSE;
 	}
 
-	if(nandType->unk3 == 6) {
+	if(nandType->ecc1 == 6) {
 		ECCType = 4;
 		TotalECCDataSize = Data.sectorsPerPage * 15;
-	} else if(nandType->unk3 == 8) {
+	} else if(nandType->ecc1 == 8) {
 		ECCType = 8;
 		TotalECCDataSize = Data.sectorsPerPage * 20;
-	} else if(nandType->unk3 == 4) {
+	} else if(nandType->ecc1 == 4) {
 		ECCType = 0;
 		TotalECCDataSize = Data.sectorsPerPage * 10;
 	}
 
-	if(nandType->unk4 == 6) {
-		NANDSetting6 = 4;
-	} else if(nandType->unk3 == 8) {
-		NANDSetting6 = 8;
-	} else if(nandType->unk3 == 4) {
-		NANDSetting6 = 0;
+	if(nandType->ecc2 == 6) {
+		ECCType2 = 4;
+	} else if(nandType->ecc2 == 8) {
+		ECCType2 = 8;
+	} else if(nandType->ecc2 == 4) {
+		ECCType2 = 0;
 	}
 
 	Data.field_4 = 5;
@@ -592,5 +592,16 @@ FIL_read_error:
 
 NANDData* nand_get_geometry() {
 	return &Data;
+}
+
+int nand_read_alternate_ecc(int bank, int page, uint8_t* buffer) {
+	int ret;
+	if((ret = nand_read(bank, page, buffer, aTemporarySBuf, FALSE, TRUE)) != 0)
+		return ret;
+
+	if(checkECC(ECCType2, buffer, aTemporarySBuf) != 0)
+		return ERROR_NAND;
+
+	return 0;
 }
 
