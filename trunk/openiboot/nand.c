@@ -22,19 +22,12 @@ static const int NANDBankResetSetting = 1;
 static int LargePages;
 
 static NANDData Data;
+static UnknownNANDType Data2;
 
 static uint8_t* aTemporaryReadEccBuf;
 static uint8_t* aTemporarySBuf;
 
 #define SECTOR_SIZE 512
-
-static struct UnknownNANDType {
-	uint16_t field_0;
-	uint16_t field_2;
-	uint16_t field_4;
-	uint16_t field_6;
-	uint16_t field_8;
-} Data2;
 
 static const NANDDeviceType SupportedDevices[] = {
 	{0x2555D5EC, 8192, 0x80, 4, 64, 4, 2, 4, 2, 7744, 4, 6},
@@ -592,6 +585,10 @@ FIL_read_error:
 
 NANDData* nand_get_geometry() {
 	return &Data;
+}
+
+UnknownNANDType* nand_get_data() {
+	return &Data2;
 }
 
 int nand_read_alternate_ecc(int bank, int page, uint8_t* buffer) {

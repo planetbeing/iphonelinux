@@ -6,6 +6,7 @@
 #define FTL_ID 0x43303033
 
 static NANDData* Data;
+static UnknownNANDType* Data2;
 
 static int findDeviceInfoBBT(int bank, void* deviceInfoBBT) {
 	uint8_t* buffer = malloc(Data->bytesPerPage);
@@ -55,7 +56,7 @@ static int hasDeviceInfoBBT() {
 
 static uint8_t VFLData1[0x48];
 static void* pstVFLCxt = NULL;
-static void* pstBBTArea = NULL;
+static uint8_t* pstBBTArea = NULL;
 static void* VFLData2 = NULL;
 static void* VFLData3 = NULL;
 static int VFLData4 = 0;
@@ -69,7 +70,7 @@ static int VFL_Init() {
 	}
 
 	if(pstBBTArea == NULL) {
-		pstBBTArea = malloc((Data->blocksPerBank + 7) / 8);
+		pstBBTArea = (uint8_t*) malloc((Data->blocksPerBank + 7) / 8);
 		if(pstBBTArea == NULL)
 			return -1;
 	}
@@ -172,8 +173,125 @@ static int FTL_Init() {
 	return 0;
 }
 
+// pageBuffer and spareBuffer are represented by single BUF struct within Whimory
+static int sub_18016120(int bank, int page, int option, uint8_t* pageBuffer, uint8_t* spareBuffer) {
+	return FALSE;
+}
+
+static int VFLAuxFunction1(int bank) {
+	return FALSE;
+}
+
+static int VFLAuxFunction2(int bank) {
+	return FALSE;
+}
+
 static int VFL_Open() {
-	return -1;
+	int bank = 0;
+	for(bank = 0; bank < Data->banksTotal; bank++) {
+		if(findDeviceInfoBBT(bank, pstBBTArea) != 0) {
+			bufferPrintf("ftl: findDeviceInfoBBT failed\r\n");
+			return -1;
+		}
+		if(bank >= Data->banksTotal) {
+			return -1;
+		}
+
+
+		uint8_t* r10 = ((uint8_t*)pstVFLCxt) + bank * 2048;
+		uint8_t* pageBuffer = malloc(Data->bytesPerPage);
+		uint8_t* spareBuffer = malloc(Data->bytesPerSpare);
+		if(pageBuffer == NULL)
+			return -1;
+
+		int i = 1;
+		for(i = 1; i < Data2->field_0; i++) {
+			// so pstBBTArea is a bit array of some sort
+			if(!(pstBBTArea[i / 8] & (1 << (i  & 0x7))))
+				continue;
+
+			if(sub_18016120(bank, i, 0, pageBuffer, spareBuffer) == TRUE) {
+				memcpy(r10 + 0x7A2, pageBuffer + 0x7A2, 8);
+				break;
+			}
+		}
+
+		if(i == Data->field_0) {
+			free(pageBuffer);
+			free(spareBuffer);
+			return -1;
+		}
+
+		int maxSpareData = 0xFFFFFFFF;
+		int maxSpareDataIdx = 4;
+		for(i = 0; i < 4; i++) {
+			uint16_t r1 = *((uint16_t*)(r10 + 0x7A2 + 2 * i));
+			if(r1 == 0xFFFF)
+				continue;
+
+			if(sub_18016120(bank, r1, 0, pageBuffer, spareBuffer) != TRUE)
+				continue;
+
+			if(*((uint32_t*)spareBuffer) > 0 && *((uint32_t*)spareBuffer) <= maxSpareData) {
+				maxSpareData = *((uint32_t*)spareBuffer);
+				maxSpareDataIdx = i;
+			}
+		}
+
+		if(maxSpareDataIdx == 4) {
+			free(pageBuffer);
+			free(spareBuffer);
+			return -1;
+		}
+
+		int page = 8;
+		int last = 0;
+		for(page = 8; page < Data->pagesPerBlock; page += 8) {
+			if(sub_18016120(bank, *((uint16_t*)((r10 + (maxSpareDataIdx * 2) + 1952) + 2)), page, pageBuffer, spareBuffer) == FALSE) {
+				break;
+			}
+			
+			last = page;
+		}
+
+		if(sub_18016120(bank, *((uint16_t*)((r10 + (maxSpareDataIdx * 2) + 1952) + 2)), last, pageBuffer, spareBuffer) == FALSE) {
+			free(pageBuffer);
+			free(spareBuffer);
+			return -1;
+		}
+
+		// Aha, so the upshot is that this finds the VFLCxt and copies it into pstVFLCxt
+		memcpy((void**)(((uint8_t*)pstVFLCxt) + bank * 2048), pageBuffer, 2048);
+		if(*((uint32_t*)r10) >= VFLData4) {
+			VFLData4 = *((uint32_t*)r10);
+		}
+
+		free(pageBuffer);
+		free(spareBuffer);
+
+		if(VFLAuxFunction2(bank) == FALSE)
+			return -1;
+	} 
+
+	int max = 0;
+	void* maxThing = NULL;
+	uint8_t buffer[6];
+	for(bank = 0; bank < Data->banksTotal; bank++) {
+		int cur = *((int*)(((uint8_t*)pstVFLCxt) + bank * 2048));
+		if(max <= cur) {
+			max = cur;
+			maxThing = (void*)((((uint8_t*)pstVFLCxt) + bank * 2048) + 4);
+		}
+	}
+
+	memcpy(buffer, maxThing, 6);
+
+	for(bank = 0; bank < Data->banksTotal; bank++) {
+		memcpy((void**)(((uint8_t*)pstVFLCxt) + bank * 2048), buffer, 6);
+		VFLAuxFunction1(bank);
+	}
+
+	return 0;
 }
 
 static int FTL_Open() {
@@ -182,6 +300,7 @@ static int FTL_Open() {
 
 int ftl_setup() {
 	Data = nand_get_geometry();
+	Data2 = nand_get_data();
 
 	if(VFL_Init() != 0) {
 		bufferPrintf("ftl: VFL_Init failed\r\n");
