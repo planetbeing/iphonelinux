@@ -32,6 +32,21 @@ typedef struct UnknownNANDType {
 	uint16_t field_8;
 } UnknownNANDType;
 
+typedef struct SpareData {
+	uint8_t field_0;
+	uint8_t field_1;
+	uint8_t field_2;
+	uint8_t field_3;
+	uint8_t field_4;
+	uint8_t field_5;
+	uint8_t field_6;
+	uint8_t field_7;
+	uint8_t field_8;
+	uint8_t field_9;
+	uint8_t field_A;
+	uint8_t field_B;
+} __attribute__ ((packed)) SpareData;
+
 typedef struct NANDData {
 	uint32_t field_0;
 	uint16_t field_4;

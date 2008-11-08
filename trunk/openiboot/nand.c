@@ -548,11 +548,11 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 	int eccFailed = 0;
 	if(doECC) {
 		if(buffer) {
-			eccFailed = (checkECC(ECCType, buffer, aTemporarySBuf + 0xC) != 0);
+			eccFailed = (checkECC(ECCType, buffer, aTemporarySBuf + sizeof(SpareData)) != 0);
 		}
 
-		memcpy(aTemporaryReadEccBuf, aTemporarySBuf, 0xC);
-		ecc_perform(ECCType, 1, aTemporaryReadEccBuf, aTemporarySBuf + 0xC + TotalECCDataSize);
+		memcpy(aTemporaryReadEccBuf, aTemporarySBuf, sizeof(SpareData));
+		ecc_perform(ECCType, 1, aTemporaryReadEccBuf, aTemporarySBuf + sizeof(SpareData) + TotalECCDataSize);
 		if(ecc_finish() != 0) {
 			memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
 			eccFailed |= 1;
@@ -562,7 +562,7 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 	if(spare) {
 		if(doECC) {
 			// We can only copy the first 12 bytes because the rest is probably changed by the ECC check routine
-			memcpy(spare, aTemporaryReadEccBuf, 0xC);
+			memcpy(spare, aTemporaryReadEccBuf, sizeof(SpareData));
 		} else {
 			memcpy(spare, aTemporarySBuf, Data.bytesPerSpare);
 		}

@@ -55,7 +55,7 @@ static int hasDeviceInfoBBT() {
 }
 
 static uint8_t VFLData1[0x48];
-static void* pstVFLCxt = NULL;
+static VFLCxt* pstVFLCxt = NULL;
 static uint8_t* pstBBTArea = NULL;
 static void* VFLData2 = NULL;
 static void* VFLData3 = NULL;
@@ -64,7 +64,7 @@ static int VFLData4 = 0;
 static int VFL_Init() {
 	memset(VFLData1, 0, 0x48);
 	if(pstVFLCxt == NULL) {
-		pstVFLCxt = malloc(Data->banksTotal * 2048);
+		pstVFLCxt = malloc(Data->banksTotal * sizeof(VFLCxt));
 		if(pstVFLCxt == NULL)
 			return -1;
 	}
@@ -174,15 +174,53 @@ static int FTL_Init() {
 }
 
 // pageBuffer and spareBuffer are represented by single BUF struct within Whimory
-static int sub_18016120(int bank, int page, int option, uint8_t* pageBuffer, uint8_t* spareBuffer) {
+static int vfl_read_page(int bank, int block, int page, uint8_t* pageBuffer, uint8_t* spareBuffer) {
+	int i;
+	for(i = 0; i < 8; i++) {
+		if(nand_read(bank, (block * Data->pagesPerBlock) + page + i, pageBuffer, spareBuffer, TRUE, TRUE) == 0) {
+			SpareData* spareData = (SpareData*) spareBuffer;
+			if(spareData->field_8 == 0 && spareData->field_9 == 0x80)
+				return TRUE;
+		}
+	}
 	return FALSE;
 }
 
-static int VFLAuxFunction1(int bank) {
+static void vfl_checksum(void* data, int size, uint32_t* a, uint32_t* b) {
+	int i;
+	uint32_t* buffer = (uint32_t*) data;
+	uint32_t x = 0;
+	uint32_t y = 0;
+	for(i = 0; i < (size / 4); i++) {
+		x += buffer[i];
+		y ^= buffer[i];
+	}
+
+	*a = x + 0xAABBCCDD;
+	*b = y ^ 0xAABBCCDD;
+}
+
+static int vfl_gen_checksum(int bank) {
+	vfl_checksum(&pstVFLCxt[bank], (uint32_t)&pstVFLCxt[bank].checksum1 - (uint32_t)&pstVFLCxt[bank], &pstVFLCxt[bank].checksum1, &pstVFLCxt[bank].checksum2);
 	return FALSE;
 }
 
-static int VFLAuxFunction2(int bank) {
+static int vfl_check_checksum(int bank) {
+	static int counter = 0;
+
+	counter++;
+
+	uint32_t checksum1;
+	uint32_t checksum2;
+	vfl_checksum(&pstVFLCxt[bank], (uint32_t)&pstVFLCxt[bank].checksum1 - (uint32_t)&pstVFLCxt[bank], &checksum1, &checksum2);
+
+	// Yeah, this looks fail, but this is actually the logic they use
+	if(checksum1 == pstVFLCxt[bank].checksum1)
+		return TRUE;
+
+	if(checksum2 != pstVFLCxt[bank].checksum2)
+		return TRUE;
+
 	return FALSE;
 }
 
@@ -198,7 +236,7 @@ static int VFL_Open() {
 		}
 
 
-		uint8_t* r10 = ((uint8_t*)pstVFLCxt) + bank * 2048;
+		VFLCxt* curVFLCxt = &pstVFLCxt[bank];
 		uint8_t* pageBuffer = malloc(Data->bytesPerPage);
 		uint8_t* spareBuffer = malloc(Data->bytesPerSpare);
 		if(pageBuffer == NULL)
@@ -210,8 +248,8 @@ static int VFL_Open() {
 			if(!(pstBBTArea[i / 8] & (1 << (i  & 0x7))))
 				continue;
 
-			if(sub_18016120(bank, i, 0, pageBuffer, spareBuffer) == TRUE) {
-				memcpy(r10 + 0x7A2, pageBuffer + 0x7A2, 8);
+			if(vfl_read_page(bank, i, 0, pageBuffer, spareBuffer) == TRUE) {
+				memcpy(curVFLCxt->VFLCxtBlock, ((VFLCxt*)pageBuffer)->VFLCxtBlock, sizeof(curVFLCxt->VFLCxtBlock));
 				break;
 			}
 		}
@@ -225,11 +263,11 @@ static int VFL_Open() {
 		int maxSpareData = 0xFFFFFFFF;
 		int maxSpareDataIdx = 4;
 		for(i = 0; i < 4; i++) {
-			uint16_t r1 = *((uint16_t*)(r10 + 0x7A2 + 2 * i));
-			if(r1 == 0xFFFF)
+			uint16_t block = curVFLCxt->VFLCxtBlock[i];
+			if(block == 0xFFFF)
 				continue;
 
-			if(sub_18016120(bank, r1, 0, pageBuffer, spareBuffer) != TRUE)
+			if(vfl_read_page(bank, block, 0, pageBuffer, spareBuffer) != TRUE)
 				continue;
 
 			if(*((uint32_t*)spareBuffer) > 0 && *((uint32_t*)spareBuffer) <= maxSpareData) {
@@ -247,29 +285,29 @@ static int VFL_Open() {
 		int page = 8;
 		int last = 0;
 		for(page = 8; page < Data->pagesPerBlock; page += 8) {
-			if(sub_18016120(bank, *((uint16_t*)((r10 + (maxSpareDataIdx * 2) + 1952) + 2)), page, pageBuffer, spareBuffer) == FALSE) {
+			if(vfl_read_page(bank, curVFLCxt->VFLCxtBlock[maxSpareDataIdx], page, pageBuffer, spareBuffer) == FALSE) {
 				break;
 			}
 			
 			last = page;
 		}
 
-		if(sub_18016120(bank, *((uint16_t*)((r10 + (maxSpareDataIdx * 2) + 1952) + 2)), last, pageBuffer, spareBuffer) == FALSE) {
+		if(vfl_read_page(bank, curVFLCxt->VFLCxtBlock[maxSpareDataIdx], last, pageBuffer, spareBuffer) == FALSE) {
 			free(pageBuffer);
 			free(spareBuffer);
 			return -1;
 		}
 
 		// Aha, so the upshot is that this finds the VFLCxt and copies it into pstVFLCxt
-		memcpy((void**)(((uint8_t*)pstVFLCxt) + bank * 2048), pageBuffer, 2048);
-		if(*((uint32_t*)r10) >= VFLData4) {
-			VFLData4 = *((uint32_t*)r10);
+		memcpy(&pstVFLCxt[bank], pageBuffer, sizeof(VFLCxt));
+		if(curVFLCxt->field_0 >= VFLData4) {
+			VFLData4 = curVFLCxt->field_0;
 		}
 
 		free(pageBuffer);
 		free(spareBuffer);
 
-		if(VFLAuxFunction2(bank) == FALSE)
+		if(vfl_check_checksum(bank) == FALSE)
 			return -1;
 	} 
 
@@ -277,18 +315,18 @@ static int VFL_Open() {
 	void* maxThing = NULL;
 	uint8_t buffer[6];
 	for(bank = 0; bank < Data->banksTotal; bank++) {
-		int cur = *((int*)(((uint8_t*)pstVFLCxt) + bank * 2048));
+		int cur = pstVFLCxt[bank].field_0;
 		if(max <= cur) {
 			max = cur;
-			maxThing = (void*)((((uint8_t*)pstVFLCxt) + bank * 2048) + 4);
+			maxThing = pstVFLCxt[bank].field_4;
 		}
 	}
 
 	memcpy(buffer, maxThing, 6);
 
 	for(bank = 0; bank < Data->banksTotal; bank++) {
-		memcpy((void**)(((uint8_t*)pstVFLCxt) + bank * 2048), buffer, 6);
-		VFLAuxFunction1(bank);
+		memcpy(pstVFLCxt[bank].field_4, buffer, 6);
+		vfl_gen_checksum(bank);
 	}
 
 	return 0;
