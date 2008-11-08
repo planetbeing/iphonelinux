@@ -3,7 +3,7 @@
 #include "nand.h"
 #include "util.h"
 
-#define FTL_ID 0x43303033
+#define FTL_ID 0x43303034
 
 static NANDData* Data;
 static UnknownNANDType* Data2;
@@ -227,10 +227,11 @@ static int vfl_check_checksum(int bank) {
 static int VFL_Open() {
 	int bank = 0;
 	for(bank = 0; bank < Data->banksTotal; bank++) {
-		if(findDeviceInfoBBT(bank, pstBBTArea) != 0) {
+		if(!findDeviceInfoBBT(bank, pstBBTArea)) {
 			bufferPrintf("ftl: findDeviceInfoBBT failed\r\n");
 			return -1;
 		}
+
 		if(bank >= Data->banksTotal) {
 			return -1;
 		}
@@ -239,8 +240,10 @@ static int VFL_Open() {
 		VFLCxt* curVFLCxt = &pstVFLCxt[bank];
 		uint8_t* pageBuffer = malloc(Data->bytesPerPage);
 		uint8_t* spareBuffer = malloc(Data->bytesPerSpare);
-		if(pageBuffer == NULL)
+		if(pageBuffer == NULL || spareBuffer == NULL) {
+			bufferPrintf("ftl: cannot allocate page and spare buffer\r\n");
 			return -1;
+		}
 
 		int i = 1;
 		for(i = 1; i < Data2->field_0; i++) {
@@ -254,7 +257,8 @@ static int VFL_Open() {
 			}
 		}
 
-		if(i == Data->field_0) {
+		if(i == Data2->field_0) {
+			bufferPrintf("ftl: cannot find readable VFLCxtBlock\r\n");
 			free(pageBuffer);
 			free(spareBuffer);
 			return -1;
@@ -277,6 +281,7 @@ static int VFL_Open() {
 		}
 
 		if(maxSpareDataIdx == 4) {
+			bufferPrintf("ftl: cannot find readable VFLCxtBlock index in spares\r\n");
 			free(pageBuffer);
 			free(spareBuffer);
 			return -1;
@@ -293,6 +298,7 @@ static int VFL_Open() {
 		}
 
 		if(vfl_read_page(bank, curVFLCxt->VFLCxtBlock[maxSpareDataIdx], last, pageBuffer, spareBuffer) == FALSE) {
+			bufferPrintf("ftl: cannot find readable VFLCxt\n");
 			free(pageBuffer);
 			free(spareBuffer);
 			return -1;
@@ -307,8 +313,10 @@ static int VFL_Open() {
 		free(pageBuffer);
 		free(spareBuffer);
 
-		if(vfl_check_checksum(bank) == FALSE)
+		if(vfl_check_checksum(bank) == FALSE) {
+			bufferPrintf("ftl: VFLCxt has bad checksum\n");
 			return -1;
+		}
 	} 
 
 	int max = 0;
@@ -357,6 +365,7 @@ int ftl_setup() {
 	for(i = 0; i < Data->pagesPerBlock; i++) {
 		if(nand_read_alternate_ecc(0, i, buffer) == 0 && *((uint32_t*) buffer) == FTL_ID) {
 			foundSignature = TRUE;
+			break;
 		}
 	}
 	free(buffer);

@@ -306,7 +306,8 @@ int nand_setup() {
 	Data.subBlksTotal = (Data.banksTotal * Data.blocksPerBank) / Data.banksTotal;
 
 	Data2.field_2 = Data.subBlksTotal - Data.userSubBlksTotal - 28;
-	Data2.field_4 = 4 + Data2.field_2;
+	Data2.field_0 = Data2.field_2 + 4;
+	Data2.field_4 = Data2.field_4 + 5;
 	Data2.field_6 = 3;
 	Data2.field_8 = 23;
 	if(Data2.field_8 == 0)
@@ -405,13 +406,11 @@ static int wait_for_ecc_interrupt(int timeout) {
 
 static int ecc_finish() {
 	int ret;
-	if((ret = wait_for_ecc_interrupt(500)) != 0) {
+	if((ret = wait_for_ecc_interrupt(500)) != 0)
 		return ret;
-	}
 
-	if((GET_REG(NANDECC + NANDECC_STATUS) & 0x1) != 0) {
+	if((GET_REG(NANDECC + NANDECC_STATUS) & 0x1) != 0)
 		return ERROR_ECC;
-	}
 
 	return 0;
 }
