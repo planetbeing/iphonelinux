@@ -15,6 +15,7 @@
 #include "pmu.h"
 #include "dma.h"
 #include "nand.h"
+#include "ftl.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -371,6 +372,19 @@ void cmd_nand_read_spare(int argc, char** argv) {
 	bufferPrintf("done!\r\n");
 }
 
+void cmd_vfl_read(int argc, char** argv) {
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <address> <page>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t page = parseNumber(argv[2]);
+
+	bufferPrintf("Reading virtual page %d into 0x%x\r\n", page, address);
+	bufferPrintf("VFL_read: %x\r\n", VFL_Read(page, (uint8_t*) address, NULL, TRUE, NULL));
+}
+
 void cmd_text(int argc, char** argv) {
 	if(argc < 2) {
 		bufferPrintf("Usage: %s <on|off>\r\n", argv[0]);
@@ -412,6 +426,7 @@ OPIBCommand CommandList[] =
 		{"dma", "perform a DMA transfer", cmd_dma},
 		{"nand_read", "read a page of NAND into RAM", cmd_nand_read},
 		{"nand_read_spare", "read a page of NAND's spare into RAM", cmd_nand_read_spare},
+		{"vfl_read", "read a page of VFL into RAM", cmd_vfl_read},
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},

@@ -54,7 +54,7 @@ static int hasDeviceInfoBBT() {
 	return good;
 }
 
-static uint8_t VFLData1[0x48];
+static VFLData1Type VFLData1;
 static VFLCxt* pstVFLCxt = NULL;
 static uint8_t* pstBBTArea = NULL;
 static void* VFLData2 = NULL;
@@ -62,7 +62,7 @@ static void* VFLData3 = NULL;
 static int VFLData4 = 0;
 
 static int VFL_Init() {
-	memset(VFLData1, 0, 0x48);
+	memset(&VFLData1, 0, sizeof(VFLData1));
 	if(pstVFLCxt == NULL) {
 		pstVFLCxt = malloc(Data->banksTotal * sizeof(VFLCxt));
 		if(pstVFLCxt == NULL)
@@ -222,6 +222,97 @@ static int vfl_check_checksum(int bank) {
 		return TRUE;
 
 	return FALSE;
+}
+
+static void virtual_page_number_to_virtual_address(uint32_t dwVpn, int* virtualBank, int* virtualBlock, int* virtualPage) {
+	*virtualBank = dwVpn % Data->banksTotal;
+	*virtualBlock = dwVpn / Data->pagesPerSubBlk;
+	*virtualPage = (dwVpn / Data->banksTotal) % Data->pagesPerBlock;
+}
+
+// badBlockTable is a bit array with 8 virtual blocks in one bit entry
+static int isGoodBlock(uint8_t* badBlockTable, uint32_t virtualBlock) {
+	int index = virtualBlock/8;
+	return ((badBlockTable[index / 8] >> (7 - (index % 8))) & 0x1) == 0x1;
+}
+
+static int virtual_block_to_physical_block(int virtualBank, int virtualBlock) {
+	if(isGoodBlock(pstVFLCxt[virtualBank].badBlockTable, virtualBlock))
+		return virtualBlock;
+
+	int pwDesPbn;
+	for(pwDesPbn = 0; pwDesPbn < pstVFLCxt[virtualBank].numReservedBlocks; pwDesPbn++) {
+		if(pstVFLCxt[virtualBank].reservedBlockPoolMap[pwDesPbn] == virtualBlock) {
+			if(pwDesPbn >= Data->blocksPerBank) {
+				bufferPrintf("ftl: Destination physical block for remapping is greater than number of blocks per bank!");
+			}
+			return pstVFLCxt[virtualBank].reservedBlockPoolStart + pwDesPbn;
+		}
+	}
+
+	return virtualBlock;
+}
+
+int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int empty_ok, int* did_error) {
+	if(did_error) {
+		*did_error = FALSE;
+	}
+
+	VFLData1.field_8++;
+	VFLData1.field_20++;
+
+	uint32_t dwVpn = virtualPageNumber + (Data->pagesPerSubBlk * Data2->field_4);
+	if(dwVpn >= Data->pagesTotal) {
+		bufferPrintf("ftl: dwVpn overflow: %d\r\n", dwVpn);
+		return ERROR_ARG;
+	}
+
+	if(dwVpn < Data->pagesPerSubBlk) {
+		bufferPrintf("ftl: dwVpn underflow: %d\r\n", dwVpn);
+	}
+
+	int virtualBank;
+	int virtualBlock;
+	int virtualPage;
+	int physicalBlock;
+
+	virtual_page_number_to_virtual_address(dwVpn, &virtualBank, &virtualBlock, &virtualPage);
+	physicalBlock = virtual_block_to_physical_block(virtualBank, virtualBlock);
+
+	int page = physicalBlock * Data->pagesPerBlock + virtualPage;
+
+	bufferPrintf("ftl: mapping %d to %d, %d (%d), %d - %d\r\n", dwVpn, virtualBank, physicalBlock, virtualBlock, virtualPage, page);
+
+	int ret = nand_read(virtualBank, page, buffer, spare, TRUE, TRUE);
+
+	if(!empty_ok && ret == ERROR_EMPTYBLOCK) {
+		ret = ERROR_NAND;
+	}
+
+	if(did_error) {
+		if((Data->field_2F > 0 && ret == 0) || ret == ERROR_NAND) {
+			*did_error = TRUE;
+		}
+	}
+
+	if(ret == ERROR_ARG || ret == ERROR_NAND) {
+		nand_bank_reset(virtualBank, 100);
+		ret = nand_read(virtualBank, page, buffer, spare, TRUE, TRUE);
+		if(!empty_ok && ret == ERROR_EMPTYBLOCK) {
+			return ERROR_NAND;
+		}
+
+		if(ret == ERROR_ARG || ret == ERROR_NAND)
+			return ret;
+	}
+
+	if(ret == ERROR_EMPTYBLOCK) {
+		if(spare) {
+			memset(spare, 0xFF, sizeof(SpareData));
+		}
+	}
+
+	return 0;
 }
 
 static int VFL_Open() {

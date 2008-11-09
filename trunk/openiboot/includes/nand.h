@@ -7,7 +7,7 @@
 #define ERROR_NAND 0x80020000
 #define ERROR_TIMEOUT 0x1F
 #define ERROR_ECC 0x17
-#define ERROR_BADBLOCK 0x1
+#define ERROR_EMPTYBLOCK 0x1
 
 typedef struct NANDDeviceType {
 	uint32_t id;
@@ -27,7 +27,7 @@ typedef struct NANDDeviceType {
 typedef struct UnknownNANDType {
 	uint16_t field_0;
 	uint16_t field_2;
-	uint16_t field_4;
+	uint16_t field_4;		// reservoir blocks?
 	uint16_t field_6;
 	uint16_t field_8;
 } UnknownNANDType;
@@ -70,6 +70,7 @@ typedef struct NANDData {
 } NANDData;
 
 int nand_setup();
+int nand_bank_reset(int bank, int timeout);
 int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBadBlocks);
 int nand_read_alternate_ecc(int bank, int page, uint8_t* buffer);
 NANDData* nand_get_geometry();
