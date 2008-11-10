@@ -348,6 +348,22 @@ int VFL_ReadScatteredPagesInVb(uint32_t* virtualPageNumber, int count, uint8_t* 
 		return TRUE;
 }
 
+// sub_18015A9C
+static uint8_t* VFL_get_maxThing() {
+	int bank = 0;
+	int max = 0;
+	uint8_t* maxThing = NULL;
+	for(bank = 0; bank < Data->banksTotal; bank++) {
+		int cur = pstVFLCxt[bank].field_0;
+		if(max <= cur) {
+			max = cur;
+			maxThing = pstVFLCxt[bank].field_4;
+		}
+	}
+
+	return maxThing;
+}
+
 static int VFL_Open() {
 	int bank = 0;
 	for(bank = 0; bank < Data->banksTotal; bank++) {
@@ -443,16 +459,8 @@ static int VFL_Open() {
 		}
 	} 
 
-	int max = 0;
-	void* maxThing = NULL;
+	void* maxThing = VFL_get_maxThing();
 	uint8_t buffer[6];
-	for(bank = 0; bank < Data->banksTotal; bank++) {
-		int cur = pstVFLCxt[bank].field_0;
-		if(max <= cur) {
-			max = cur;
-			maxThing = pstVFLCxt[bank].field_4;
-		}
-	}
 
 	memcpy(buffer, maxThing, 6);
 
@@ -463,6 +471,7 @@ static int VFL_Open() {
 
 	return 0;
 }
+
 
 static int FTL_Open() {
 	return -1;
