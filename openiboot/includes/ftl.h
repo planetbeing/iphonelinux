@@ -25,5 +25,6 @@ typedef struct VFLData1Type {
 
 int ftl_setup();
 int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int empty_ok, int* did_error);
+int VFL_ReadScatteredPagesInVb(uint32_t* virtualPageNumber, int count, uint8_t* main, uint8_t* spare, int* refresh_page);
 
 #endif

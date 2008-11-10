@@ -57,8 +57,8 @@ static int hasDeviceInfoBBT() {
 static VFLData1Type VFLData1;
 static VFLCxt* pstVFLCxt = NULL;
 static uint8_t* pstBBTArea = NULL;
-static void* VFLData2 = NULL;
-static void* VFLData3 = NULL;
+static uint32_t* ScatteredPageNumberBuffer = NULL;
+static uint16_t* ScatteredBankNumberBuffer = NULL;
 static int VFLData4 = 0;
 
 static int VFL_Init() {
@@ -75,10 +75,10 @@ static int VFL_Init() {
 			return -1;
 	}
 
-	if(VFLData2 == NULL && VFLData3 == NULL) {
-		VFLData2 = malloc(Data->pagesPerSubBlk * 4);
-		VFLData3 = malloc(Data->pagesPerSubBlk * 4);
-		if(VFLData2 == NULL || VFLData3 == NULL)
+	if(ScatteredPageNumberBuffer == NULL && ScatteredBankNumberBuffer == NULL) {
+		ScatteredPageNumberBuffer = (uint32_t*) malloc(Data->pagesPerSubBlk * 4);
+		ScatteredBankNumberBuffer = (uint16_t*) malloc(Data->pagesPerSubBlk * 4);
+		if(ScatteredPageNumberBuffer == NULL || ScatteredBankNumberBuffer == NULL)
 			return -1;
 	}
 
@@ -224,19 +224,19 @@ static int vfl_check_checksum(int bank) {
 	return FALSE;
 }
 
-static void virtual_page_number_to_virtual_address(uint32_t dwVpn, int* virtualBank, int* virtualBlock, int* virtualPage) {
+static void virtual_page_number_to_virtual_address(uint32_t dwVpn, uint16_t* virtualBank, uint16_t* virtualBlock, uint16_t* virtualPage) {
 	*virtualBank = dwVpn % Data->banksTotal;
 	*virtualBlock = dwVpn / Data->pagesPerSubBlk;
 	*virtualPage = (dwVpn / Data->banksTotal) % Data->pagesPerBlock;
 }
 
 // badBlockTable is a bit array with 8 virtual blocks in one bit entry
-static int isGoodBlock(uint8_t* badBlockTable, uint32_t virtualBlock) {
+static int isGoodBlock(uint8_t* badBlockTable, uint16_t virtualBlock) {
 	int index = virtualBlock/8;
 	return ((badBlockTable[index / 8] >> (7 - (index % 8))) & 0x1) == 0x1;
 }
 
-static int virtual_block_to_physical_block(int virtualBank, int virtualBlock) {
+static uint16_t virtual_block_to_physical_block(uint16_t virtualBank, uint16_t virtualBlock) {
 	if(isGoodBlock(pstVFLCxt[virtualBank].badBlockTable, virtualBlock))
 		return virtualBlock;
 
@@ -253,9 +253,9 @@ static int virtual_block_to_physical_block(int virtualBank, int virtualBlock) {
 	return virtualBlock;
 }
 
-int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int empty_ok, int* did_error) {
-	if(did_error) {
-		*did_error = FALSE;
+int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int empty_ok, int* refresh_page) {
+	if(refresh_page) {
+		*refresh_page = FALSE;
 	}
 
 	VFLData1.field_8++;
@@ -271,10 +271,10 @@ int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int em
 		bufferPrintf("ftl: dwVpn underflow: %d\r\n", dwVpn);
 	}
 
-	int virtualBank;
-	int virtualBlock;
-	int virtualPage;
-	int physicalBlock;
+	uint16_t virtualBank;
+	uint16_t virtualBlock;
+	uint16_t virtualPage;
+	uint16_t physicalBlock;
 
 	virtual_page_number_to_virtual_address(dwVpn, &virtualBank, &virtualBlock, &virtualPage);
 	physicalBlock = virtual_block_to_physical_block(virtualBank, virtualBlock);
@@ -289,9 +289,9 @@ int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int em
 		ret = ERROR_NAND;
 	}
 
-	if(did_error) {
+	if(refresh_page) {
 		if((Data->field_2F > 0 && ret == 0) || ret == ERROR_NAND) {
-			*did_error = TRUE;
+			*refresh_page = TRUE;
 		}
 	}
 
@@ -313,6 +313,39 @@ int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int em
 	}
 
 	return 0;
+}
+
+int VFL_ReadScatteredPagesInVb(uint32_t* virtualPageNumber, int count, uint8_t* main, uint8_t* spare, int* refresh_page) {
+	VFLData1.field_8 += count;
+	VFLData1.field_20++;
+
+	if(refresh_page) {
+		*refresh_page = FALSE;
+	}
+
+	int i = 0;
+	for(i = 0; i < count; i++) {
+		uint32_t dwVpn = virtualPageNumber[i] + (Data->pagesPerSubBlk * Data2->field_4);
+
+		uint16_t virtualBlock;
+		uint16_t virtualPage;
+		uint16_t physicalBlock;
+
+		virtual_page_number_to_virtual_address(dwVpn, &ScatteredBankNumberBuffer[i], &virtualBlock, &virtualPage);
+		physicalBlock = virtual_block_to_physical_block(ScatteredBankNumberBuffer[i], virtualBlock);
+		ScatteredPageNumberBuffer[i] = physicalBlock * Data->pagesPerBlock + virtualPage;
+	}
+
+	int ret = nand_read_multiple(ScatteredBankNumberBuffer, ScatteredPageNumberBuffer, main, spare, count);
+	if(Data->field_2F <= 0 && refresh_page != NULL) {
+		bufferPrintf("ftl: VFL_ReadScatteredPagesInVb mark page for refresh\r\n");
+		*refresh_page = TRUE;
+	}
+
+	if(ret != 0)
+		return FALSE;
+	else
+		return TRUE;
 }
 
 static int VFL_Open() {

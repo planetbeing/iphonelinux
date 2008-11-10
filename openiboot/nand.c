@@ -590,6 +590,21 @@ UnknownNANDType* nand_get_data() {
 	return &Data2;
 }
 
+int nand_read_multiple(uint16_t* bank, uint32_t* pages, uint8_t* main, uint8_t* spare, int pagesCount) {
+	int i;
+	unsigned int ret;
+	for(i = 0; i < pagesCount; i++) {
+		ret = nand_read(bank[i], pages[i], main, spare, TRUE, TRUE);
+		if(ret > 1)
+			return ret;
+
+		main += Data.bytesPerPage;
+		spare += sizeof(SpareData);
+	}
+
+	return 0;
+}
+
 int nand_read_alternate_ecc(int bank, int page, uint8_t* buffer) {
 	int ret;
 	if((ret = nand_read(bank, page, buffer, aTemporarySBuf, FALSE, TRUE)) != 0)
