@@ -8,7 +8,7 @@
  */
 
 #define OpenIBootLoad 0x00000000
-#define PageTable 0x002FC000
+#define PageTable 0x07FFC000
 #define MemoryStart 0x00000000
 #define MemoryEnd 0xFFFFFFFF
 #define MemoryHigher 0x80000000

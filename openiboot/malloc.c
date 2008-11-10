@@ -22,14 +22,14 @@ static void* CurBreakValue = NULL;
 extern char _end;
 
 // Hacky sbrk implementation
-void* sbrk(uint32_t incr) {
+void* sbrk(intptr_t incr) {
 	if(CurBreakValue == NULL) {
 		CurBreakValue = (void*) &_end;
 	}
 
 	void *oldBreakValue = CurBreakValue;
 
-	CurBreakValue = (void*)((uint32_t)CurBreakValue +  incr);
+	CurBreakValue = (void*)((intptr_t)CurBreakValue +  incr);
 
 	return oldBreakValue;
 }

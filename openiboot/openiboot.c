@@ -325,24 +325,6 @@ static int setup_devices() {
 
 	spi_setup();
 
-//	bufferPrintf("Before:\r\n");
-//	buffer_dump_memory(0x3e400000, 0x320);
-//	gpio_reset();
-/*	bufferPrintf("After:\r\n");
-	buffer_dump_memory2(0x3e400000, 0x320, 8);
-	power_ctrl(0x1000, ON);
-	clock_gate_switch(0x1E, ON);
-	int i = 0;
-//	uint32_t position = 0x20000000 + (0x40 * 645);
-	uint32_t position = 0x2000A000 + (0x40 * 290);
-	position = 0x2000e600;
-	for(i = 0; i < 10; i++) {
-		bufferDump(position, 0x40);
-		position += 0x40;
-	}
-	clock_gate_switch(0x1E, OFF);
-	power_ctrl(0x1000, OFF);*/
-
 	return 0;
 }
 

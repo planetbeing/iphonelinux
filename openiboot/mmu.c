@@ -47,13 +47,13 @@ void initialize_pagetable() {
 	mmu_map_section(AMC0, AMC0, TRUE, TRUE);
 
 	// Make our own code cacheable and bufferable
-	mmu_map_section_range(OpenIBootLoad, (uint32_t) &OpenIBootEnd, OpenIBootLoad, TRUE, TRUE);
+	//mmu_map_section_range(OpenIBootLoad, (uint32_t) &OpenIBootEnd, OpenIBootLoad, TRUE, TRUE);
 
 	// Make ROM buffer cacheable and bufferable
 	mmu_map_section(ROM, ROM, TRUE, TRUE);
 
 	// Remap exception vector so we can actually get interrupts
-	mmu_map_section(ExceptionVector, OpenIBootLoad, TRUE, TRUE);
+	//mmu_map_section(ExceptionVector, OpenIBootLoad, TRUE, TRUE);
 
 	// Remap upper half of memory to the lower half
 	mmu_map_section_range(MemoryHigher, MemoryEnd, MemoryStart, FALSE, FALSE);
@@ -70,6 +70,8 @@ void mmu_map_section(uint32_t section, uint32_t target, Boolean cacheable, Boole
 		| MMU_EXECUTENEVER
 		| MMU_SECTION;			// this is a section
 
+	//bufferPrintf("map section (%x): %x -> %x, %d %d (%x)\r\n", sectionEntry, section, target, cacheable, bufferable, *sectionEntry);
+
 	CleanDataCacheLineMVA(sectionEntry);
 	InvalidateUnifiedTLBUnlockedEntries();
 }
@@ -79,7 +81,7 @@ void mmu_map_section_range(uint32_t rangeStart, uint32_t rangeEnd, uint32_t targ
 	uint32_t curTargetSection = target;
 	Boolean started = FALSE;
 
-	for(currentSection = 0; currentSection < rangeEnd; currentSection += MMU_SECTION_SIZE) {
+	for(currentSection = rangeStart; currentSection < rangeEnd; currentSection += MMU_SECTION_SIZE) {
 		if(started && currentSection == 0) {
 			// We need this check because if rangeEnd is 0xFFFFFFFF, currentSection
 			// will always be < rangeEnd, since we overflow the uint32.

@@ -310,7 +310,7 @@ static char* MyBuffer= NULL;
 static char* pMyBuffer = NULL;
 static size_t MyBufferLen = 0;
 
-#define SCROLLBACK_LEN (1024*4)
+#define SCROLLBACK_LEN (1024*16)
 
 void bufferDump(uint32_t location, unsigned int len) {
 	EnterCriticalSection();

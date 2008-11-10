@@ -472,6 +472,12 @@ static int VFL_Open() {
 	return 0;
 }
 
+void FTL_64bit_sum(uint64_t* src, uint64_t* dest, int size) {
+	int i;
+	for(i = 0; i < size / sizeof(uint64_t); i++) {
+		dest[i] += src[i];
+	}
+}
 
 static int FTL_Open() {
 	return -1;
