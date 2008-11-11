@@ -88,8 +88,8 @@ static int VFL_Init() {
 }
 
 static uint8_t FTLData1[0x58];
-static void** FTLData2;
-static void** FTLData3;
+static FTLCxt* pstFTLCxt;
+static FTLCxt* FTLData3;
 static void* FTLData4;
 static void* FTLData5;
 static uint8_t* StoreCxt;
@@ -131,23 +131,19 @@ static int FTL_Init() {
 
 	memset(FTLData1, 0, 0x58);
 
-	if(FTLData2 == NULL) {
-		FTLData2 = FTLData3 = (void**) malloc(512 * sizeof(void*));
-		if(FTLData2 == NULL)
+	if(pstFTLCxt == NULL) {
+		pstFTLCxt = FTLData3 = (FTLCxt*) malloc(sizeof(FTLCxt));
+		if(pstFTLCxt == NULL)
 			return -1;
-		memset(&FTLData2[246], 0, 264 * sizeof(uint32_t)); 
+		memset(pstFTLCxt->field_3D8, 0, sizeof(pstFTLCxt->field_3D8)); 
 	}
 
-	FTLData2[199] = NULL;
+	pstFTLCxt->field_31C = NULL;
 
-	int someIndex1 = 408;
-	FTLData2[someIndex1/4] = malloc(Data->userSubBlksTotal * 2);
-	int someIndex2 = 416;
-	FTLData2[someIndex2/4] = malloc(Data->pagesPerSubBlk * 36);
-	int someIndex3 = 412;
-	FTLData2[someIndex3/4] = malloc((Data->userSubBlksTotal + 23) * 2);
-	int someIndex4 = 944;
-	FTLData2[someIndex4/4] = malloc((Data->userSubBlksTotal + 23) * 2);
+	pstFTLCxt->field_198 = malloc(Data->userSubBlksTotal * 2);
+	pstFTLCxt->field_1A0 = malloc((Data->pagesPerSubBlk * 2) * 18);
+	pstFTLCxt->field_19C = malloc((Data->userSubBlksTotal + 23) * 2);
+	pstFTLCxt->field_3B0 = malloc((Data->userSubBlksTotal + 23) * 2);
 
 	FTLData4 = malloc(Data->pagesPerSubBlk * 12);
 
@@ -158,16 +154,16 @@ static int FTL_Init() {
 	StoreCxt = malloc(Data->bytesPerPage * numPagesToWriteInStoreCxt);
 	FTLData5 = malloc(Data->pagesPerSubBlk * 4);
 
-	if(!FTLData2[someIndex1/4] || !FTLData2[someIndex2/4] || !FTLData2[someIndex3/4] || !FTLData3[someIndex4/4] | ! FTLData4 | !StoreCxt | !FTLData5)
+	if(!pstFTLCxt->field_198 || !pstFTLCxt->field_1A0 || !pstFTLCxt->field_19C || !FTLData3->field_3B0 || ! FTLData4 || !StoreCxt || !FTLData5)
 		return -1;
 
 	int i;
 	for(i = 0; i < 18; i++) {
-		*((void**)(((uint8_t*)(FTLData2)) + (i * 0x14) + 428)) = FTLData2[someIndex2/4] + (i * Data->pagesPerSubBlk * 2);
-		memset(*((void**)(((uint8_t*)(FTLData2)) + (i * 0x14) + 428)), 0xFF, Data->pagesPerSubBlk * 2);
-		*((uint32_t*)(((uint8_t*)(FTLData2)) + (i * 0x14) + 436)) = 1;
-		*((uint16_t*)(((uint8_t*)(FTLData2)) + (i * 0x14) + 432)) = 0;
-		*((uint16_t*)(((uint8_t*)(FTLData2)) + (i * 0x14) + 434)) = 0;
+		pstFTLCxt->elements[i].field_8 = pstFTLCxt->field_1A0 + (i * (Data->pagesPerSubBlk * 2));
+		memset(pstFTLCxt->elements[i].field_8, 0xFF, Data->pagesPerSubBlk * 2);
+		pstFTLCxt->elements[i].field_10 = 1;
+		pstFTLCxt->elements[i].field_C = 0;
+		pstFTLCxt->elements[i].field_E = 0;
 	}
 
 	return 0;
