@@ -97,8 +97,8 @@ static uint8_t* StoreCxt;
 static int FTL_Init() {
 	int numPagesToWriteInStoreCxt = 0;
 
-	int x = ((Data->userSubBlksTotal + 23) * 2) / Data->bytesPerPage;
-	if((((Data->userSubBlksTotal + 23) * 2) % Data->bytesPerPage) != 0) {
+	int x = ((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) / Data->bytesPerPage;
+	if((((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) % Data->bytesPerPage) != 0) {
 		x++;
 	}
 
@@ -138,12 +138,12 @@ static int FTL_Init() {
 		memset(pstFTLCxt->field_3D8, 0, sizeof(pstFTLCxt->field_3D8)); 
 	}
 
-	pstFTLCxt->field_31C = NULL;
+	pstFTLCxt->field_31C = 0;
 
 	pstFTLCxt->field_198 = malloc(Data->userSubBlksTotal * 2);
 	pstFTLCxt->field_1A0 = malloc((Data->pagesPerSubBlk * 2) * 18);
-	pstFTLCxt->field_19C = malloc((Data->userSubBlksTotal + 23) * 2);
-	pstFTLCxt->field_3B0 = malloc((Data->userSubBlksTotal + 23) * 2);
+	pstFTLCxt->field_19C = (uint16_t*) malloc((Data->userSubBlksTotal + 23) * sizeof(uint16_t));
+	pstFTLCxt->field_3B0 = (uint16_t*) malloc((Data->userSubBlksTotal + 23) * sizeof(uint16_t));
 
 	FTLData4 = malloc(Data->pagesPerSubBlk * 12);
 
@@ -480,6 +480,10 @@ static int FTL_Restore() {
 	return FALSE;
 }
 
+static int sub_18013C5A(uint8_t* pageBuffer) {
+	return FALSE;
+}
+
 static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 	int refreshPage;
 	int ret;
@@ -529,6 +533,7 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 
 
 	if(ftlCxtBlock == 0xffff) {
+		bufferPrintf("ftl: Cannot find context!\r\n");
 		goto FTL_Open_Error_Release;
 	}
 
@@ -560,12 +565,14 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 	if(!ftlCxtFound)
 		goto FTL_Open_Error_Release;
 
-	int numData = (Data->userSubBlksTotal * 2) / Data->bytesPerPage;
-	if(((Data->userSubBlksTotal * 2) % Data->bytesPerPage) != 0)
-		numData++;
+	int pagesToRead;
 
-	for(i = 0; i < numData; i++) {
-		if(VFL_Read(pstFTLCxt->page[i], pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
+	pagesToRead = (Data->userSubBlksTotal * 2) / Data->bytesPerPage;
+	if(((Data->userSubBlksTotal * 2) % Data->bytesPerPage) != 0)
+		pagesToRead++;
+
+	for(i = 0; i < pagesToRead; i++) {
+		if(VFL_Read(pstFTLCxt->pages_for_198[i], pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
 			goto FTL_Open_Error_Release;
 
 		int toRead = Data->bytesPerPage;
@@ -576,6 +583,95 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 		memcpy(((uint8_t*)pstFTLCxt->field_198) + (i * Data->bytesPerPage), pageBuffer, toRead);	
 	}
 
+	pagesToRead = (Data->pagesPerSubBlk * 34) / Data->bytesPerPage;
+	if(((Data->pagesPerSubBlk * 34) % Data->bytesPerPage) != 0)
+		pagesToRead++;
+
+	for(i = 0; i < pagesToRead; i++) {
+		if(VFL_Read(pstFTLCxt->pages_for_1A0[i], pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
+			goto FTL_Open_Error_Release;
+
+		int toRead = Data->bytesPerPage;
+		if(toRead > ((Data->pagesPerSubBlk * 34) - (i * Data->bytesPerPage))) {
+			toRead = (Data->pagesPerSubBlk * 34) - (i * Data->bytesPerPage);
+		}
+
+		memcpy(((uint8_t*)pstFTLCxt->field_1A0) + (i * Data->bytesPerPage), pageBuffer, toRead);	
+	}
+
+	pagesToRead = ((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) / Data->bytesPerPage;
+	if((((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) % Data->bytesPerPage) != 0)
+		pagesToRead++;
+
+	for(i = 0; i < pagesToRead; i++) {
+		if(VFL_Read(pstFTLCxt->pages_for_19C[i], pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
+			goto FTL_Open_Error_Release;
+
+		int toRead = Data->bytesPerPage;
+		if(toRead > (((Data->pagesPerSubBlk + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage))) {
+			toRead = ((Data->pagesPerSubBlk + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage);
+		}
+
+		memcpy(((uint8_t*)pstFTLCxt->field_19C) + (i * Data->bytesPerPage), pageBuffer, toRead);	
+	}
+
+	int success = FALSE;
+
+	if(FTLCxtBuffer->versionLower == 0x46560000 && FTLCxtBuffer->versionUpper == 0xB9A9FFFF) {
+		pagesToRead = ((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) / Data->bytesPerPage;
+		if((((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) % Data->bytesPerPage) != 0)
+			pagesToRead++;
+
+		success = TRUE;
+		for(i = 0; i < pagesToRead; i++) {
+			if(VFL_Read(pstFTLCxt->pages_for_3B0[i], pageBuffer, spareBuffer, TRUE, &refreshPage) != 0) {
+				success = FALSE;
+				break;
+			}
+
+			int toRead = Data->bytesPerPage;
+			if(toRead > (((Data->pagesPerSubBlk + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage))) {
+				toRead = ((Data->pagesPerSubBlk + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage);
+			}
+
+			memcpy(((uint8_t*)pstFTLCxt->field_3B0) + (i * Data->bytesPerPage), pageBuffer, toRead);	
+		}
+
+		if((pstFTLCxt->field_3D4 + 1) == 0) {
+			int x = pstFTLCxt->field_3D0 / Data->pagesPerSubBlk;
+			if(x == 0 || x <= Data->userSubBlksTotal) {
+				if(VFL_Read(pstFTLCxt->field_3D0, pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
+					goto FTL_Open_Error_Release;
+
+				sub_18013C5A(pageBuffer);
+			}
+		}
+	} else {
+		bufferPrintf("ftl: updating the FTL from seemingly compatible version\r\n");
+		for(i = 0; i < (Data->userSubBlksTotal + 23); i++) {
+			pstFTLCxt->field_3B0[i] = 0x1388;
+		}
+
+		for(i = 0; i < 5; i++) {
+			pstFTLCxt->elements2[i].field_0 = -1;
+			pstFTLCxt->elements2[i].field_2 = -1;
+		}
+
+		pstFTLCxt->field_3C8 = 0;
+		pstFTLCxt->field_31C = 0;
+		FTLCxtBuffer->versionLower = 0x46560000;
+		FTLCxtBuffer->versionUpper = 0xB9A9FFFF;
+
+		success = TRUE;
+	}
+
+	if(success) {
+		free(pageBuffer);
+		free(spareBuffer);
+		*pagesAvailable = Data->userPagesTotal;
+		*bytesPerPage = Data->bytesPerPage;
+		return 0;
+	}
 
 FTL_Open_Error_Release:
 	free(pageBuffer);
