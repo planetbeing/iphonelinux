@@ -278,8 +278,6 @@ int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int em
 
 	int page = physicalBlock * Data->pagesPerBlock + virtualPage;
 
-	bufferPrintf("ftl: mapping %d to %d, %d (%d), %d - %d\r\n", dwVpn, virtualBank, physicalBlock, virtualBlock, virtualPage, page);
-
 	int ret = nand_read(virtualBank, page, buffer, spare, TRUE, TRUE);
 
 	if(!empty_ok && ret == ERROR_EMPTYBLOCK) {
@@ -309,7 +307,7 @@ int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int em
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 int VFL_ReadScatteredPagesInVb(uint32_t* virtualPageNumber, int count, uint8_t* main, uint8_t* spare, int* refresh_page) {
@@ -572,6 +570,8 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 		goto FTL_Open_Error_Release;
 	}
 
+	bufferPrintf("ftl: Successfully found FTL context block: %d\r\n", ftlCxtBlock);
+
 	int ftlCxtFound = FALSE;
 	for(i = Data->pagesPerSubBlk - 1; i > 0; i--) {
 		ret = VFL_Read(Data->pagesPerSubBlk * ftlCxtBlock + i, pageBuffer, spareBuffer, TRUE, &refreshPage);
@@ -599,6 +599,8 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 
 	if(!ftlCxtFound)
 		goto FTL_Open_Error_Release;
+
+	bufferPrintf("ftl: Successfully read FTL context block\r\n");
 
 	int pagesToRead;
 

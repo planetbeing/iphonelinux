@@ -307,7 +307,7 @@ int nand_setup() {
 
 	Data2.field_2 = Data.subBlksTotal - Data.userSubBlksTotal - 28;
 	Data2.field_0 = Data2.field_2 + 4;
-	Data2.field_4 = Data2.field_0 + 5;
+	Data2.field_4 = Data2.field_2 + 5;
 	Data2.field_6 = 3;
 	Data2.field_8 = 23;
 	if(Data2.field_8 == 0)
