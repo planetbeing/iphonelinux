@@ -33,14 +33,16 @@ typedef struct FTLCxt {
 	void* field_19C;				// 0x19C
 	void* field_1A0;				// 0x1A0
 	FTLCxtElement elements[18];			// 0x1A4
-	uint8_t unk2[0x10];				// 0x30C
+	uint8_t unk2[6];				// 0x30C
+	uint8_t thing[6];				// 0x312
+	uint32_t field_318;				// 0x318
 	void* field_31C;				// 0x31C
 	uint8_t unk3[0x90];				// 0x320
 	void* field_3B0;				// 0x3B0
 	uint8_t unk4[0x24];				// 0x3B4
 	uint8_t field_3D8[0x420];			// 0x3D8
-	uint8_t field_7F8;				// 0x7F8
-	uint8_t field_7FC;				// 0x7FC
+	uint32_t field_7F8;				// 0x7F8
+	uint32_t field_7FC;				// 0x7FC
 } FTLCxt;
 
 typedef struct VFLData1Type {

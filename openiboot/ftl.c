@@ -475,8 +475,25 @@ void FTL_64bit_sum(uint64_t* src, uint64_t* dest, int size) {
 	}
 }
 
-static int FTL_Open() {
-	return -1;
+static int FTL_Restore() {
+	return FALSE;
+}
+
+static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
+	void* thing;
+	if((thing = VFL_get_maxThing()) == NULL)
+		goto FTL_Open_Error;
+	
+	memcpy(pstFTLCxt->thing, thing, 6);
+
+FTL_Open_Error:
+	if(FTL_Restore() != FALSE) {
+		*pagesAvailable = Data->userPagesTotal;
+		*bytesPerPage = Data->bytesPerPage;
+		return 0;
+	} else {
+		return ERROR_ARG;
+	}
 }
 
 int ftl_setup() {
@@ -515,7 +532,9 @@ int ftl_setup() {
 		return -1;
 	}
 
-	if(FTL_Open() != 0) {
+	int pagesAvailable;
+	int bytesPerPage;
+	if(FTL_Open(&pagesAvailable, &bytesPerPage) != 0) {
 		bufferPrintf("ftl: FTL_Open failed\r\n");
 		return -1;
 	}
