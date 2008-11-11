@@ -62,6 +62,15 @@ typedef struct VFLData1Type {
 	uint64_t field_20;
 } VFLData1Type;
 
+typedef enum FTLStruct {
+	FTLData1SID = 0x1000200
+} FTLStruct;
+
+typedef enum VFLStruct {
+	VFLData1SID = 0x2000200,
+	VFLData5SID = 0x2000500
+} VFLStruct;
+
 int ftl_setup();
 int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int empty_ok, int* did_error);
 int VFL_ReadScatteredPagesInVb(uint32_t* virtualPageNumber, int count, uint8_t* main, uint8_t* spare, int* refresh_page);

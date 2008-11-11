@@ -60,6 +60,7 @@ static uint8_t* pstBBTArea = NULL;
 static uint32_t* ScatteredPageNumberBuffer = NULL;
 static uint16_t* ScatteredBankNumberBuffer = NULL;
 static int VFLData4 = 0;
+static uint8_t VFLData5[0xF8];
 
 static int VFL_Init() {
 	memset(&VFLData1, 0, sizeof(VFLData1));
@@ -480,8 +481,42 @@ static int FTL_Restore() {
 	return FALSE;
 }
 
-static int sub_18013C5A(uint8_t* pageBuffer) {
-	return FALSE;
+static int FTL_GetStruct(FTLStruct type, void** data, int* size) {
+	switch(type) {
+		case FTLData1SID:
+			*data = FTLData1;
+			*size = 0x58;
+			return TRUE;
+		default:
+			return FALSE;
+	}
+}
+
+static int VFL_GetStruct(FTLStruct type, void** data, int* size) {
+	switch(type) {
+		case VFLData1SID:
+			*data = &VFLData1;
+			*size = 0x48;
+			return TRUE;
+		case VFLData5SID:
+			*data = VFLData5;
+			*size = 0xF8;
+			return TRUE;
+		default:
+			return FALSE;
+	}
+}
+
+static int sum_data(uint8_t* pageBuffer) {
+	void* data;
+	int size;
+	FTL_GetStruct(FTLData1SID, &data, &size);
+	FTL_64bit_sum((uint64_t*)pageBuffer, (uint64_t*)data, size);
+	VFL_GetStruct(VFLData1SID, &data, &size);
+	FTL_64bit_sum((uint64_t*)(pageBuffer + 0x200), (uint64_t*)data, size);
+	VFL_GetStruct(VFLData5SID, &data, &size);
+	FTL_64bit_sum((uint64_t*)(pageBuffer + 0x400), (uint64_t*)data, size);
+	return TRUE;
 }
 
 static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
@@ -643,7 +678,7 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 				if(VFL_Read(pstFTLCxt->field_3D0, pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
 					goto FTL_Open_Error_Release;
 
-				sub_18013C5A(pageBuffer);
+				sum_data(pageBuffer);
 			}
 		}
 	} else {
