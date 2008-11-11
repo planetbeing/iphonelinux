@@ -89,7 +89,7 @@ static int VFL_Init() {
 
 static uint8_t FTLData1[0x58];
 static FTLCxt* pstFTLCxt;
-static FTLCxt* FTLData3;
+static FTLCxt* FTLCxtBuffer;
 static void* FTLData4;
 static void* FTLData5;
 static uint8_t* StoreCxt;
@@ -132,7 +132,7 @@ static int FTL_Init() {
 	memset(FTLData1, 0, 0x58);
 
 	if(pstFTLCxt == NULL) {
-		pstFTLCxt = FTLData3 = (FTLCxt*) malloc(sizeof(FTLCxt));
+		pstFTLCxt = FTLCxtBuffer = (FTLCxt*) malloc(sizeof(FTLCxt));
 		if(pstFTLCxt == NULL)
 			return -1;
 		memset(pstFTLCxt->field_3D8, 0, sizeof(pstFTLCxt->field_3D8)); 
@@ -154,7 +154,7 @@ static int FTL_Init() {
 	StoreCxt = malloc(Data->bytesPerPage * numPagesToWriteInStoreCxt);
 	FTLData5 = malloc(Data->pagesPerSubBlk * 4);
 
-	if(!pstFTLCxt->field_198 || !pstFTLCxt->field_1A0 || !pstFTLCxt->field_19C || !FTLData3->field_3B0 || ! FTLData4 || !StoreCxt || !FTLData5)
+	if(!pstFTLCxt->field_198 || !pstFTLCxt->field_1A0 || !pstFTLCxt->field_19C || !FTLCxtBuffer->field_3B0 || ! FTLData4 || !StoreCxt || !FTLData5)
 		return -1;
 
 	int i;
@@ -345,10 +345,10 @@ int VFL_ReadScatteredPagesInVb(uint32_t* virtualPageNumber, int count, uint8_t* 
 }
 
 // sub_18015A9C
-static uint8_t* VFL_get_maxThing() {
+static uint16_t* VFL_get_maxThing() {
 	int bank = 0;
 	int max = 0;
-	uint8_t* maxThing = NULL;
+	uint16_t* maxThing = NULL;
 	for(bank = 0; bank < Data->banksTotal; bank++) {
 		int cur = pstVFLCxt[bank].field_0;
 		if(max <= cur) {
@@ -400,8 +400,8 @@ static int VFL_Open() {
 			return -1;
 		}
 
-		int maxSpareData = 0xFFFFFFFF;
-		int maxSpareDataIdx = 4;
+		int minEpoch = 0xFFFFFFFF;
+		int VFLCxtIdx = 4;
 		for(i = 0; i < 4; i++) {
 			uint16_t block = curVFLCxt->VFLCxtBlock[i];
 			if(block == 0xFFFF)
@@ -410,13 +410,14 @@ static int VFL_Open() {
 			if(vfl_read_page(bank, block, 0, pageBuffer, spareBuffer) != TRUE)
 				continue;
 
-			if(*((uint32_t*)spareBuffer) > 0 && *((uint32_t*)spareBuffer) <= maxSpareData) {
-				maxSpareData = *((uint32_t*)spareBuffer);
-				maxSpareDataIdx = i;
+			SpareData* spareData = (SpareData*) spareBuffer;
+			if(spareData->epoch > 0 && spareData->epoch <= minEpoch) {
+				minEpoch = spareData->epoch;
+				VFLCxtIdx = i;
 			}
 		}
 
-		if(maxSpareDataIdx == 4) {
+		if(VFLCxtIdx == 4) {
 			bufferPrintf("ftl: cannot find readable VFLCxtBlock index in spares\r\n");
 			free(pageBuffer);
 			free(spareBuffer);
@@ -426,14 +427,14 @@ static int VFL_Open() {
 		int page = 8;
 		int last = 0;
 		for(page = 8; page < Data->pagesPerBlock; page += 8) {
-			if(vfl_read_page(bank, curVFLCxt->VFLCxtBlock[maxSpareDataIdx], page, pageBuffer, spareBuffer) == FALSE) {
+			if(vfl_read_page(bank, curVFLCxt->VFLCxtBlock[VFLCxtIdx], page, pageBuffer, spareBuffer) == FALSE) {
 				break;
 			}
 			
 			last = page;
 		}
 
-		if(vfl_read_page(bank, curVFLCxt->VFLCxtBlock[maxSpareDataIdx], last, pageBuffer, spareBuffer) == FALSE) {
+		if(vfl_read_page(bank, curVFLCxt->VFLCxtBlock[VFLCxtIdx], last, pageBuffer, spareBuffer) == FALSE) {
 			bufferPrintf("ftl: cannot find readable VFLCxt\n");
 			free(pageBuffer);
 			free(spareBuffer);
@@ -456,12 +457,12 @@ static int VFL_Open() {
 	} 
 
 	void* maxThing = VFL_get_maxThing();
-	uint8_t buffer[6];
+	uint16_t buffer[3];
 
 	memcpy(buffer, maxThing, 6);
 
 	for(bank = 0; bank < Data->banksTotal; bank++) {
-		memcpy(pstVFLCxt[bank].field_4, buffer, 6);
+		memcpy(pstVFLCxt[bank].field_4, buffer, sizeof(buffer));
 		vfl_gen_checksum(bank);
 	}
 
@@ -480,13 +481,108 @@ static int FTL_Restore() {
 }
 
 static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
+	int refreshPage;
+	int ret;
+	int i;
+
+	void* field_198 = pstFTLCxt->field_198;
+	void* field_19C = pstFTLCxt->field_19C;
+	void* field_3B0 = pstFTLCxt->field_3B0;
+	void* field_1A0 = pstFTLCxt->field_1A0;
+
 	void* thing;
 	if((thing = VFL_get_maxThing()) == NULL)
 		goto FTL_Open_Error;
 	
-	memcpy(pstFTLCxt->thing, thing, 6);
+	memcpy(pstFTLCxt->thing, thing, sizeof(pstFTLCxt->thing));
+
+	uint8_t* pageBuffer = malloc(Data->bytesPerPage);
+	uint8_t* spareBuffer = malloc(Data->bytesPerSpare);
+	if(!pageBuffer || !spareBuffer) {
+		bufferPrintf("ftl: FTL_Open ran out of memory!\r\n");
+		return ERROR_ARG;
+	}
+
+	uint32_t ftlCxtBlock = 0xffff;
+	uint32_t minEpoch = 0xffffffff;
+	for(i = 0; i < sizeof(pstFTLCxt->thing)/sizeof(uint16_t); i++) {
+		ret = VFL_Read(Data->pagesPerSubBlk * pstFTLCxt->thing[i], pageBuffer, spareBuffer, TRUE, &refreshPage);
+		if(ret == ERROR_ARG) {
+			free(pageBuffer);
+			free(spareBuffer);
+			goto FTL_Open_Error;
+		}
+
+		SpareData* spareData = (SpareData*) spareBuffer;
+		if((spareData->field_9 - 0x43) > 0xC)
+			continue;
+
+		if(ret != 0)
+			continue;
+
+		if(ftlCxtBlock != 0xffff && spareData->epoch >= minEpoch)
+			continue;
+
+		minEpoch = spareData->epoch;
+		ftlCxtBlock = pstFTLCxt->thing[i];
+	}
+
+
+	if(ftlCxtBlock == 0xffff) {
+		goto FTL_Open_Error_Release;
+	}
+
+	int ftlCxtFound = FALSE;
+	for(i = Data->pagesPerSubBlk - 1; i > 0; i--) {
+		ret = VFL_Read(Data->pagesPerSubBlk * ftlCxtBlock + i, pageBuffer, spareBuffer, TRUE, &refreshPage);
+		if(ret == 1) {
+			continue;
+		} else if(ret == 0 && ((SpareData*)spareBuffer)->field_9 == 0x43) {
+			memcpy(FTLCxtBuffer, pageBuffer, sizeof(FTLCxt));
+			ftlCxtFound = TRUE;
+			break;
+		} else {
+			ftlCxtFound = FALSE;
+			break;
+		}
+	}
+
+	// Restore now possibly overwritten (by data from NAND) pointers from backed up copies
+	pstFTLCxt->field_198 = field_198;
+	pstFTLCxt->field_19C = field_19C;
+	pstFTLCxt->field_3B0 = field_3B0;
+	pstFTLCxt->field_1A0 = field_1A0;
+
+	for(i = 0; i < 18; i++) {
+		pstFTLCxt->elements[i].field_8 = pstFTLCxt->field_1A0 + (i * (Data->pagesPerSubBlk * 2));
+	}
+
+	if(!ftlCxtFound)
+		goto FTL_Open_Error_Release;
+
+	int numData = (Data->userSubBlksTotal * 2) / Data->bytesPerPage;
+	if(((Data->userSubBlksTotal * 2) % Data->bytesPerPage) != 0)
+		numData++;
+
+	for(i = 0; i < numData; i++) {
+		if(VFL_Read(pstFTLCxt->page[i], pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
+			goto FTL_Open_Error_Release;
+
+		int toRead = Data->bytesPerPage;
+		if(toRead > ((Data->userSubBlksTotal * 2) - (i * Data->bytesPerPage))) {
+			toRead = (Data->userSubBlksTotal * 2) - (i * Data->bytesPerPage);
+		}
+
+		memcpy(((uint8_t*)pstFTLCxt->field_198) + (i * Data->bytesPerPage), pageBuffer, toRead);	
+	}
+
+
+FTL_Open_Error_Release:
+	free(pageBuffer);
+	free(spareBuffer);
 
 FTL_Open_Error:
+	bufferPrintf("ftl: FTL_Open cannot load FTLCxt!\r\n");
 	if(FTL_Restore() != FALSE) {
 		*pagesAvailable = Data->userPagesTotal;
 		*bytesPerPage = Data->bytesPerPage;

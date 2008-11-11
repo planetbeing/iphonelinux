@@ -16,6 +16,7 @@ PKG_NEWLIB="newlib-1.14.0.tar.gz"
 # Package Patches
 PATCH_MIRROR="http://www.iphonelinux.org"
 PATCH_GCC411_ARMELF="t-arm-elf.patch"
+PATCH_NEWLIB_MAKEINFO="newlib-1.14.0-missing-makeinfo.patch"
 
 
 #LOG FILE
@@ -144,7 +145,7 @@ checkRet $? "Failed to extract package $PKG_BINUTILS" $EXIT_TRUE
 echo -en "- Doing binutils configure\n"
 cd $TOOLCHAIN_PATH/binutils-build
 ../binutils-2.17/configure --target=arm-elf --prefix=/usr/local \
-	--enable-interwork --enable-multilib >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+	--enable-interwork --enable-multilib --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to configure binutils" $EXIT_TRUE
 
 echo -en "- Starting binutils build\n"
@@ -174,7 +175,7 @@ cd gcc-build
 ../gcc-4.1.1/configure --target=arm-elf --prefix=/usr/local \
     --enable-interwork --enable-multilib \
     --enable-languages="c,c++" --with-newlib \
-    --with-headers=../newlib-1.14.0/newlib/libc/include >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+    --with-headers=../newlib-1.14.0/newlib/libc/include --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to configure gcc" $EXIT_TRUE
 
 echo -en "- Starting GCC build\n"
@@ -185,11 +186,16 @@ make install-gcc >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 cd ../
 echo -en "- GCC Part 1 Completed\n"
 
+echo -en "- Downloading newlib makeinfo patch\n" 
+wget -r $PATCH_MIRROR/$PATCH_NEWLIB_MAKEINFO -O $TOOLCHAIN_PATH/$PATCH_NEWLIB_MAKEINFO >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to download patch $PATCH_NEWLIB_MAKEINFO" $EXIT_TRUE
+patch -p0 < $PATCH_NEWLIB_MAKEINFO >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to apply patch for newlib makeinfo" $EXIT_TRUE
 echo -en "- Doing NewLib configure\n"
 cd newlib-build
 checkRet $? "Failed to configure newlib" $EXIT_TRUE
 ../newlib-1.14.0/configure --target=arm-elf --prefix=/usr/local \
-	--enable-interwork --enable-multilib >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+	--enable-interwork --enable-multilib --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 
 echo -en "- Starting NewLib build\n"
 make all >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
