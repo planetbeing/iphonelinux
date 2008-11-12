@@ -310,8 +310,16 @@ int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int em
 	return ret;
 }
 
-static int VFL_ReadMultiplePagesInVb(int a, int b, int c, uint8_t* main, SpareData* spare, int* refresh_page) {
-	return -1;
+static int VFL_ReadMultiplePagesInVb(int logicalBlock, int logicalPage, int count, uint8_t* main, SpareData* spare, int* refresh_page) {
+	int i;
+	int currentPage = logicalPage; 
+	for(i = 0; i < count; i++) {
+		int ret = VFL_Read((logicalBlock * Data->pagesPerSubBlk) + currentPage, main + (Data->bytesPerPage * i), (uint8_t*) &spare[i], TRUE, refresh_page);
+		currentPage++;
+		if(ret != 0)
+			return FALSE;
+	}
+	return TRUE;
 }
 
 static int VFL_ReadScatteredPagesInVb(uint32_t* virtualPageNumber, int count, uint8_t* main, SpareData* spare, int* refresh_page) {
