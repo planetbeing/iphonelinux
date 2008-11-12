@@ -285,7 +285,8 @@ int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int em
 	}
 
 	if(refresh_page) {
-		if((Data->field_2F > 0 && ret == 0) || ret == ERROR_NAND) {
+		if((Data->field_2F <= 0 && ret == 0) || ret == ERROR_NAND) {
+			bufferPrintf("ftl: setting refresh_page to TRUE due to the following factors: Data->field_2F = %x, ret = %d\r\n", Data->field_2F, ret);
 			*refresh_page = TRUE;
 		}
 	}
@@ -797,6 +798,7 @@ int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf) {
 		if(pagesToRead >= (totalPagesToRead - pagesRead))
 			pagesToRead = totalPagesToRead - pagesRead;
 
+		int readSuccessful;
 		if(pLog != NULL) {
 			for(i = 0; i < pagesToRead; i++) {
 				ScatteredVirtualPageNumberBuffer[i] = FTL_map_page(pLog, lbn, offset + i);
@@ -807,23 +809,21 @@ int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf) {
 				}
 			}
 
-			ret = VFL_ReadScatteredPagesInVb(ScatteredVirtualPageNumberBuffer, pagesToRead, pBuf + (pagesRead * Data->bytesPerPage), FTLSpareBuffer, &refreshPage);
+			readSuccessful = VFL_ReadScatteredPagesInVb(ScatteredVirtualPageNumberBuffer, pagesToRead, pBuf + (pagesRead * Data->bytesPerPage), FTLSpareBuffer, &refreshPage);
 			if(refreshPage) {
 				bufferPrintf("ftl: _AddLbnToRefreshList (0x%x, 0x%x, 0x%x)\r\n", lbn, pstFTLCxt->dataVbn[lbn], pLog->wVbn);
 			}
 		} else {
-			int numBanks = pagesToRead / Data->banksTotal;
-			if((pagesToRead % Data->banksTotal) != 0)
-				numBanks++;
-
-			ret = VFL_ReadMultiplePagesInVb(pstFTLCxt->dataVbn[lbn], offset, numBanks, pBuf + (pagesRead * Data->bytesPerPage), FTLSpareBuffer, &refreshPage);
+			// VFL_ReadMultiplePagesInVb has a different calling convention and implementation than the equivalent iBoot function.
+			// Ours is a bit less optimized, and just calls VFL_Read for each page.
+			readSuccessful = VFL_ReadMultiplePagesInVb(pstFTLCxt->dataVbn[lbn], offset, pagesToRead, pBuf + (pagesRead * Data->bytesPerPage), FTLSpareBuffer, &refreshPage);
 			if(refreshPage) {
 				bufferPrintf("ftl: _AddLbnToRefreshList (0x%x, 0x%x)\r\n", lbn, pstFTLCxt->dataVbn[lbn]);
 			}
 		}
 
 		int loop = 0;
-		if(ret == 1) {
+		if(readSuccessful) {
 			for(i = 0; i < pagesToRead; i++) {
 				if(FTLSpareBuffer[i].eccMark == 0xFF)
 					continue;

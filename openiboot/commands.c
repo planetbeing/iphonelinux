@@ -385,6 +385,20 @@ void cmd_vfl_read(int argc, char** argv) {
 	bufferPrintf("VFL_read: %x\r\n", VFL_Read(page, (uint8_t*) address, NULL, TRUE, NULL));
 }
 
+void cmd_ftl_read(int argc, char** argv) {
+	if(argc < 4) {
+		bufferPrintf("Usage: %s <address> <lpn> <pages>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t page = parseNumber(argv[2]);
+	uint32_t pages = parseNumber(argv[3]);
+
+	bufferPrintf("Reading %d pages, starting at %d into 0x%x\r\n", pages, page, address);
+	bufferPrintf("FTL_read: %x\r\n", FTL_Read(page, pages, (uint8_t*) address));
+}
+
 void cmd_text(int argc, char** argv) {
 	if(argc < 2) {
 		bufferPrintf("Usage: %s <on|off>\r\n", argv[0]);
@@ -427,6 +441,7 @@ OPIBCommand CommandList[] =
 		{"nand_read", "read a page of NAND into RAM", cmd_nand_read},
 		{"nand_read_spare", "read a page of NAND's spare into RAM", cmd_nand_read_spare},
 		{"vfl_read", "read a page of VFL into RAM", cmd_vfl_read},
+		{"ftl_read", "read a page of FTL into RAM", cmd_ftl_read},
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},

@@ -97,5 +97,6 @@ typedef enum VFLStruct {
 
 int ftl_setup();
 int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int empty_ok, int* did_error);
+int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf);
 
 #endif
