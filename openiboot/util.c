@@ -5,6 +5,11 @@
 #include "openiboot-asmhelpers.h"
 #include "framebuffer.h"
 
+void panic() {
+	bufferPrintf("openiboot PANIC!!\r\n");
+	while(TRUE);
+}
+
 void* memset(void* x, int fill, uint32_t size) {
 	uint32_t i;
 	for(i = 0; i < size; i++) {
@@ -36,6 +41,67 @@ char* strdup(const char* str) {
 	memcpy(toRet, str, len);
 	toRet[len] = '\0';
 	return toRet;
+}
+
+char* strtok(char* s1, const char* s2)
+{
+	static char * tmp = NULL;
+	const char * p = s2;
+
+	if ( s1 != NULL )
+	{
+		/* new string */
+		tmp = s1;
+	}
+	else
+	{
+		/* old string continued */
+		if ( tmp == NULL )
+		{
+			/* No old string, no new string, nothing to do */
+			return NULL;
+		}
+		s1 = tmp;
+	}
+
+	/* skipping leading s2 characters */
+	while ( *p && *s1 )
+	{
+		if ( *s1 == *p )
+		{
+			/* found seperator; skip and start over */
+			++s1;
+			p = s2;
+			continue;
+		}
+		++p;
+	}
+
+	if ( ! *s1 )
+	{
+		/* no more to parse */
+		return ( tmp = NULL );
+	}
+
+	/* skipping non-s2 characters */
+	tmp = s1;
+	while ( *tmp )
+	{
+		p = s2;
+		while ( *p )
+		{
+			if ( *tmp == *p++ )
+			{
+				/* found seperator; overwrite with '\0', position tmp, return */
+				*tmp++ = '\0';
+				return s1;
+			}
+		}
+		++tmp;
+	}
+
+	/* parsed to end of string */
+	return ( tmp = NULL );
 }
 
 int memcmp(const void* s1, const void* s2, uint32_t size) {

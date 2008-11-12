@@ -964,3 +964,24 @@ int ftl_setup() {
 	return 0;
 }
 
+int ftl_read(uint8_t* buffer, uint64_t offset, int size) {
+	int curPage = offset / Data->bytesPerPage;
+	int toRead = size;
+	int pageOffset = offset - (curPage * Data->bytesPerPage);
+	uint8_t* tBuffer = (uint8_t*) malloc(Data->bytesPerPage);
+	while(toRead > 0) {
+		if(FTL_Read(curPage, 1, tBuffer) != 0) {
+			free(tBuffer);
+			return FALSE;
+		}
+
+		int read = ((Data->bytesPerPage > toRead) ? toRead : Data->bytesPerPage);
+		memcpy(buffer + pageOffset, tBuffer, read);
+		toRead -= read;
+		pageOffset = 0;
+		curPage++;
+	}
+
+	free(tBuffer);
+	return TRUE;
+}
