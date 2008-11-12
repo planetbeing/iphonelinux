@@ -95,9 +95,11 @@ typedef enum VFLStruct {
 	VFLData5SID = 0x2000500
 } VFLStruct;
 
+extern int HasFTLInit;
+
 int ftl_setup();
 int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int empty_ok, int* did_error);
 int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf);
-int ftl_read(uint8_t* buffer, uint64_t offset, int size);
+int ftl_read(void* buffer, uint64_t offset, int size);
 
 #endif

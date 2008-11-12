@@ -66,6 +66,8 @@ typedef struct NANDData {
 	uint8_t field_2F;
 } NANDData;
 
+extern int HasNANDInit;
+
 int nand_setup();
 int nand_bank_reset(int bank, int timeout);
 int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBadBlocks);

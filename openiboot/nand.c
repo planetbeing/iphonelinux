@@ -8,6 +8,8 @@
 #include "dma.h"
 #include "hardware/interrupt.h"
 
+int HasNANDInit = FALSE;
+
 static int banksTable[NAND_NUM_BANKS];
 
 static int ECCType = 0;
@@ -177,6 +179,9 @@ static int bank_setup(int bank) {
 }
 
 int nand_setup() {
+	if(HasNANDInit)
+		return 0;
+
 	NANDSetting1 = 7;
 	NANDSetting2 = 7;
 	NANDSetting3 = 7;
@@ -336,6 +341,8 @@ int nand_setup() {
 	memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
 
 	aTemporarySBuf = (uint8_t*) malloc(Data.bytesPerSpare);
+
+	HasNANDInit = TRUE;
 
 	return 0;
 }

@@ -5,6 +5,8 @@
 
 #define FTL_ID 0x43303034
 
+int HasFTLInit = FALSE;
+
 static NANDData* Data;
 static UnknownNANDType* Data2;
 
@@ -919,6 +921,11 @@ FTL_Read_Error_Release:
 }
 
 int ftl_setup() {
+	if(HasFTLInit)
+		return 0;
+
+	nand_setup();
+
 	Data = nand_get_geometry();
 	Data2 = nand_get_data();
 
@@ -961,10 +968,12 @@ int ftl_setup() {
 		return -1;
 	}
 
+	HasFTLInit = TRUE;
+
 	return 0;
 }
 
-int ftl_read(uint8_t* buffer, uint64_t offset, int size) {
+int ftl_read(void* buffer, uint64_t offset, int size) {
 	int curPage = offset / Data->bytesPerPage;
 	int toRead = size;
 	int pageOffset = offset - (curPage * Data->bytesPerPage);
@@ -976,7 +985,7 @@ int ftl_read(uint8_t* buffer, uint64_t offset, int size) {
 		}
 
 		int read = ((Data->bytesPerPage > toRead) ? toRead : Data->bytesPerPage);
-		memcpy(buffer + pageOffset, tBuffer, read);
+		memcpy(((uint8_t*)buffer) + pageOffset, tBuffer, read);
 		toRead -= read;
 		pageOffset = 0;
 		curPage++;
