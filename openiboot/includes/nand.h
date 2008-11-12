@@ -33,14 +33,14 @@ typedef struct UnknownNANDType {
 } UnknownNANDType;
 
 typedef struct SpareData {
-	uint32_t epoch;
+	uint32_t logicalPageNumber;
 	uint8_t field_4;
 	uint8_t field_5;
 	uint8_t field_6;
 	uint8_t field_7;
 	uint8_t field_8;
 	uint8_t field_9;
-	uint8_t field_A;
+	uint8_t eccMark;
 	uint8_t field_B;
 } __attribute__ ((packed)) SpareData;
 

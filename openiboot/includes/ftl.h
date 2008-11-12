@@ -20,15 +20,15 @@ typedef struct VFLCxt {
 	uint32_t checksum2;				// 0x7FC
 } VFLCxt;
 
-typedef struct FTLCxtElement {
+typedef struct FTLCxtLog {
 	void* field_0;					// 0x0
-	uint16_t field_4;				// 0x4
+	uint16_t wVbn;					// 0x4
 	uint16_t field_6;				// 0x6
 	uint16_t* field_8;				// 0x8
 	uint16_t field_C;				// 0xC
 	uint16_t field_E;				// 0xE
 	uint32_t field_10;				// 0x10
-} FTLCxtElement;
+} FTLCxtLog;
 
 typedef struct FTLCxtElement2 {
 	uint16_t field_0;				// 0x0
@@ -37,13 +37,13 @@ typedef struct FTLCxtElement2 {
 
 typedef struct FTLCxt {
 	uint8_t unk1[0x38];				// 0x0
-	uint32_t pages_for_198[18];			// 0x38
+	uint32_t pages_for_dataVbn[18];			// 0x38
 	uint32_t pages_for_19C[36];			// 0x80
 	uint32_t pages_for_1A0[34];			// 0x110
-	uint16_t* field_198;				// 0x198
+	uint16_t* dataVbn;				// 0x198
 	uint16_t* field_19C;				// 0x19C
 	uint16_t* field_1A0;				// 0x1A0
-	FTLCxtElement elements[18];			// 0x1A4
+	FTLCxtLog pLog[18];				// 0x1A4
 	uint8_t unk2[6];				// 0x30C
 	uint16_t thing[3];				// 0x312
 	uint32_t field_318;				// 0x318
