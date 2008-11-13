@@ -19,9 +19,11 @@ int bdev_setup() {
 	ftl_read(&MBRData, 0, sizeof(MBRData));
 	MBRPartitionRecord* record = MBRData.partitions;
 
+	int id = 0;
 	while(record->type != 0) {
-		bufferPrintf("bdev: partition type: %x, sectors: %d - %d\r\n", record->type, record->beginLBA, record->beginLBA + record->numSectors);
+		bufferPrintf("bdev: partition id: %d, type: %x, sectors: %d - %d\r\n", id, record->type, record->beginLBA, record->beginLBA + record->numSectors);
 		record++;
+		id++;
 	}
 
 	HasBDevInit = TRUE;

@@ -11,7 +11,6 @@ void* memset(void* x, int fill, uint32_t size);
 void* memcpy(void* dest, const void* src, uint32_t size);
 int strcmp(const char* s1, const char* s2);
 char* strdup(const char* str);
-char* strtok(char* s1, const char* s2);
 int memcmp(const void* s1, const void* s2, uint32_t size);
 void* memmove(void *dest, const void* src, size_t length);
 int strlen(const char* str);

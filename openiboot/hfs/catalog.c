@@ -492,9 +492,21 @@ HFSPlusCatalogRecord* getRecordFromPath3(const char* path, Volume* volume, char 
 	}
 
 	pathLimit = myPath + strlen(myPath);
+	word = myPath;
+	char* nextWord = word;
 
-	for(word = (char*)strtok(myPath, "/"); word && (word < pathLimit);
-			word = ((word + strlen(word) + 1) < pathLimit) ? (char*)strtok(word + strlen(word) + 1, "/") : NULL) {
+	while(TRUE) {
+		word = nextWord;
+		if(*word == '\0')
+			break;
+
+		while(*nextWord != '/' && *nextWord != '\0')
+			nextWord++;
+
+		if(*nextWord != '\0') {
+			*nextWord = '\0';
+			nextWord++;
+		}
 
 		if(name != NULL)
 			*name = (char*)(path + (word - origPath));

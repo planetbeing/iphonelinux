@@ -53,14 +53,14 @@ void displayFileLSLine(HFSPlusCatalogFile* file, const char* name) {
 uint32_t readHFSFile(HFSPlusCatalogFile* file, uint8_t** buffer, Volume* volume) {
 	io_func* io;
 	size_t bytesLeft;
-	
+
 	io = openRawFile(file->fileID, &file->dataFork, (HFSPlusCatalogRecord*)file, volume);
 	if(io == NULL) {
 		hfs_panic("error opening file");
 		free(buffer);
 		return 0;
 	}
-	
+
 	bytesLeft = file->dataFork.logicalSize;
 	*buffer = malloc(bytesLeft);
 	if(!(*buffer)) {
@@ -68,7 +68,7 @@ uint32_t readHFSFile(HFSPlusCatalogFile* file, uint8_t** buffer, Volume* volume)
 		return 0;
 	}
 	
-	if(!READ(io, 0, bytesLeft, buffer)) {
+	if(!READ(io, 0, bytesLeft, *buffer)) {
 		hfs_panic("error reading");
 	}
 
@@ -200,8 +200,10 @@ void fs_cmd_extract(int argc, char** argv) {
 		if(record->recordType == kHFSPlusFileRecord) {
 			uint8_t* buffer;
 			uint32_t size = readHFSFile((HFSPlusCatalogFile*)record, &buffer, volume);
-			memcpy((uint8_t*)parseNumber(argv[3]), buffer, size);
+			uint32_t address = parseNumber(argv[3]);
+			memcpy((uint8_t*)address, buffer, size);
 			free(buffer);
+			bufferPrintf("%d bytes of %s extracted to 0x%x\r\n", size, argv[2], address);
 		} else {
 			bufferPrintf("Not a file, record type: %x\r\n", record->recordType);
 		}
