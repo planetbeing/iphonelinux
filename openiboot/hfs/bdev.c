@@ -8,6 +8,8 @@ int HasBDevInit = FALSE;
 
 static MBR MBRData;
 
+#define BLOCK_SIZE 4096
+
 int bdev_setup() {
 	if(HasBDevInit)
 		return 0;
@@ -27,9 +29,10 @@ int bdev_setup() {
 	return 0;
 }
 
-static int bdevRead(io_func* io, off_t location, size_t size, void *buffer) {
+int bdevRead(io_func* io, off_t location, size_t size, void *buffer) {
 	MBRPartitionRecord* record = (MBRPartitionRecord*) io->data;
-	return ftl_read(buffer, location + record->beginLBA, size);
+	//bufferPrintf("bdev: attempt to read %d sectors from partition %d, sector %Ld to 0x%x\r\n", size, ((uint32_t)record - (uint32_t)MBRData.partitions)/sizeof(MBRPartitionRecord), location, buffer);
+	return ftl_read(buffer, location + record->beginLBA * BLOCK_SIZE, size);
 }
 
 static int bdevWrite(io_func* io, off_t location, size_t size, void *buffer) {

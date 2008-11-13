@@ -974,6 +974,7 @@ int ftl_setup() {
 }
 
 int ftl_read(void* buffer, uint64_t offset, int size) {
+	uint8_t* curLoc = (uint8_t*) buffer;
 	int curPage = offset / Data->bytesPerPage;
 	int toRead = size;
 	int pageOffset = offset - (curPage * Data->bytesPerPage);
@@ -985,7 +986,8 @@ int ftl_read(void* buffer, uint64_t offset, int size) {
 		}
 
 		int read = ((Data->bytesPerPage > toRead) ? toRead : Data->bytesPerPage);
-		memcpy(((uint8_t*)buffer) + pageOffset, tBuffer, read);
+		memcpy(curLoc, tBuffer + pageOffset, read);
+		curLoc += read;
 		toRead -= read;
 		pageOffset = 0;
 		curPage++;

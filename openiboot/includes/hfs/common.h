@@ -19,7 +19,7 @@
 
 #define ASSERT(x, m) if(!(x)) { bufferPrintf("error: %s\n", m); }
 
-#define off_t uint64_t
+typedef uint64_t off_t;
 
 #define endianness IS_LITTLE_ENDIAN
 

@@ -16,6 +16,7 @@
 #include "dma.h"
 #include "nand.h"
 #include "ftl.h"
+#include "hfs/fs.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -399,6 +400,20 @@ void cmd_ftl_read(int argc, char** argv) {
 	bufferPrintf("FTL_read: %x\r\n", FTL_Read(page, pages, (uint8_t*) address));
 }
 
+void cmd_bdev_read(int argc, char** argv) {
+	if(argc < 4) {
+		bufferPrintf("Usage: %s <address> <offset> <bytes>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t offset = parseNumber(argv[2]);
+	uint32_t bytes = parseNumber(argv[3]);
+
+	bufferPrintf("Reading %d bytes, starting at %d into 0x%x\r\n", bytes, offset, address);
+	bufferPrintf("ftl_read: %x\r\n", ftl_read((uint8_t*) address, offset, bytes));
+}
+
 void cmd_text(int argc, char** argv) {
 	if(argc < 2) {
 		bufferPrintf("Usage: %s <on|off>\r\n", argv[0]);
@@ -442,6 +457,10 @@ OPIBCommand CommandList[] =
 		{"nand_read_spare", "read a page of NAND's spare into RAM", cmd_nand_read_spare},
 		{"vfl_read", "read a page of VFL into RAM", cmd_vfl_read},
 		{"ftl_read", "read a page of FTL into RAM", cmd_ftl_read},
+		{"bdev_read", "read bytes from a NAND block device", cmd_bdev_read},
+		{"fs_ls", "list files and folders", fs_cmd_ls},
+		{"fs_cat", "display a file", fs_cmd_cat},
+		{"fs_extract", "extract a file into memory", fs_cmd_extract},
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},

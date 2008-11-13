@@ -2,6 +2,7 @@
 #define BDEV_H
 
 #include "openiboot.h"
+#include "hfs/common.h"
 
 typedef struct MBRPartitionRecord {
 	uint8_t status;
@@ -27,5 +28,6 @@ typedef struct MBR {
 extern int HasBDevInit;
 
 int bdev_setup();
+io_func* bdev_open(int partition);
 
 #endif

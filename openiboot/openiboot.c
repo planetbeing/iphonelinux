@@ -30,6 +30,7 @@
 #include "nand.h"
 #include "ftl.h"
 #include "hfs/bdev.h"
+#include "hfs/fs.h"
 
 static int setup_devices();
 static int setup_openiboot();
@@ -60,7 +61,7 @@ void OpenIBootStart() {
 		menu_setup();
 	}
 
-	bdev_setup();
+	fs_setup();
 
 	bufferPrintf("-----------------------------------------------\r\n");
 	bufferPrintf("              WELCOME TO OPENIBOOT\r\n");
