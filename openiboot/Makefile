@@ -16,8 +16,10 @@ CONFIGFLAGS =
 
 ifeq ($(PLATFORM),IPOD)
 	CONFIGFLAGS += -DCONFIG_IPOD
+	IMG3TEMPLATE = mk8900image/template-ipod.img3
 else
 	CONFIGFLAGS += -DCONFIG_IPHONE
+	IMG3TEMPLATE = mk8900image/template.img3
 endif
 
 CFLAGS += $(CONFIGFLAGS)
@@ -52,7 +54,7 @@ openiboot.img2:	openiboot mk8900image/mk8900image
 	mk8900image/mk8900image openiboot openiboot.img2 mk8900image/template.img2 mk8900image/iphonelinux.der
 
 openiboot.img3:	openiboot mk8900image/mk8900image
-	mk8900image/mk8900image openiboot openiboot.img3 mk8900image/template.img3
+	mk8900image/mk8900image openiboot openiboot.img3 $(IMG3TEMPLATE)
 
 openiboot-payload.bin: openiboot-payload mk8900image/mk8900image
 	mk8900image/mk8900image openiboot-payload openiboot-payload.bin
