@@ -12,9 +12,18 @@ LIBRARIES += -lgcc -nostdlib
 LIBRARY_PATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
 INC += -Iincludes
 CFLAGS += -Wall -O3
+CONFIGFLAGS =
+
+ifeq ($(PLATFORM),IPOD)
+	CONFIGFLAGS += -DCONFIG_IPOD
+else
+	CONFIGFLAGS += -DCONFIG_IPHONE
+endif
+
+CFLAGS += $(CONFIGFLAGS)
 
 %.o:	%.S
-	$(CC) $(INC) -E -x c $< | $(AS) $(ASFLAGS) $(ARCHFLAGS) -o $@
+	$(CC) $(INC) $(CONFIGFLAGS) -E -x c $< | $(AS) $(ASFLAGS) $(ARCHFLAGS) -o $@
 
 %.o:	%.c
 	$(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
