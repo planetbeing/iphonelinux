@@ -672,7 +672,14 @@ static int syrah_init() {
 	gpio_pin_output(LCD_GPIO_POWER_ENABLE, 1);
 	udelay(10000);
 
+#ifdef CONFIG_IPOD
+	togglePixelClock(ON);
+	transmitCommandOnSPI1(0x6D, 0x0);
+	transmitCommandOnSPI1(0x36, 0x8);
+	udelay(15000);
+#else
 	transmitCommandOnSPI1(0x6D, 0x40);
+#endif
 
 	enterRegisterMode();
 	udelay(1000);
@@ -705,8 +712,10 @@ static int syrah_init() {
 	transmitCommandOnSPI0(0x7, 0x0);
 	transmitCommandOnSPI0(0x0, 0x16);
 
+#ifndef CONFIG_IPOD
 	togglePixelClock(ON);
 	udelay(40000);
+#endif
 
 	setPanelRegister(0x6D, 0x0);
 	transmitCommandOnSPI1(0x36, 0x8);
