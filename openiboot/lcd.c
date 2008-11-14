@@ -937,9 +937,15 @@ static void togglePixelClock(OnOff swt) {
 }
 
 static void resetLCD() {
+#ifdef CONFIG_IPOD
+	gpio_pin_output(LCD_GPIO_RESET, 0);
+	udelay(10000);
+	gpio_pin_output(LCD_GPIO_RESET, 1);
+#else
 	gpio_pin_output(LCD_GPIO_RESET, 1);
 	udelay(10000);
 	gpio_pin_output(LCD_GPIO_RESET, 0);
+#endif
 }
 
 static void setCommandMode(OnOff swt) {
