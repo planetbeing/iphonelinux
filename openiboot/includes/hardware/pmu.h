@@ -3,6 +3,12 @@
 
 #include "hardware/s5l8900.h"
 
+#ifdef CONFIG_IPOD
+#define PMU_I2C_BUS 1
+#else
+#define PMU_I2C_BUS 0
+#endif
+
 // Power
 #define PMU_SETADDR	0xE6
 #define PMU_GETADDR	0xE7

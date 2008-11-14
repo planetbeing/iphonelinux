@@ -4,7 +4,6 @@
 #include "openiboot.h"
 
 typedef struct PMURegisterData {
-	int bus;
 	uint8_t reg;
 	uint8_t data;
 } PMURegisterData;
@@ -25,9 +24,9 @@ typedef enum PowerSupplyType {
 #define PMU_IBOOTERRORSTAGE 0x3
 
 int pmu_setup();
-int pmu_get_gpmem_reg(int bus, int reg, uint8_t* out);
-int pmu_get_reg(int bus, int reg);
-int pmu_write_reg(int bus, int reg, int data, int verify);
+int pmu_get_gpmem_reg(int reg, uint8_t* out);
+int pmu_get_reg(int reg);
+int pmu_write_reg(int reg, int data, int verify);
 int pmu_write_regs(const PMURegisterData* regs, int num);
 int pmu_get_battery_voltage();
 PowerSupplyType pmu_get_power_supply();

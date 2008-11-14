@@ -90,14 +90,14 @@ static const GammaTableDescriptor gammaTables[] =
 	}};
 
 
-static const PMURegisterData backlightOffData = {0x0, 0x29, 0x0};
+static const PMURegisterData backlightOffData = {0x29, 0x0};
 
 static const PMURegisterData backlightData[] = {
-	{0x0, 0x17, 0x1},
-	{0x0, 0x2A, 0x0},
-	{0x0, 0x28, 0x22},
-	{0x0, 0x29, 0x1},
-	{0x0, 0x2A, 0x6}
+	{0x17, 0x1},
+	{0x2A, 0x0},
+	{0x28, 0x22},
+	{0x29, 0x1},
+	{0x2A, 0x6}
 };
 
 static int initDisplay();
@@ -935,9 +935,9 @@ static void resetLCD() {
 
 static void setCommandMode(OnOff swt) {
 	if(swt) {
-		pmu_write_reg(LCD_I2C_BUS, LCD_I2C_COMMAND, LCD_I2C_COMMANDMODE_ON, 0);
+		pmu_write_reg(LCD_I2C_COMMAND, LCD_I2C_COMMANDMODE_ON, 0);
 	} else {
-		pmu_write_reg(LCD_I2C_BUS, LCD_I2C_COMMAND, LCD_I2C_COMMANDMODE_OFF, 0);
+		pmu_write_reg(LCD_I2C_COMMAND, LCD_I2C_COMMANDMODE_OFF, 0);
 	}
 }
 

@@ -571,6 +571,7 @@ static void usbIRQHandler(uint32_t token) {
 
 		if((status & GINTMSK_RESET) == GINTMSK_RESET) {
 			if(usb_state < USBError) {
+				bufferPrintf("usb: reset detected\r\n");
 				change_state(USBPowered);
 			}
 
@@ -579,6 +580,7 @@ static void usbIRQHandler(uint32_t token) {
 			SET_REG(USB + GINTSTS, GINTMSK_RESET);
 
 			if(retval) {
+				bufferPrintf("usb: listening for further usb events\r\n");
 				return;	
 			}
 
@@ -629,7 +631,7 @@ static void usbIRQHandler(uint32_t token) {
 									memcpy(controlSendBuffer, usb_get_device_qualifier_descriptor(), length);
 									break;
 								default:
-									uartPrintf("Unknown descriptor request: %d\r\n", setupPacket->wValue >> 8);
+									bufferPrintf("Unknown descriptor request: %d\r\n", setupPacket->wValue >> 8);
 									if(usb_state < USBError) {
 										change_state(USBUnknownDescriptorRequest);
 									}

@@ -5,7 +5,7 @@
 
 // Device
 #define LCD 0x38900000
-#define LCD_I2C_BUS 0
+//#define LCD_I2C_BUS 0
 
 // Registers
 #define LCD_0 0x0
