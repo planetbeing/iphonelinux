@@ -1,5 +1,6 @@
 // Reverse engineering courtesty of c1de0x, et al. of the iPhone Dev Team
 
+#include <stdint.h>
 #include <usb.h>
 #include <stdio.h>
 #include <stdlib.h>
