@@ -5,6 +5,12 @@
 
 #define FTL_ID 0x43303034
 
+#ifdef DEBUG
+#define DebugPrintf bufferPrintf
+#else
+#define DebugPrintf(...)
+#endif
+
 int HasFTLInit = FALSE;
 
 static NANDData* Data;
@@ -18,14 +24,19 @@ static int findDeviceInfoBBT(int bank, void* deviceInfoBBT) {
 		int page;
 		int badBlockCount = 0;
 		for(page = 0; page < Data->pagesPerBlock; page++) {
-			if(badBlockCount > 2)
+			if(badBlockCount > 2) {
+				DebugPrintf("ftl: findDeviceInfoBBT - too many bad pages, skipping block %d\r\n", block);
 				break;
+			}
 
 			int ret = nand_read_alternate_ecc(bank, (block * Data->pagesPerBlock) + page, buffer);
 			if(ret != 0) {
-				if(ret == 1)
+				if(ret == 1) {
+					DebugPrintf("ftl: findDeviceInfoBBT - found 'badBlock' on bank %d, page %d\r\n", (block * Data->pagesPerBlock) + page);
 					badBlockCount++;
+				}
 
+				DebugPrintf("ftl: findDeviceInfoBBT - skipping bank %d, page %d\r\n", (block * Data->pagesPerBlock) + page);
 				continue;
 			}
 
@@ -36,6 +47,8 @@ static int findDeviceInfoBBT(int bank, void* deviceInfoBBT) {
 
 				free(buffer);
 				return TRUE;
+			} else {
+				DebugPrintf("ftl: did not find signature on bank %d, page %d\r\n", (block * Data->pagesPerBlock) + page);
 			}
 		}
 	}
@@ -945,6 +958,7 @@ int ftl_setup() {
 	uint8_t* buffer = malloc(Data->bytesPerPage);
 	for(i = 0; i < Data->pagesPerBlock; i++) {
 		if(nand_read_alternate_ecc(0, i, buffer) == 0 && *((uint32_t*) buffer) == FTL_ID) {
+			bufferPrintf("ftl: Found production format: %x\r\n", FTL_ID);
 			foundSignature = TRUE;
 			break;
 		}

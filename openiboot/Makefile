@@ -22,6 +22,12 @@ else
 	IMG3TEMPLATE = mk8900image/template.img3
 endif
 
+ifeq ($(DEBUG),YES)
+	CONFIGFLAGS += -DDEBUG
+else
+	CONFIGFLAGS += -DDEBUG
+endif
+
 CFLAGS += $(CONFIGFLAGS)
 
 %.o:	%.S
