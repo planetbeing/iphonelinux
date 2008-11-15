@@ -191,8 +191,8 @@ void cmd_bgcolor(int argc, char** argv) {
 	}
 
 	uint8_t red = parseNumber(argv[1]);
-	uint8_t blue = parseNumber(argv[2]);
-	uint8_t green = parseNumber(argv[3]);
+	uint8_t green = parseNumber(argv[2]);
+	uint8_t blue = parseNumber(argv[3]);
 
 	lcd_fill((red << 16) | (green << 8) | blue);
 }
