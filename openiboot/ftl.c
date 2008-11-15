@@ -952,7 +952,8 @@ int ftl_setup() {
 	DebugPrintf("ftl: Attempting to read %d pages from first block of first bank.\r\n", Data->pagesPerBlock);
 	uint8_t* buffer = malloc(Data->bytesPerPage);
 	for(i = 0; i < Data->pagesPerBlock; i++) {
-		if(nand_read_alternate_ecc(0, i, buffer) == 0) {
+		int ret;
+		if((ret = nand_read_alternate_ecc(0, i, buffer)) == 0) {
 			if(*((uint32_t*) buffer) == FTL_ID) {
 				bufferPrintf("ftl: Found production format: %x\r\n", FTL_ID);
 				foundSignature = TRUE;
@@ -961,7 +962,7 @@ int ftl_setup() {
 				DebugPrintf("ftl: Found non-matching signature: %x\r\n", ((uint32_t*) buffer));
 			}
 		} else {
-			DebugPrintf("ftl: page %d of first bank is unreadable!\r\n", i);
+			DebugPrintf("ftl: page %d of first bank is unreadable: %x!\r\n", i, ret);
 		}
 	}
 	free(buffer);
