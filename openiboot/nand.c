@@ -613,11 +613,15 @@ int nand_read_multiple(uint16_t* bank, uint32_t* pages, uint8_t* main, SpareData
 
 int nand_read_alternate_ecc(int bank, int page, uint8_t* buffer) {
 	int ret;
-	if((ret = nand_read(bank, page, buffer, aTemporarySBuf, FALSE, TRUE)) != 0)
+	if((ret = nand_read(bank, page, buffer, aTemporarySBuf, FALSE, TRUE)) != 0) {
+		DebugPrintf("nand: Raw read failed.\r\n");
 		return ret;
+	}
 
-	if(checkECC(ECCType2, buffer, aTemporarySBuf) != 0)
+	if(checkECC(ECCType2, buffer, aTemporarySBuf) != 0) {
+		DebugPrintf("nand: Alternate ECC check failed, but raw read succeeded.\r\n");
 		return ERROR_NAND;
+	}
 
 	return 0;
 }
