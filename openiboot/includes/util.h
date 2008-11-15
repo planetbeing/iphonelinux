@@ -5,6 +5,12 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#ifdef DEBUG
+#define DebugPrintf bufferPrintf
+#else
+#define DebugPrintf(...)
+#endif
+
 void panic();
 
 void* memset(void* x, int fill, uint32_t size);

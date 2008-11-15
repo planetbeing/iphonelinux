@@ -5,12 +5,6 @@
 
 #define FTL_ID 0x43303034
 
-#ifdef DEBUG
-#define DebugPrintf bufferPrintf
-#else
-#define DebugPrintf(...)
-#endif
-
 int HasFTLInit = FALSE;
 
 static NANDData* Data;
@@ -957,10 +951,14 @@ int ftl_setup() {
 
 	uint8_t* buffer = malloc(Data->bytesPerPage);
 	for(i = 0; i < Data->pagesPerBlock; i++) {
-		if(nand_read_alternate_ecc(0, i, buffer) == 0 && *((uint32_t*) buffer) == FTL_ID) {
-			bufferPrintf("ftl: Found production format: %x\r\n", FTL_ID);
-			foundSignature = TRUE;
-			break;
+		if(nand_read_alternate_ecc(0, i, buffer) == 0) {
+			if(*((uint32_t*) buffer) == FTL_ID) {
+				bufferPrintf("ftl: Found production format: %x\r\n", FTL_ID);
+				foundSignature = TRUE;
+				break;
+			} else {
+				DebugPrintf("ftl: Found non-matching signature: %x\r\n", ((uint32_t*) buffer));
+			}
 		}
 	}
 	free(buffer);

@@ -224,7 +224,6 @@ static void installGammaTables(uint32_t panelID) {
 
 	int i;
 	for(i = 0; i < (sizeof(gammaTables)/sizeof(GammaTableDescriptor)); i++) {
-		bufferPrintf("Matching: %x -> %x == %x\r\n", panelID, curTable->panelIDMask & panelID, curTable->panelIDMatch);
 		if((curTable->panelIDMask & panelID) == curTable->panelIDMatch) {
 			bufferPrintf("Installing gamma table 0x%08x / 0x%08x\r\n", curTable->panelIDMatch, curTable->panelIDMask);
 			installGammaTable(0, (uint8_t*) curTable->table0.data);

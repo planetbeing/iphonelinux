@@ -66,6 +66,7 @@ void OpenIBootStart() {
 	bufferPrintf("-----------------------------------------------\r\n");
 	bufferPrintf("              WELCOME TO OPENIBOOT\r\n");
 	bufferPrintf("-----------------------------------------------\r\n");
+	DebugPrintf("                    DEBUG MODE\r\n");
 
 	// Process command queue
 	while(TRUE) {
