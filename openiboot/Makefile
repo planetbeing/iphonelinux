@@ -18,13 +18,16 @@ ifeq ($(PLATFORM),IPOD)
 	CONFIGFLAGS += -DCONFIG_IPOD
 	IMG3TEMPLATE = mk8900image/template-ipod.img3
 else
+ifeq ($(PLATFORM),3G)
+	CONFIGFLAGS += -DCONFIG_3G
+	IMG3TEMPLATE = mk8900image/template-3g.img3
+else
 	CONFIGFLAGS += -DCONFIG_IPHONE
 	IMG3TEMPLATE = mk8900image/template.img3
 endif
+endif
 
 ifeq ($(DEBUG),YES)
-	CONFIGFLAGS += -DDEBUG
-else
 	CONFIGFLAGS += -DDEBUG
 endif
 
