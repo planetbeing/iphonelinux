@@ -695,7 +695,12 @@ static int syrah_init() {
 	transmitCommandOnSPI1(0x6D, 0x0);
 	transmitCommandOnSPI1(0x36, 0x8);
 	udelay(15000);
-#else
+#endif
+#ifdef CONFIG_3G
+	togglePixelClock(ON);
+	transmitCommandOnSPI1(0x6D, 0x0);
+#endif
+#ifdef CONFIG_IPHONE
 	transmitCommandOnSPI1(0x6D, 0x40);
 #endif
 
@@ -745,22 +750,22 @@ static int syrah_init() {
 	memset(panelID, 0, 3);
 
 	lcdCommand[0] = 0xDA;
-	gpio_pin_output(GPIO_SPI1_CS0, 0);
-	spi_tx(1, lcdCommand, 1, TRUE, 0);
-	spi_rx(1, &panelID[0], 1, TRUE, 0);
-	gpio_pin_output(GPIO_SPI1_CS0, 1);
+	gpio_pin_output(LCD_PANEL_CS, 0);
+	spi_tx(LCD_PANEL_SPI, lcdCommand, 1, TRUE, 0);
+	spi_rx(LCD_PANEL_SPI, &panelID[0], 1, TRUE, 0);
+	gpio_pin_output(LCD_PANEL_CS, 1);
 
 	lcdCommand[0] = 0xDB;
-	gpio_pin_output(GPIO_SPI1_CS0, 0);
-	spi_tx(1, lcdCommand, 1, TRUE, 0);
-	spi_rx(1, &panelID[1], 1, TRUE, 0);
-	gpio_pin_output(GPIO_SPI1_CS0, 1);
+	gpio_pin_output(LCD_PANEL_CS, 0);
+	spi_tx(LCD_PANEL_SPI, lcdCommand, 1, TRUE, 0);
+	spi_rx(LCD_PANEL_SPI, &panelID[1], 1, TRUE, 0);
+	gpio_pin_output(LCD_PANEL_CS, 1);
 
 	lcdCommand[0] = 0xDC;
-	gpio_pin_output(GPIO_SPI1_CS0, 0);
-	spi_tx(1, lcdCommand, 1, TRUE, 0);
-	spi_rx(1, &panelID[2], 1, TRUE, 0);
-	gpio_pin_output(GPIO_SPI1_CS0, 1);
+	gpio_pin_output(LCD_PANEL_CS, 0);
+	spi_tx(LCD_PANEL_SPI, lcdCommand, 1, TRUE, 0);
+	spi_rx(LCD_PANEL_SPI, &panelID[2], 1, TRUE, 0);
+	gpio_pin_output(LCD_PANEL_CS, 1);
 
 	if((panelID[2] & 0x7) == 1 || (panelID[2] & 0x7) == 3) {
 		panelID[2] |= 0x8;
@@ -996,9 +1001,9 @@ static void transmitCommandOnSPI0(int command, int subcommand) {
 	lcdCommand[1] = subcommand;
 
 	gpio_custom_io(LCD_GPIO_CONTROL_ENABLE, 0x2 | 1);
-	gpio_pin_output(GPIO_SPI0_CS0, 0);
-	spi_tx(0, lcdCommand, 2, TRUE, 0);
-	gpio_pin_output(GPIO_SPI0_CS0, 1);
+	gpio_pin_output(LCD_CS, 0);
+	spi_tx(LCD_SPI, lcdCommand, 2, TRUE, 0);
+	gpio_pin_output(LCD_CS, 1);
 	gpio_custom_io(LCD_GPIO_CONTROL_ENABLE, 0x2 | 0);
 
 }
@@ -1008,9 +1013,9 @@ static void transmitCommandOnSPI1(int command, int subcommand) {
 	lcdCommand[0] = command;
 	lcdCommand[1] = subcommand;
 
-	gpio_pin_output(GPIO_SPI1_CS0, 0);
-	spi_tx(1, lcdCommand, 2, TRUE, 0);
-	gpio_pin_output(GPIO_SPI1_CS0, 1);
+	gpio_pin_output(LCD_PANEL_CS, 0);
+	spi_tx(LCD_PANEL_SPI, lcdCommand, 2, TRUE, 0);
+	gpio_pin_output(LCD_PANEL_CS, 1);
 }
 
 static void setPanelRegister(int reg, int value) {
@@ -1018,9 +1023,9 @@ static void setPanelRegister(int reg, int value) {
 	lcdCommand[0] = reg & 0x7F;
 	lcdCommand[1] = value;
 
-	gpio_pin_output(GPIO_SPI1_CS0, 0);
-	spi_tx(1, lcdCommand, 2, TRUE, 0);
-	gpio_pin_output(GPIO_SPI1_CS0, 1);
+	gpio_pin_output(LCD_PANEL_CS, 0);
+	spi_tx(LCD_PANEL_SPI, lcdCommand, 2, TRUE, 0);
+	gpio_pin_output(LCD_PANEL_CS, 1);
 }
 
 
@@ -1028,9 +1033,9 @@ static void transmitShortCommandOnSPI1(int command) {
 	uint8_t lcdCommand[1];
 	lcdCommand[0] = command;
 
-	gpio_pin_output(GPIO_SPI1_CS0, 0);
-	spi_tx(1, lcdCommand, 1, TRUE, 0);
-	gpio_pin_output(GPIO_SPI1_CS0, 1);
+	gpio_pin_output(LCD_PANEL_CS, 0);
+	spi_tx(LCD_PANEL_SPI, lcdCommand, 1, TRUE, 0);
+	gpio_pin_output(LCD_PANEL_CS, 1);
 }
 
 static int getPanelRegister(int reg) {
@@ -1038,10 +1043,10 @@ static int getPanelRegister(int reg) {
 	uint8_t buffer[1];
 	lcdCommand[0] = 0x80 | reg;
 
-	gpio_pin_output(GPIO_SPI1_CS0, 0);
-	spi_tx(1, lcdCommand, 1, TRUE, 0);
-	spi_rx(1, buffer, 1, TRUE, 0);
-	gpio_pin_output(GPIO_SPI1_CS0, 1);
+	gpio_pin_output(LCD_PANEL_CS, 0);
+	spi_tx(LCD_PANEL_SPI, lcdCommand, 1, TRUE, 0);
+	spi_rx(LCD_PANEL_SPI, buffer, 1, TRUE, 0);
+	gpio_pin_output(LCD_PANEL_CS, 1);
 
 	return buffer[0];
 }

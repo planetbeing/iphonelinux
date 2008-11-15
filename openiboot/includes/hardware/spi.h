@@ -47,6 +47,11 @@
 
 #define GPIO_SPI1_CS0 0x1800
 
+#ifdef CONFIG_3G
+#define GPIO_SPI0_CS1 0x705
+#define GPIO_SPI0_CS2 0x706
+#endif
+
 #define NUM_SPIPORTS 3
 
 #endif

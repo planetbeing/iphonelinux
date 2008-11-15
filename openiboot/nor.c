@@ -16,8 +16,10 @@ static int Prepared = 0;
 
 static void nor_prepare() {
 #ifdef CONFIG_3G
-	if(Prepared == 0)
+	if(Prepared == 0) {
+		bufferPrintf("Setting SPI baud\r\n");
 		spi_set_baud(0, 12000000, SPIOption13Setting0, 1, 0, 0);
+	}
 #endif
 	Prepared++;
 }
@@ -37,10 +39,10 @@ static NorInfo* probeNOR() {
 	spi_rx(0, deviceID, 3, TRUE, 0);
 	gpio_pin_output(GPIO_SPI0_CS0, 1);
 	uint16_t vendor = deviceID[0];
-	uint16_t device = deviceID[3];
+	uint16_t device = deviceID[2];
 
 	// Unprotect NOR
-	command = NOR_SPI_EWSR;
+	/*command = NOR_SPI_EWSR;
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
 	spi_tx(0, &command, 1, TRUE, 0);
 	gpio_pin_output(GPIO_SPI0_CS0, 1);
@@ -48,7 +50,7 @@ static NorInfo* probeNOR() {
 	uint8_t wrsrCommand[2] = {NOR_SPI_WRSR, 0};
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
 	spi_tx(0, wrsrCommand, 2, TRUE, 0);
-	gpio_pin_output(GPIO_SPI0_CS0, 1);
+	gpio_pin_output(GPIO_SPI0_CS0, 1);*/
 #else
 	SET_REG16(NOR + COMMAND, COMMAND_UNLOCK);
 	SET_REG16(NOR + LOCK, LOCK_UNLOCK);
@@ -164,7 +166,6 @@ uint16_t nor_read_word(uint32_t offset) {
 	spi_rx(0, (uint8_t*) &data, sizeof(data), TRUE, 0);
 	gpio_pin_output(GPIO_SPI0_CS0, 1);
 
-	nor_unprepare();
 #else
 	data = GET_REG16(NOR + offset);
 #endif
