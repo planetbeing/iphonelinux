@@ -949,6 +949,7 @@ int ftl_setup() {
 	int i;
 	int foundSignature = FALSE;
 
+	DebugPrintf("ftl: Attempting to read %d pages from first block of first bank.\r\n", Data->pagesPerBlock);
 	uint8_t* buffer = malloc(Data->bytesPerPage);
 	for(i = 0; i < Data->pagesPerBlock; i++) {
 		if(nand_read_alternate_ecc(0, i, buffer) == 0) {
@@ -959,6 +960,8 @@ int ftl_setup() {
 			} else {
 				DebugPrintf("ftl: Found non-matching signature: %x\r\n", ((uint32_t*) buffer));
 			}
+		} else {
+			DebugPrintf("ftl: page %d of first bank is unreadable!\r\n", i);
 		}
 	}
 	free(buffer);
