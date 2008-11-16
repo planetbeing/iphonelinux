@@ -30,6 +30,7 @@
 #define NOR_SPI_RDSR 0x05
 #define NOR_SPI_WRSR 0x01
 #define NOR_SPI_EWSR 0x50
+#define NOR_SPI_AIPG 0xAD
 #define NOR_SPI_ERSE_4KB 0x20
 #define NOR_SPI_JEDECID 0x9F
 

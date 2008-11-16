@@ -14,6 +14,10 @@ static int NORSectorSize = 4096;
 
 static int Prepared = 0;
 
+#ifdef CONFIG_3G
+static int WritePrepared = FALSE;
+#endif
+
 static void nor_prepare() {
 #ifdef CONFIG_3G
 	if(Prepared == 0) {
@@ -110,6 +114,11 @@ static int nor_wait_for_ready(int timeout) {
 static void nor_write_enable() {
 	nor_prepare();
 
+	if(nor_wait_for_ready(100) != 0) {
+		nor_unprepare();
+		return;
+	}
+
 	uint8_t command[1];
 	command[0] = NOR_SPI_WREN;
 
@@ -123,6 +132,11 @@ static void nor_write_enable() {
 static void nor_write_disable() {
 	nor_prepare();
 
+	if(nor_wait_for_ready(100) != 0) {
+		nor_unprepare();
+		return;
+	}
+
 	uint8_t command[1];
 	command[0] = NOR_SPI_WRDI;
 
@@ -132,9 +146,10 @@ static void nor_write_disable() {
 
 	nor_unprepare();
 
+	WritePrepared = FALSE;
 }
 
-static int nor_write_byte(uint32_t offset, uint8_t data) {
+static int nor_serial_prepare_write(uint32_t offset, uint16_t data) {
 	nor_prepare();
 
 	if(nor_wait_for_ready(100) != 0) {
@@ -144,20 +159,22 @@ static int nor_write_byte(uint32_t offset, uint8_t data) {
 
 	nor_write_enable();
 
-	uint8_t command[5];
-	command[0] = NOR_SPI_PRGM;
+	uint8_t command[6];
+	command[0] = NOR_SPI_AIPG;
 	command[1] = (offset >> 16) & 0xFF;
 	command[2] = (offset >> 8) & 0xFF;
 	command[3] = offset & 0xFF;
-	command[4] = data;
+	command[4] = data & 0xFF;
+	command[5] = (data >> 8) & 0xFF;
 
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
 	spi_tx(0, command, sizeof(command), TRUE, 0);
 	gpio_pin_output(GPIO_SPI0_CS0, 1);
 
-	nor_write_disable();
 	nor_unprepare();
 
+	WritePrepared = TRUE;
+	
 	return 0;
 }
 
@@ -166,13 +183,23 @@ static int nor_write_byte(uint32_t offset, uint8_t data) {
 int nor_write_word(uint32_t offset, uint16_t data) {
 	nor_prepare();
 #ifdef CONFIG_3G
-	if(nor_wait_for_ready(100) != 0) {
-		nor_unprepare();
-		return -1;
-	}
+	if(!WritePrepared) {
+		nor_serial_prepare_write(offset, data);
+	} else {
+		if(nor_wait_for_ready(100) != 0) {
+			nor_unprepare();
+			return -1;
+		}
 
-	nor_write_byte(offset, data & 0xFF);
-	nor_write_byte(offset + 1, (data >> 8) & 0xFF); 
+		uint8_t command[3];
+		command[0] = NOR_SPI_AIPG;
+		command[1] = data & 0xFF;
+		command[2] = (data >> 8) & 0xFF;
+
+		gpio_pin_output(GPIO_SPI0_CS0, 0);
+		spi_tx(0, command, sizeof(command), TRUE, 0);
+		gpio_pin_output(GPIO_SPI0_CS0, 1);
+	}
 #else
 	SET_REG16(NOR + COMMAND, COMMAND_UNLOCK);
 	SET_REG16(NOR + LOCK, LOCK_UNLOCK);
@@ -269,7 +296,27 @@ int nor_erase_sector(uint32_t offset) {
 
 void nor_read(void* buffer, int offset, int len) {
 	nor_prepare();
+#ifdef CONFIG_3G
+	uint8_t command[4];
+	uint8_t* data = buffer;
+	while(len > 0) {
+		int toRead = (len > 0x10) ? 0x10 : len;
 
+		command[0] = NOR_SPI_READ;
+		command[1] = (offset >> 16) & 0xFF;
+		command[2] = (offset >> 8) & 0xFF;
+		command[3] = offset & 0xFF;
+
+		gpio_pin_output(GPIO_SPI0_CS0, 0);
+		spi_tx(0, command, sizeof(command), TRUE, 0);
+		spi_rx(0, data, toRead, TRUE, 0);
+		gpio_pin_output(GPIO_SPI0_CS0, 1);
+
+		len -= toRead;
+		data += toRead;
+		offset += toRead;
+	}
+#else
 	uint16_t* alignedBuffer = (uint16_t*) buffer;
 	for(; len >= 2; len -= 2) {
 		*alignedBuffer = nor_read_word(offset);
@@ -282,6 +329,7 @@ void nor_read(void* buffer, int offset, int len) {
 		uint8_t* unalignedBuffer = (uint8_t*) alignedBuffer;
 		*unalignedBuffer = *((uint8_t*)(&lastWord));
 	}
+#endif
 
 	nor_unprepare();
 }
@@ -312,9 +360,15 @@ int nor_write(void* buffer, int offset, int len) {
 		for(j = 0; j < (NORSectorSize / 2); j++) {
 			if(nor_write_word(((i + startSector) * NORSectorSize) + (j * 2), curSector[j]) != 0) {
 				nor_unprepare();
+#ifdef CONFIG_3G
+				nor_write_disable();
+#endif
 				return -1;
 			}
 		}
+#ifdef CONFIG_3G
+		nor_write_disable();
+#endif
 	}
 
 	free(sectorsToChange);
