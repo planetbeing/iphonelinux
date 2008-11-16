@@ -17,7 +17,6 @@ static int Prepared = 0;
 static void nor_prepare() {
 #ifdef CONFIG_3G
 	if(Prepared == 0) {
-		bufferPrintf("Setting SPI baud\r\n");
 		spi_set_baud(0, 12000000, SPIOption13Setting0, 1, 0, 0);
 	}
 #endif
@@ -42,7 +41,7 @@ static NorInfo* probeNOR() {
 	uint16_t device = deviceID[2];
 
 	// Unprotect NOR
-	/*command = NOR_SPI_EWSR;
+	command = NOR_SPI_EWSR;
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
 	spi_tx(0, &command, 1, TRUE, 0);
 	gpio_pin_output(GPIO_SPI0_CS0, 1);
@@ -50,7 +49,7 @@ static NorInfo* probeNOR() {
 	uint8_t wrsrCommand[2] = {NOR_SPI_WRSR, 0};
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
 	spi_tx(0, wrsrCommand, 2, TRUE, 0);
-	gpio_pin_output(GPIO_SPI0_CS0, 1);*/
+	gpio_pin_output(GPIO_SPI0_CS0, 1);
 #else
 	SET_REG16(NOR + COMMAND, COMMAND_UNLOCK);
 	SET_REG16(NOR + LOCK, LOCK_UNLOCK);
@@ -75,9 +74,42 @@ static NorInfo* probeNOR() {
 }
 
 #ifdef CONFIG_3G
+static uint8_t nor_get_status() {
+	nor_prepare();
+	uint8_t data;
+
+	uint8_t command[1];
+	command[0] = NOR_SPI_RDSR;
+
+	gpio_pin_output(GPIO_SPI0_CS0, 0);
+	spi_tx(0, command, sizeof(command), TRUE, 0);
+	spi_rx(0, &data, sizeof(data), TRUE, 0);
+	gpio_pin_output(GPIO_SPI0_CS0, 1);
+
+	nor_unprepare();
+
+	return data;
+}
+
+static int nor_wait_for_ready(int timeout) {
+	if((nor_get_status() & (1 << NOR_SPI_SR_BUSY)) == 0) {
+		return 0;
+	}
+
+	uint64_t startTime = timer_get_system_microtime();
+	while((nor_get_status() & (1 << NOR_SPI_SR_BUSY)) != 0) {
+		if(has_elapsed(startTime, timeout * 1000)) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 static void nor_write_byte(uint32_t offset, uint8_t data) {
 	nor_prepare();
 
+	nor_wait_for_ready(100);
 	uint8_t command[5];
 	command[0] = NOR_SPI_PRGM;
 	command[1] = (offset >> 16) & 0xFF;
@@ -96,7 +128,7 @@ static void nor_write_byte(uint32_t offset, uint8_t data) {
 static void nor_write_enable() {
 	nor_prepare();
 
-	uint8_t command[5];
+	uint8_t command[1];
 	command[0] = NOR_SPI_WREN;
 
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
@@ -109,7 +141,7 @@ static void nor_write_enable() {
 static void nor_write_disable() {
 	nor_prepare();
 
-	uint8_t command[5];
+	uint8_t command[1];
 	command[0] = NOR_SPI_WRDI;
 
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
@@ -123,8 +155,8 @@ static void nor_write_disable() {
 
 void nor_write_word(uint32_t offset, uint16_t data) {
 	nor_prepare();
-
 #ifdef CONFIG_3G
+	nor_wait_for_ready(100);
 	nor_write_enable();
 	nor_write_byte(offset, data & 0xFF);
 	nor_write_byte(offset + 1, (data >> 8) & 0xFF); 
@@ -177,9 +209,10 @@ void nor_erase_sector(uint32_t offset) {
 	nor_prepare();
 
 #ifdef CONFIG_3G
+	nor_wait_for_ready(100);
 	nor_write_enable();
 
-	uint8_t command[3];
+	uint8_t command[4];
 	command[0] = NOR_SPI_ERSE_4KB;
 	command[1] = (offset >> 16) & 0xFF;
 	command[2] = (offset >> 8) & 0xFF;
