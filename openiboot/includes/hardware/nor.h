@@ -23,7 +23,7 @@
 #define ERASE_DATA 0x3030
 #define LOCK_UNLOCK 0x5555
 
-#define NOR_SPI_READ 0x0B
+#define NOR_SPI_READ 0x03
 #define NOR_SPI_WREN 0x06
 #define NOR_SPI_WRDI 0x04
 #define NOR_SPI_PRGM 0x02

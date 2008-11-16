@@ -80,9 +80,9 @@ static void nor_write_byte(uint32_t offset, uint8_t data) {
 
 	uint8_t command[5];
 	command[0] = NOR_SPI_PRGM;
-	command[1] = (offset >> 16) && 0xFF;
-	command[2] = (offset >> 8) && 0xFF;
-	command[3] = offset && 0xFF;
+	command[1] = (offset >> 16) & 0xFF;
+	command[2] = (offset >> 8) & 0xFF;
+	command[3] = offset & 0xFF;
 	command[4] = data;
 
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
@@ -154,12 +154,11 @@ uint16_t nor_read_word(uint32_t offset) {
 	nor_prepare();
 
 #ifdef CONFIG_3G
-	uint8_t command[5];
+	uint8_t command[4];
 	command[0] = NOR_SPI_READ;
-	command[1] = (offset >> 16) && 0xFF;
-	command[2] = (offset >> 8) && 0xFF;
-	command[3] = offset && 0xFF;
-	command[4] = 0;
+	command[1] = (offset >> 16) & 0xFF;
+	command[2] = (offset >> 8) & 0xFF;
+	command[3] = offset & 0xFF;
 
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
 	spi_tx(0, command, sizeof(command), TRUE, 0);
@@ -182,9 +181,9 @@ void nor_erase_sector(uint32_t offset) {
 
 	uint8_t command[3];
 	command[0] = NOR_SPI_ERSE_4KB;
-	command[1] = (offset >> 16) && 0xFF;
-	command[2] = (offset >> 8) && 0xFF;
-	command[3] = offset && 0xFF;
+	command[1] = (offset >> 16) & 0xFF;
+	command[2] = (offset >> 8) & 0xFF;
+	command[3] = offset & 0xFF;
 
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
 	spi_tx(0, command, sizeof(command), TRUE, 0);
