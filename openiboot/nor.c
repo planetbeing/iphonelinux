@@ -99,30 +99,12 @@ static int nor_wait_for_ready(int timeout) {
 	uint64_t startTime = timer_get_system_microtime();
 	while((nor_get_status() & (1 << NOR_SPI_SR_BUSY)) != 0) {
 		if(has_elapsed(startTime, timeout * 1000)) {
+			bufferPrintf("nor: timed out waiting for ready\r\n");
 			return -1;
 		}
 	}
 
 	return 0;
-}
-
-static void nor_write_byte(uint32_t offset, uint8_t data) {
-	nor_prepare();
-
-	nor_wait_for_ready(100);
-	uint8_t command[5];
-	command[0] = NOR_SPI_PRGM;
-	command[1] = (offset >> 16) & 0xFF;
-	command[2] = (offset >> 8) & 0xFF;
-	command[3] = offset & 0xFF;
-	command[4] = data;
-
-	gpio_pin_output(GPIO_SPI0_CS0, 0);
-	spi_tx(0, command, sizeof(command), TRUE, 0);
-	gpio_pin_output(GPIO_SPI0_CS0, 1);
-	udelay(NOR_T_BP);
-
-	nor_unprepare();
 }
 
 static void nor_write_enable() {
@@ -151,16 +133,46 @@ static void nor_write_disable() {
 	nor_unprepare();
 
 }
+
+static int nor_write_byte(uint32_t offset, uint8_t data) {
+	nor_prepare();
+
+	if(nor_wait_for_ready(100) != 0) {
+		nor_unprepare();
+		return -1;
+	}
+
+	nor_write_enable();
+
+	uint8_t command[5];
+	command[0] = NOR_SPI_PRGM;
+	command[1] = (offset >> 16) & 0xFF;
+	command[2] = (offset >> 8) & 0xFF;
+	command[3] = offset & 0xFF;
+	command[4] = data;
+
+	gpio_pin_output(GPIO_SPI0_CS0, 0);
+	spi_tx(0, command, sizeof(command), TRUE, 0);
+	gpio_pin_output(GPIO_SPI0_CS0, 1);
+
+	nor_write_disable();
+	nor_unprepare();
+
+	return 0;
+}
+
 #endif
 
-void nor_write_word(uint32_t offset, uint16_t data) {
+int nor_write_word(uint32_t offset, uint16_t data) {
 	nor_prepare();
 #ifdef CONFIG_3G
-	nor_wait_for_ready(100);
-	nor_write_enable();
+	if(nor_wait_for_ready(100) != 0) {
+		nor_unprepare();
+		return -1;
+	}
+
 	nor_write_byte(offset, data & 0xFF);
 	nor_write_byte(offset + 1, (data >> 8) & 0xFF); 
-	nor_write_disable();
 #else
 	SET_REG16(NOR + COMMAND, COMMAND_UNLOCK);
 	SET_REG16(NOR + LOCK, LOCK_UNLOCK);
@@ -179,6 +191,8 @@ void nor_write_word(uint32_t offset, uint16_t data) {
 #endif
 
 	nor_unprepare();
+
+	return 0;
 }
 
 uint16_t nor_read_word(uint32_t offset) {
@@ -205,11 +219,15 @@ uint16_t nor_read_word(uint32_t offset) {
 	return data;
 }
 
-void nor_erase_sector(uint32_t offset) {
+int nor_erase_sector(uint32_t offset) {
 	nor_prepare();
 
 #ifdef CONFIG_3G
-	nor_wait_for_ready(100);
+	if(nor_wait_for_ready(100) != 0) {
+		nor_unprepare();
+		return -1;
+	}
+
 	nor_write_enable();
 
 	uint8_t command[4];
@@ -221,8 +239,6 @@ void nor_erase_sector(uint32_t offset) {
 	gpio_pin_output(GPIO_SPI0_CS0, 0);
 	spi_tx(0, command, sizeof(command), TRUE, 0);
 	gpio_pin_output(GPIO_SPI0_CS0, 1);
-
-	udelay(NOR_T_SE);
 
 	nor_write_disable();
 #else
@@ -247,6 +263,8 @@ void nor_erase_sector(uint32_t offset) {
 #endif
 
 	nor_unprepare();
+
+	return 0;
 }
 
 void nor_read(void* buffer, int offset, int len) {
@@ -268,7 +286,7 @@ void nor_read(void* buffer, int offset, int len) {
 	nor_unprepare();
 }
 
-void nor_write(void* buffer, int offset, int len) {
+int nor_write(void* buffer, int offset, int len) {
 	nor_prepare();
 
 	int startSector = offset / NORSectorSize;
@@ -284,17 +302,26 @@ void nor_write(void* buffer, int offset, int len) {
 
 	int i;
 	for(i = 0; i < numSectors; i++) {
-		nor_erase_sector((i + startSector) * NORSectorSize);
+		if(nor_erase_sector((i + startSector) * NORSectorSize) != 0) {
+			nor_unprepare();
+			return -1;
+		}
+
 		int j;
 		uint16_t* curSector = (uint16_t*)(sectorsToChange + (i * NORSectorSize));
 		for(j = 0; j < (NORSectorSize / 2); j++) {
-			nor_write_word(((i + startSector) * NORSectorSize) + (j * 2), curSector[j]);
+			if(nor_write_word(((i + startSector) * NORSectorSize) + (j * 2), curSector[j]) != 0) {
+				nor_unprepare();
+				return -1;
+			}
 		}
 	}
 
 	free(sectorsToChange);
 
 	nor_unprepare();
+
+	return 0;
 }
 
 int getNORSectorSize() {

@@ -42,8 +42,8 @@
 #define NOR_SPI_SR_AAI 6
 #define NOR_SPI_SR_BPL 7
 
-#define NOR_T_BP 10
-#define NOR_T_SE 25
+#define NOR_T_BP 10000
+#define NOR_T_SE 25000
 
 #define NOR_CLOCKGATE 0x1E
 
