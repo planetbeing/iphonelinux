@@ -26,5 +26,9 @@
 
 #define GPIO_CLOCKGATE 0x2C
 
+#define GPIO_DETECT1 0xE04
+#define GPIO_DETECT2 0xE05
+#define GPIO_DETECT3 0xE06
+
 #endif
 

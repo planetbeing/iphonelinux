@@ -103,9 +103,28 @@ static const GammaTableDescriptor gammaTables[] =
 			{{0xC1C771F2, 0x71C7071, 0x7071C1C7, 0x71C7071C, 0x75C1C70, 0xD0D0000, 0xDC, 0, 0x400D0000, 0xC0000003, 0x77777701, 0x777771C7, 0x3400077, 0x4D31C1E9, 0x4D447777, 0x7404C3C3, 0x30, 0}},
 			{{0x1C01F2, 0x70007, 0xC001C007, 0x1C007001, 0x1D001C00, 0x701C001C, 0x1C01C003, 0xC1C0701C, 0x70001, 0x1C001C00, 0x1DDDDDDC, 0xDDDDDC77, 0x4D340771, 0x71C07003, 0x71D44070, 0x30F, 3, 0}},
 			{{0x1DC1C4F2, 0xC71C71C7, 0x71C71C71, 0x1C71C71C, 0x4D7071C7, 0x374DDDC7, 0xD3774DDD, 0x43434D34, 0x4DD374D3, 0xD34D34D3, 0x70070000, 0x7071C1C0, 0x74DDD000, 0x70000003, 0xC1C1C70C, 0x14284071, 0x37, 0}}
+		},
+		{0xC223, 0xFF77,
+				{{0x1DC702A6, 0xC771DC77, 0xDD7471DD, 0x1C01CD, 0x77777774, 0x377000D0, 7, 0, 0, 0xC7007000, 0x1C1C7071, 0xC0707070, 0x1C707001, 0x1DD34D00, 0x401DC707, 0x1374D3, 0x30, 0}},
+					{{0x34D3A4A6, 0x434D0D0D, 0x1C74D0D3, 0x1C71C7, 0x1DD3774, 0xDC000D, 0x434000D0, 0xD0343403, 0x340D0, 0, 0x700000, 0x7001C, 0x34340000, 0x4D0D00D0, 0x700D0343, 0x37774000, 0x300, 0}},
+						{{0x340C3A6, 0x400D0034, 0x35DD003, 0x1D000000, 0xDD0001C7, 0xD000DF4D, 0x34034000, 0xD0340D00, 0x1C000000, 0x1C1C0700, 0xC71DC71C, 0x1DC71C71, 0x707777, 0xC0070000, 0x70701C01, 0x15CAC070, 0x31D, 0}}
+		},
+		{0xC220, 0xFF77,
+				{{0x340D1CF6, 0xD00D0340, 0x40D00D00, 0x3403403, 0x7740D00D, 0xDDDDDC, 0x1C0701C0, 0x71C71C7, 0x1C07001C, 0x4DD37777, 0xC1C771D3, 0xDDDDDC71, 0x7007774, 0x1C01C000, 0x34010070, 0x700, 3, 0}},
+					{{0x3774D0F6, 0x4DD3774D, 0x374DD377, 0xDD3774DD, 0xD71D3774, 0x37340, 0xC0007000, 0x1C01, 0x71C070D0, 0x7071DC7, 0xC70701C0, 0x1DC71D, 0, 0xC7070070, 0x1D37771D, 0x34371C7, 0, 0}},
+						{{0x137134F6, 0x77777777, 0x77777777, 0xDDDDDDDC, 0xD01DDDDD, 0x70003034, 0x1C1C0700, 0x7071C, 0x377701C0, 0x77774DDD, 0xDDDDDDC7, 0xD34D374D, 0x70701C1, 0x701C0707, 0x1C034C, 0x444D0, 0, 0}}
+		},
+		{0xD123, 0xFF77,
+				{{0x1C71C4F2, 0x71C71C77, 0xDC71C71C, 0x71C71C71, 0x1C71DC, 0x340740D0, 0x1C707000, 0x40D03777, 0x4DDD3743, 0x71C1C073, 0xC1C701C0, 0xDDDDDD01, 0xDDDDDDC0, 0x701C034, 0x4D01C707, 0xA0AD34D3, 0x38A48, 0}},
+					{{0x771C74F2, 0x1DC771DC, 0xDC771C77, 0x771DC771, 0xC1C771DC, 0x1D1C1C1, 0x77770700, 0xD00D3777, 0xDDDDD340, 0xC701C034, 0x1C000701, 0xC7777400, 0xC771C00D, 0xD34DDDDD, 0x74D0, 0x728101C, 0x30, 0}},
+						{{0x1C71C4F2, 0xC71C71C7, 0x71C71C71, 0x1C71C71C, 0x71C71C7, 0x740070, 0xDDC7070D, 0xD0D0DDD, 0xD3434D0, 0xC7771C00, 0x700701DD, 0x74DD0000, 0xDDDDC003, 0xD0DDD, 0x1D000000, 0x8A5071C7, 0x10E2, 0}}
+		},
+		{0xE522, 0xFF77,
+				{{0x328EB6, 0xD00000, 0xD000000, 0x40000000, 3, 0x771C7000, 0xC77401DC, 0x34D37771, 0x77771D34, 0x340037, 0x4D34D340, 0x40000003, 0xC0701C13, 0xC00340D, 0x34DD34D3, 0x135D774D, 0xD0, 0}},
+					{{0x1C071F2, 0x1C07007, 0xC0701C07, 0x701C0701, 0x701C0, 0x70, 0x1C707000, 0xC771DC77, 0x1C1DC71, 0x1C1C0707, 0x7071DC7, 0xD1C000D0, 0xC4000000, 0x7001C1C1, 0x340DC00, 0x73DD1100, 3, 0}},
+						{{0xC07071F2, 0x70701C1, 0xC070701C, 0x70701C1, 0x701C1C, 0xC707001C, 0x1C71, 0x1C000000, 0xD00D7000, 0x1C000000, 0xD007070, 0x7000D00, 0x7135C070, 0x7771C71C, 0xC037, 0xA4A11C00, 0x10, 0}}
 		}
 	};
-
 
 static const PMURegisterData backlightOffData = {0x29, 0x0};
 
@@ -683,6 +702,10 @@ static int syrah_init() {
 
 	setCommandMode(ON);
 
+#ifdef CONFIG_3G
+	gpio_pin_output(LCD_GPIO_3G_ENABLE, 0);
+#endif
+
 	gpio_pin_output(LCD_GPIO_MPL_RX_ENABLE, 0);
 	gpio_pin_output(LCD_GPIO_POWER_ENABLE, 0);
 	resetLCD();
@@ -825,6 +848,8 @@ static int syrah_init() {
 				break;
 		}
 	} else {
+		bufferPrintf("Autoboot display...\r\n");
+
 		if((panelID[2] & 0x7) == 1) {
 			enterRegisterMode();
 			setPanelRegister(0x7E, 0x0);
@@ -837,16 +862,20 @@ static int syrah_init() {
 		if(panelID[1] == 0xD1 && (panelID[2] & 0x7) == 2 && panelID[0] == 0xA1) {
 			LCDInitRegisterCount = AUOInitRegisterCount;
 			LCDInitRegisters = AUOInitRegisters;
+		} else {
+			LCDInitRegisterCount = 0;
 		}
 	}
 
 	LCDPanelID = (panelID[0] << 16) | (panelID[1] << 8) | panelID[2];
 
-	bufferPrintf("Writing LCD init registers...\r\n");
-	int i;
-	for(i = 0; i < LCDInitRegisterCount; i++) {
-		uint8_t* regInfo = (uint8_t*) &LCDInitRegisters[i];
-		setPanelRegister(regInfo[0], regInfo[1]);
+	if(LCDInitRegisterCount > 0) {
+		bufferPrintf("Writing LCD init registers...\r\n");
+		int i;
+		for(i = 0; i < LCDInitRegisterCount; i++) {
+			uint8_t* regInfo = (uint8_t*) &LCDInitRegisters[i];
+			setPanelRegister(regInfo[0], regInfo[1]);
+		}
 	}
 
 	switch(panelID[2] & 0x7) {
@@ -855,12 +884,12 @@ static int syrah_init() {
 			setPanelRegister(0x2E, getPanelRegister(0x2E) & 0x7F);
 			break;
 		case 2:
-			bufferPrintf("turning on parity error flag");
+			bufferPrintf("turning on parity error flag\r\n");
 			setPanelRegister(0x53, 0x5);
 			setPanelRegister(0xB, 0x10);
 			break;
 		case 3:
-			bufferPrintf("changing to continuous calibration mode");
+			bufferPrintf("changing to continuous calibration mode 3\r\n");
 			setPanelRegister(0x50, 0x3);
 			// drop down to init for Novatek-5.x
 		case 1:
@@ -924,6 +953,8 @@ static void displayPanelInfo(uint8_t* panelID) {
 		bufferPrintf("M68/");
 	} else if((panelID[2] & 0x70) == 0x10) {
 		bufferPrintf("N45/");
+	} else if((panelID[2] & 0x70) == 0x20) {
+		bufferPrintf("N82/");
 	} else {
 		bufferPrintf("UNKNOWN/");
 	}
@@ -944,6 +975,10 @@ static void displayPanelInfo(uint8_t* panelID) {
 		default:
 			bufferPrintf("UNKNOWN ");
 	}
+
+	if((panelID[2] & (1 << 3)) != 0)
+		bufferPrintf("AutoBoot Enabled ");
+
 	bufferPrintf("\r\n");
 }
 
@@ -960,15 +995,26 @@ static void togglePixelClock(OnOff swt) {
 }
 
 static void resetLCD() {
-#ifdef CONFIG_IPOD
-	gpio_pin_output(LCD_GPIO_RESET, 0);
-	udelay(10000);
-	gpio_pin_output(LCD_GPIO_RESET, 1);
-#else
-	gpio_pin_output(LCD_GPIO_RESET, 1);
-	udelay(10000);
-	gpio_pin_output(LCD_GPIO_RESET, 0);
+	int altResetDirection = FALSE;
+
+#ifdef CONFIG_3G
+	if(gpio_detect_configuration() < 3)
+		altResetDirection = TRUE;
 #endif
+
+#ifdef CONFIG_IPOD
+	altResetDirection = TRUE;
+#endif
+
+	if(altResetDirection) {
+		gpio_pin_output(LCD_GPIO_RESET, 0);
+		udelay(10000);
+		gpio_pin_output(LCD_GPIO_RESET, 1);
+	} else {
+		gpio_pin_output(LCD_GPIO_RESET, 1);
+		udelay(10000);
+		gpio_pin_output(LCD_GPIO_RESET, 0);
+	}
 }
 
 static void setCommandMode(OnOff swt) {

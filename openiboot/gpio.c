@@ -40,4 +40,16 @@ void gpio_pin_output(int port, int bit) {
 	gpio_custom_io(port, 0xE | bit); // 0b111U, where U is the argument
 }
 
+int gpio_detect_configuration() {
+	static int hasDetected = FALSE;
+	static int detectedConfig = 0;
+
+	if(hasDetected) {
+		return detectedConfig;
+	}
+
+	detectedConfig = (gpio_pin_state(GPIO_DETECT3) ? 1 : 0) | ((gpio_pin_state(GPIO_DETECT2) ? 1 : 0) << 1) | ((gpio_pin_state(GPIO_DETECT1) ? 1 : 0) << 2);
+	hasDetected = TRUE;
+	return detectedConfig;
+}
 
