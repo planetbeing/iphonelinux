@@ -235,6 +235,7 @@ void cmd_setenv(int argc, char** argv) {
 }
 
 void cmd_saveenv(int argc, char** argv) {
+	bufferPrintf("Saving environment, this may take awhile...\r\n");
 	nvram_save();
 	bufferPrintf("Environment saved\r\n");
 }
