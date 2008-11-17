@@ -5,6 +5,11 @@
 #include "openiboot-asmhelpers.h"
 #include "framebuffer.h"
 
+void __assert(const char* file, int line, const char* m) {
+	bufferPrintf("ASSERT FAILED: %s at %s:%d\r\n", m, file, line);
+	panic();
+}
+
 void panic() {
 	bufferPrintf("openiboot PANIC!!\r\n");
 	while(TRUE);

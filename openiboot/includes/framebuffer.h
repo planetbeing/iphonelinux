@@ -26,5 +26,6 @@ void framebuffer_setloc(int x, int y);
 void framebuffer_clear();
 void framebuffer_draw_image(uint32_t* image, int x, int y, int width, int height);
 void framebuffer_draw_rect(uint32_t color, int x, int y, int width, int height);
+void framebuffer_draw_rect_hgradient(int starting, int ending, int x, int y, int width, int height);
 
 #endif

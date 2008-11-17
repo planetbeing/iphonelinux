@@ -143,3 +143,14 @@ void framebuffer_draw_rect(uint32_t color, int x, int y, int width, int height) 
 	currentWindow->framebuffer.vline(&currentWindow->framebuffer, y, x + width, height, color);
 }
 
+void framebuffer_draw_rect_hgradient(int starting, int ending, int x, int y, int width, int height) {
+	int step = (ending - starting) * 1000 / height;
+	int level = starting * 1000;
+	int i;
+	for(i = 0; i < height; i++) {
+		int color = level / 1000;
+		currentWindow->framebuffer.hline(&currentWindow->framebuffer, x, y + i, width, (color & 0xFF) | ((color & 0xFF) << 8) | ((color & 0xFF) << 16));
+		level += step;
+	}
+}
+

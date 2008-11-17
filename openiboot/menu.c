@@ -66,6 +66,8 @@ int menu_setup() {
 
 	framebuffer_draw_image(imgiPhoneOS, 30, 150, iphoneos_width, iphoneos_height);
 	framebuffer_draw_image(imgConsole, 30, 150 + iphoneos_height + 40, console_width, console_height);
+	framebuffer_draw_rect_hgradient(0, 43, 0, 360, FBWidth, (FBHeight - 20) - 360);
+	framebuffer_draw_rect(0x222222, 0, FBHeight - 20, FBWidth, 20);
 
 	Selection = MenuSelectioniPhoneOS;
 
