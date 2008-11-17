@@ -12,8 +12,10 @@
 #define MemoryStart 0x00000000
 #define MemoryEnd 0xFFFFFFFF
 #define MemoryHigher 0x80000000
-#define HeapStart 0x0A000000
+#define LargeMemoryStart 0x08000000
+#define HeapStart (LargeMemoryStart + 0x02000000)
 #define ExceptionVector MemoryStart
+#define GeneralStack ((PageTable - 4) + LargeMemoryStart)
 
 /*
  *	Devices

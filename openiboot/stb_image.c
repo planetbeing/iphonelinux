@@ -310,8 +310,8 @@ extern int      stbi_info_from_file  (FILE *f,                  int *x, int *y, 
 extern int      stbi_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp);
 
 #ifndef STBI_NO_HDR
-static float h2l_gamma_i=1.0f/2.2f, h2l_scale_i=1.0f;
-static float l2h_gamma=2.2f, l2h_scale=1.0f;
+static const float h2l_gamma_i=1.0f/2.2f, h2l_scale_i=1.0f;
+static const float l2h_gamma=2.2f, l2h_scale=1.0f;
 
 void   stbi_hdr_to_ldr_gamma(float gamma) { h2l_gamma_i = 1/gamma; }
 void   stbi_hdr_to_ldr_scale(float scale) { h2l_scale_i = 1/scale; }
@@ -665,7 +665,7 @@ static void grow_buffer_unsafe(jpeg *j)
 }
 
 // (1 << n) - 1
-static uint32 bmask[17]={0,1,3,7,15,31,63,127,255,511,1023,2047,4095,8191,16383,32767,65535};
+static const uint32 bmask[17]={0,1,3,7,15,31,63,127,255,511,1023,2047,4095,8191,16383,32767,65535};
 
 // decode a jpeg huffman value from the bitstream
 __forceinline static int decode(jpeg *j, huffman *h)
@@ -737,7 +737,7 @@ __forceinline static int extend_receive(jpeg *j, int n)
 
 // given a value that's at position X in the zigzag stream,
 // where does it appear in the 8x8 matrix coded as row-major?
-static uint8 dezigzag[64+15] =
+static const uint8 dezigzag[64+15] =
 {
     0,  1,  8, 16,  9,  2,  3, 10,
    17, 24, 32, 25, 18, 11,  4,  5,
@@ -1740,18 +1740,18 @@ static int expand(zbuf *z, int n)  // need to make room for n bytes
    return 1;
 }
 
-static int length_base[31] = {
+static const int length_base[31] = {
    3,4,5,6,7,8,9,10,11,13,
    15,17,19,23,27,31,35,43,51,59,
    67,83,99,115,131,163,195,227,258,0,0 };
 
-static int length_extra[31]= 
+static const int length_extra[31]= 
 { 0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,0,0 };
 
-static int dist_base[32] = { 1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,
+static const int dist_base[32] = { 1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,
 257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577,0,0};
 
-static int dist_extra[32] =
+static const int dist_extra[32] =
 { 0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13};
 
 static int parse_huffman_block(zbuf *a)
@@ -1784,7 +1784,7 @@ static int parse_huffman_block(zbuf *a)
 
 static int compute_huffman_codes(zbuf *a)
 {
-   static uint8 length_dezigzag[19] = { 16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15 };
+   static const uint8 length_dezigzag[19] = { 16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15 };
    zhuffman z_codelength;
    uint8 lencodes[286+32+137];//padding for maximum single op
    uint8 codelength_sizes[19];
@@ -2013,7 +2013,7 @@ static chunk get_chunk_header(stbi *s)
 
 static int check_png_header(stbi *s)
 {
-   static uint8 png_sig[8] = { 137,80,78,71,13,10,26,10 };
+   static const uint8 png_sig[8] = { 137,80,78,71,13,10,26,10 };
    int i;
    for (i=0; i < 8; ++i)
       if (get8(s) != png_sig[i]) return e("bad png sig","Not a PNG");
@@ -2032,7 +2032,7 @@ enum {
    F_avg_first, F_paeth_first,
 };
 
-static uint8 first_row_filter[5] =
+static const uint8 first_row_filter[5] =
 {
    F_none, F_sub, F_none, F_avg_first, F_paeth_first
 };

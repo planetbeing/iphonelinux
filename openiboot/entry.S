@@ -10,8 +10,6 @@
 .global InterruptHandlerTable
 .global ExceptionStack
 .global ExceptionStackEnd
-.global GeneralStack
-.global GeneralStackEnd
 .global OpenIBootEnd
 
 .text
@@ -352,12 +350,6 @@ ExceptionStackEnd:
 	.byte	0x0
 	.endr
 ExceptionStack:
-
-GeneralStackEnd:
-	.rept	0x800
-	.byte	0x0
-	.endr
-GeneralStack:
 
 .bss
 

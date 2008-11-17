@@ -71,14 +71,21 @@ int menu_setup() {
 
 	uint32_t* rawImgiPhoneOS = framebuffer_load_image(dataiPhoneOSPNG, dataiPhoneOSPNG_size, &imgiPhoneOSWidth, &imgiPhoneOSHeight, TRUE);
 	uint32_t* rawImgConsole = framebuffer_load_image(dataConsolePNG, dataConsolePNG_size, &imgConsoleWidth, &imgConsoleHeight, TRUE);
-	imgHeader = framebuffer_load_image(dataHeaderPNG, dataHeaderPNG_size, &imgHeaderWidth, &imgHeaderHeight, FALSE);
-	uint32_t* imgSelection = framebuffer_load_image(dataSelectionPNG, dataSelectionPNG_size, &imgSelectionWidth, &imgSelectionHeight, FALSE);
+	uint32_t* rawImgHeader = framebuffer_load_image(dataHeaderPNG, dataHeaderPNG_size, &imgHeaderWidth, &imgHeaderHeight, TRUE);
+	uint32_t* imgSelection = framebuffer_load_image(dataSelectionPNG, dataSelectionPNG_size, &imgSelectionWidth, &imgSelectionHeight, TRUE);
 
 	bufferPrintf("menu: images loaded\r\n");
+
+	imgHeader = malloc(sizeof(uint32_t) * imgHeaderWidth * imgHeaderHeight);
+	memset(imgHeader, 0, sizeof(uint32_t) * imgHeaderWidth * imgHeaderHeight);
+	framebuffer_blend_image(imgHeader, imgHeaderWidth, imgHeaderHeight, rawImgHeader, imgHeaderWidth, imgHeaderHeight, 0, 0);
+	free(rawImgHeader);
+
 	imgiPhoneOSSelected = malloc(sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
-	memcpy(imgiPhoneOSSelected, imgSelection, sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+	memset(imgiPhoneOSSelected, 0, sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+	framebuffer_blend_image(imgiPhoneOSSelected, imgSelectionWidth, imgSelectionHeight, imgSelection, imgSelectionWidth, imgSelectionHeight, 0, 0);
 	imgConsoleSelected = malloc(sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
-	memcpy(imgConsoleSelected, imgSelection, sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+	memcpy(imgConsoleSelected, imgiPhoneOSSelected, sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
 	free(imgSelection);
 
 	imgiPhoneOS = malloc(sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
@@ -105,6 +112,9 @@ int menu_setup() {
 
 	framebuffer_blend_image(imgConsole, imgSelectionWidth, imgSelectionHeight, rawImgConsole, imgConsoleWidth, imgConsoleHeight, imgConsoleXWithinSelection, imgConsoleYWithinSelection);
 	framebuffer_blend_image(imgConsoleSelected, imgSelectionWidth, imgSelectionHeight, rawImgConsole, imgConsoleWidth, imgConsoleHeight, imgConsoleXWithinSelection, imgConsoleYWithinSelection);
+
+	free(rawImgiPhoneOS);
+	free(rawImgConsole);
 
 	bufferPrintf("menu: images prepared\r\n");
 	framebuffer_draw_image(imgHeader, imgHeaderX, imgHeaderY, imgHeaderWidth, imgHeaderHeight);

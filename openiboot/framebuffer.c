@@ -147,6 +147,10 @@ void framebuffer_draw_rect(uint32_t color, int x, int y, int width, int height) 
 uint32_t* framebuffer_load_image(const char* data, int len, int* width, int* height, int alpha) {
 	int components;
 	uint32_t* stbiData = (uint32_t*) stbi_load_from_memory((stbi_uc const*)data, len, width, height, &components, 4);
+	if(!stbiData) {
+		bufferPrintf("framebuffer: %s\r\n", stbi_failure_reason());
+		return NULL;
+	}
 	uint32_t* imageData = malloc((*width) * (*height) * sizeof(uint32_t));
 	register uint32_t sx;
 	register uint32_t sy;
@@ -172,9 +176,9 @@ void framebuffer_blend_image(uint32_t* dst, int dstWidth, int dstHeight, uint32_
 			register uint32_t* dstPixel = &dst[((sy + y) * dstWidth) + (sx + x)];
 			register uint32_t* srcPixel = &src[(sy * srcWidth) + sx];
 			*dstPixel =
-				((((*dstPixel & 0xFF) * (*srcPixel >> 24)) / 0xFF) + (((*srcPixel & 0xFF) * (0xFF - (*srcPixel >> 24))) / 0xFF))
-				| (((((*dstPixel >> 8) & 0xFF) * (*srcPixel >> 24)) / 0xFF) + ((((*srcPixel >> 8) & 0xFF) * (0xFF - (*srcPixel >> 24))) / 0xFF)) << 8
-				| (((((*dstPixel >> 16) & 0xFF) * (*srcPixel >> 24)) / 0xFF) + ((((*srcPixel >> 16) & 0xFF) * (0xFF - (*srcPixel >> 24))) / 0xFF)) << 16;
+				((((*dstPixel & 0xFF) * (*srcPixel >> 24)) / 0xF) + (((*srcPixel & 0xFF) * (0xF - (*srcPixel >> 24))) / 0xF))
+				| (((((*dstPixel >> 8) & 0xFF) * (*srcPixel >> 24)) / 0xF) + ((((*srcPixel >> 8) & 0xFF) * (0xF - (*srcPixel >> 24))) / 0xF)) << 8
+				| (((((*dstPixel >> 16) & 0xFF) * (*srcPixel >> 24)) / 0xF) + ((((*srcPixel >> 16) & 0xFF) * (0xF - (*srcPixel >> 24))) / 0xF)) << 16;
 		}
 	}
 }	
