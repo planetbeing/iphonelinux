@@ -3,6 +3,7 @@
 #include "lcd.h"
 #include "util.h"
 #include "pcf/6x10.h"
+#include "stb_image.h"
 
 static int TWidth;
 static int THeight;
@@ -142,6 +143,41 @@ void framebuffer_draw_rect(uint32_t color, int x, int y, int width, int height) 
 	currentWindow->framebuffer.vline(&currentWindow->framebuffer, y, x, height, color);
 	currentWindow->framebuffer.vline(&currentWindow->framebuffer, y, x + width, height, color);
 }
+
+uint32_t* framebuffer_load_image(const char* data, int len, int* width, int* height, int alpha) {
+	int components;
+	uint32_t* stbiData = (uint32_t*) stbi_load_from_memory((stbi_uc const*)data, len, width, height, &components, 4);
+	uint32_t* imageData = malloc((*width) * (*height) * sizeof(uint32_t));
+	register uint32_t sx;
+	register uint32_t sy;
+	for(sy = 0; sy < *height; sy++) {
+		for(sx = 0; sx < *width; sx++) {
+			register uint32_t pixel = stbiData[(sy * (*width)) + sx];
+			if(alpha)
+				imageData[(sy * (*width)) + sx] = (pixel && 0xFF000000)
+					| ((pixel << 16) & 0xFF00000) | (pixel & 0xFF00) | ((pixel >> 16) & 0xFF);
+			else
+				imageData[(sy * (*width)) + sx] = ((pixel << 16) & 0xFF00000) | (pixel & 0xFF00) | ((pixel >> 16) & 0xFF);
+		}
+	}
+	stbi_image_free(stbiData);
+	return imageData;
+}
+
+void framebuffer_blend_image(uint32_t* dst, int dstWidth, int dstHeight, uint32_t* src, int srcWidth, int srcHeight, int x, int y) {
+	register uint32_t sx;
+	register uint32_t sy;
+	for(sy = 0; sy < srcHeight; sy++) {
+		for(sx = 0; sx < srcWidth; sx++) {
+			register uint32_t* dstPixel = &dst[((sy + y) * dstWidth) + (sx + x)];
+			register uint32_t* srcPixel = &src[(sy * srcWidth) + sx];
+			*dstPixel =
+				((((*dstPixel & 0xFF) * (*srcPixel >> 24)) / 0xFF) + (((*srcPixel & 0xFF) * (0xFF - (*srcPixel >> 24))) / 0xFF))
+				| (((((*dstPixel >> 8) & 0xFF) * (*srcPixel >> 24)) / 0xFF) + ((((*srcPixel >> 8) & 0xFF) * (0xFF - (*srcPixel >> 24))) / 0xFF)) << 8
+				| (((((*dstPixel >> 16) & 0xFF) * (*srcPixel >> 24)) / 0xFF) + ((((*srcPixel >> 16) & 0xFF) * (0xFF - (*srcPixel >> 24))) / 0xFF)) << 16;
+		}
+	}
+}	
 
 void framebuffer_draw_rect_hgradient(int starting, int ending, int x, int y, int width, int height) {
 	int step = (ending - starting) * 1000 / height;

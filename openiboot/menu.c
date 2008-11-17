@@ -4,16 +4,39 @@
 #include "framebuffer.h"
 #include "buttons.h"
 #include "timer.h"
-#include "images/console.h"
-#include "images/iphoneos.h"
+#include "images/ConsolePNG.h"
+#include "images/iPhoneOSPNG.h"
+#include "images/HeaderPNG.h"
+#include "images/SelectionPNG.h"
 #include "images.h"
 #include "actions.h"
 
 static uint32_t FBWidth;
 static uint32_t FBHeight;
 
+
 static uint32_t* imgiPhoneOS;
+static int imgiPhoneOSWidth;
+static int imgiPhoneOSHeight;
+static int imgiPhoneOSX;
+static int imgiPhoneOSY;
+
 static uint32_t* imgConsole;
+static int imgConsoleWidth;
+static int imgConsoleHeight;
+static int imgConsoleX;
+static int imgConsoleY;
+
+static uint32_t* imgiPhoneOSSelected;
+static uint32_t* imgConsoleSelected;
+static int imgSelectionWidth;
+static int imgSelectionHeight;
+
+static uint32_t* imgHeader;
+static int imgHeaderWidth;
+static int imgHeaderHeight;
+static int imgHeaderX;
+static int imgHeaderY;
 
 typedef enum MenuSelection {
 	MenuSelectioniPhoneOS,
@@ -22,28 +45,15 @@ typedef enum MenuSelection {
 
 static MenuSelection Selection;
 
-static uint32_t* loadRGBImage(char* image_data, int width, int height) {
-	uint32_t* image = (uint32_t*) malloc(width * height * 4);
-	uint8_t pixel[3];
-
-	int i;
-	for(i = 0; i < (width * height); i++) {
-		HEADER_PIXEL(image_data, pixel);
-		image[i] = pixel[0] << 16 | pixel[1] << 8 | pixel[2];
-	}
-
-	return image;
-}
-
 static void drawSelectionBox() {
 	if(Selection == MenuSelectioniPhoneOS) {
-		framebuffer_draw_rect(COLOR_WHITE, 20, 140, console_width + 20, console_height + 20);
-		framebuffer_draw_rect(COLOR_BLACK, 20, 140 + iphoneos_height + 40, console_width + 20, console_height + 20);
+		framebuffer_draw_image(imgiPhoneOSSelected, imgiPhoneOSX, imgiPhoneOSY, imgSelectionWidth, imgSelectionHeight);
+		framebuffer_draw_image(imgConsole, imgConsoleX, imgConsoleY, imgSelectionWidth, imgSelectionHeight);
 	}
 
 	if(Selection == MenuSelectionConsole) {
-		framebuffer_draw_rect(COLOR_BLACK, 20, 140, console_width + 20, console_height + 20);
-		framebuffer_draw_rect(COLOR_WHITE, 20, 140 + iphoneos_height + 40, console_width + 20, console_height + 20);
+		framebuffer_draw_image(imgiPhoneOS, imgiPhoneOSX, imgiPhoneOSY, imgSelectionWidth, imgSelectionHeight);
+		framebuffer_draw_image(imgConsoleSelected, imgConsoleX, imgConsoleY, imgSelectionWidth, imgSelectionHeight);
 	}
 }
 
@@ -59,13 +69,45 @@ int menu_setup() {
 	FBWidth = currentWindow->framebuffer.width;
 	FBHeight = currentWindow->framebuffer.height;	
 
-	imgiPhoneOS = loadRGBImage(iphoneos_data, iphoneos_width, iphoneos_height);
-	imgConsole = loadRGBImage(console_data, console_width, console_height);
+	uint32_t* rawImgiPhoneOS = framebuffer_load_image(dataiPhoneOSPNG, dataiPhoneOSPNG_size, &imgiPhoneOSWidth, &imgiPhoneOSHeight, TRUE);
+	uint32_t* rawImgConsole = framebuffer_load_image(dataConsolePNG, dataConsolePNG_size, &imgConsoleWidth, &imgConsoleHeight, TRUE);
+	imgHeader = framebuffer_load_image(dataHeaderPNG, dataHeaderPNG_size, &imgHeaderWidth, &imgHeaderHeight, FALSE);
+	uint32_t* imgSelection = framebuffer_load_image(dataSelectionPNG, dataSelectionPNG_size, &imgSelectionWidth, &imgSelectionHeight, FALSE);
 
 	bufferPrintf("menu: images loaded\r\n");
+	imgiPhoneOSSelected = malloc(sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+	memcpy(imgiPhoneOSSelected, imgSelection, sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+	imgConsoleSelected = malloc(sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+	memcpy(imgConsoleSelected, imgSelection, sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+	free(imgSelection);
 
-	framebuffer_draw_image(imgiPhoneOS, 30, 150, iphoneos_width, iphoneos_height);
-	framebuffer_draw_image(imgConsole, 30, 150 + iphoneos_height + 40, console_width, console_height);
+	imgiPhoneOS = malloc(sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+	memset(imgiPhoneOS, 0, sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+	imgConsole = malloc(sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+	memset(imgConsole, 0, sizeof(uint32_t) * imgSelectionWidth * imgSelectionHeight);
+
+	imgHeaderX = (FBWidth - imgHeaderWidth) / 2;
+	imgHeaderY = 30;
+
+	imgiPhoneOSX = (FBWidth - imgSelectionWidth) / 2;
+	imgiPhoneOSY = 106;
+
+	imgConsoleX = (FBWidth - imgSelectionWidth) / 2;
+	imgConsoleY = 246;
+
+	int imgiPhoneOSXWithinSelection = (imgSelectionWidth - imgiPhoneOSWidth) / 2;
+	int imgiPhoneOSYWithinSelection = (imgSelectionHeight - imgiPhoneOSHeight) / 2;
+	int imgConsoleXWithinSelection = (imgSelectionWidth - imgConsoleWidth) / 2;
+	int imgConsoleYWithinSelection = (imgSelectionHeight - imgConsoleHeight) / 2;
+
+	framebuffer_blend_image(imgiPhoneOS, imgSelectionWidth, imgSelectionHeight, rawImgiPhoneOS, imgiPhoneOSWidth, imgiPhoneOSHeight, imgiPhoneOSXWithinSelection, imgiPhoneOSYWithinSelection);
+	framebuffer_blend_image(imgiPhoneOSSelected, imgSelectionWidth, imgSelectionHeight, rawImgiPhoneOS, imgiPhoneOSWidth, imgiPhoneOSHeight, imgiPhoneOSXWithinSelection, imgiPhoneOSYWithinSelection);
+
+	framebuffer_blend_image(imgConsole, imgSelectionWidth, imgSelectionHeight, rawImgConsole, imgConsoleWidth, imgConsoleHeight, imgConsoleXWithinSelection, imgConsoleYWithinSelection);
+	framebuffer_blend_image(imgConsoleSelected, imgSelectionWidth, imgSelectionHeight, rawImgConsole, imgConsoleWidth, imgConsoleHeight, imgConsoleXWithinSelection, imgConsoleYWithinSelection);
+
+	bufferPrintf("menu: images prepared\r\n");
+	framebuffer_draw_image(imgHeader, imgHeaderX, imgHeaderY, imgHeaderWidth, imgHeaderHeight);
 	framebuffer_draw_rect_hgradient(0, 43, 0, 360, FBWidth, (FBHeight - 20) - 360);
 	framebuffer_draw_rect(0x222222, 0, FBHeight - 20, FBWidth, 20);
 
