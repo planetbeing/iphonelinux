@@ -3,18 +3,22 @@
 #include "hfs/bdev.h"
 #include "ftl.h"
 #include "util.h"
+#include "nand.h"
 
 int HasBDevInit = FALSE;
 
 static MBR MBRData;
 
-#define BLOCK_SIZE 4096
+unsigned int BLOCK_SIZE = 0;
 
 int bdev_setup() {
 	if(HasBDevInit)
 		return 0;
 
 	ftl_setup();
+
+	NANDData* Data = nand_get_geometry();
+	BLOCK_SIZE = Data->bytesPerPage;
 
 	ftl_read(&MBRData, 0, sizeof(MBRData));
 	MBRPartitionRecord* record = MBRData.partitions;
