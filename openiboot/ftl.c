@@ -3,7 +3,8 @@
 #include "nand.h"
 #include "util.h"
 
-#define FTL_ID 0x43303034
+#define FTL_ID_V1 0x43303033
+#define FTL_ID_V2 0x43303034
 
 int HasFTLInit = FALSE;
 
@@ -954,8 +955,9 @@ int ftl_setup() {
 	for(i = 0; i < Data->pagesPerBlock; i++) {
 		int ret;
 		if((ret = nand_read_alternate_ecc(0, i, buffer)) == 0) {
-			if(*((uint32_t*) buffer) == FTL_ID) {
-				bufferPrintf("ftl: Found production format: %x\r\n", FTL_ID);
+			uint32_t id = *((uint32_t*) buffer);
+			if(id == FTL_ID_V1 || id == FTL_ID_V2) {
+				bufferPrintf("ftl: Found production format: %x\r\n", id);
 				foundSignature = TRUE;
 				break;
 			} else {
