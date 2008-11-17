@@ -439,6 +439,10 @@ void images_install(void* newData, size_t newDataLen) {
 			cur = cur->next;
 		}
 
+		bufferPrintf("Reading: ");
+		print_fourcc(curImage->type);
+		bufferPrintf(" (%d bytes)\r\n", curImage->padded);
+
 		cur->type = curImage->type;
 		cur->next = NULL;
 		cur->data = malloc(curImage->padded);

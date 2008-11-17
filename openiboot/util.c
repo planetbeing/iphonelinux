@@ -97,15 +97,14 @@ int tolower(int c) {
 }
 
 int putchar(int c) {
-	char ch = (char) c;
-	if(uart_write(0, &ch, 1) == 0)
-		return c;
-	else
-		return -1;
+	char toPrint[] = {c, 0};
+	bufferPrint(toPrint);
+	return c;
 }
 
 int puts(const char *str) {
-	return uart_write(0, str, strlen(str));
+	bufferPrint(str);
+	return 0;
 }
 
 unsigned long int parseNumber(const char* str) {

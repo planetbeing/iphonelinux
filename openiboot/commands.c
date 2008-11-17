@@ -432,6 +432,10 @@ void cmd_text(int argc, char** argv) {
 	}
 }
 
+void cmd_malloc_stats(int argc, char** argv) {
+	malloc_stats();
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -470,6 +474,7 @@ OPIBCommand CommandList[] =
 		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},
 		{"pmu_powersupply", "get the power supply type", cmd_pmu_powersupply},
 		{"pmu_charge", "turn on and off the power charger", cmd_pmu_charge},
+		{"malloc_stats", "display malloc stats", cmd_malloc_stats},
 		{"printenv", "list the environment variables in nvram", cmd_printenv},
 		{"setenv", "sets an environment variable", cmd_setenv},
 		{"saveenv", "saves the environment variables in nvram", cmd_saveenv},
