@@ -110,14 +110,12 @@ int menu_setup() {
 	bufferPrintf("menu: header prepared\r\n");
 
 	framebuffer_draw_image(imgHeader, imgHeaderX, imgHeaderY, imgHeaderWidth, imgHeaderHeight);
-	framebuffer_draw_rect_hgradient(0, 100, 0, 360, FBWidth, (FBHeight - 12) - 360);
+	framebuffer_draw_rect_hgradient(0, 90, 0, 378, FBWidth, (FBHeight - 12) - 378);
 	framebuffer_draw_rect_hgradient(0x22, 0x22, 0, FBHeight - 12, FBWidth, 12);
 
-	framebuffer_setdisplaytext(ON);
 	framebuffer_setloc(0, 47);
 	framebuffer_setcolors(COLOR_WHITE, 0x222222);
-	framebuffer_print(OPENIBOOT_VERSION_STR);
-	framebuffer_setdisplaytext(OFF);
+	framebuffer_print_force(OPENIBOOT_VERSION_STR);
 	framebuffer_setcolors(COLOR_WHITE, COLOR_BLACK);
 	framebuffer_setloc(0, 0);
 

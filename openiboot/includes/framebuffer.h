@@ -22,6 +22,7 @@ int framebuffer_x();
 int framebuffer_y();
 void framebuffer_putc(int c);
 void framebuffer_print(const char* str);
+void framebuffer_print_force(const char* str);
 void framebuffer_setloc(int x, int y);
 void framebuffer_clear();
 uint32_t* framebuffer_load_image(const char* data, int len, int* width, int* height, int alpha);

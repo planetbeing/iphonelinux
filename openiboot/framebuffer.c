@@ -89,6 +89,14 @@ void framebuffer_print(const char* str) {
 	}
 }
 
+void framebuffer_print_force(const char* str) {
+	size_t len = strlen(str);
+	int i;
+	for(i = 0; i < len; i++) {
+		framebuffer_putc(str[i]);
+	}
+}
+
 static void scrollup() {
 	register volatile uint32_t* newFirstLine = PixelFromCoords(0, Font->height);
 	register volatile uint32_t* oldFirstLine = PixelFromCoords(0, 0);
@@ -103,9 +111,6 @@ static void scrollup() {
 }
 
 void framebuffer_putc(int c) {
-	if(!DisplayText)
-		return;
-
 	if(c == '\r') {
 		X = 0;
 	} else if(c == '\n') {

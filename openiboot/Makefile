@@ -14,7 +14,8 @@ INC += -Iincludes
 CFLAGS += -Wall -O3
 CONFIGFLAGS =
 VERSION = "0.1"
-BUILD ?= "unknown"
+COMMIT = $(shell git log | head -n1 | cut -b8-14)
+BUILD = "$(COMMIT)"
 
 ifeq ($(PLATFORM),IPOD)
 	CONFIGFLAGS += -DCONFIG_IPOD
