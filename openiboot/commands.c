@@ -436,6 +436,10 @@ void cmd_malloc_stats(int argc, char** argv) {
 	malloc_stats();
 }
 
+void cmd_version(int argc, char** argv) {
+	bufferPrintf("%s\r\n", OPENIBOOT_VERSION_STR);
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -482,6 +486,7 @@ OPIBCommand CommandList[] =
 		{"backlight", "set the backlight level", cmd_backlight},
 		{"go", "jump to a specified address (interrupts disabled)", cmd_go},
 		{"jump", "jump to a specified address (interrupts enabled)", cmd_jump},
+		{"version", "display the version string", cmd_version},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}
 	};

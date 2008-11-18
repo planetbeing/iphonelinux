@@ -3,6 +3,26 @@
 
 #include <stdint.h>
 
+#ifdef DEBUG
+#define OPENIBOOT_VERSION_DEBUG " (DEBUG)"
+#else
+#define OPENIBOOT_VERSION_DEBUG ""
+#endif
+
+#ifdef CONFIG_IPHONE
+#define OPENIBOOT_VERSION_CONFIG " for iPhone 2G"
+#endif
+#ifdef CONFIG_IPOD
+#define OPENIBOOT_VERSION_CONFIG " for iPod touch 1G"
+#endif
+#ifdef CONFIG_3G
+#define OPENIBOOT_VERSION_CONFIG " for iPhone 3G"
+#endif
+
+#define XSTRINGIFY(s) STRINGIFY(s)
+#define STRINGIFY(s) #s
+#define OPENIBOOT_VERSION_STR "openiboot " XSTRINGIFY(OPENIBOOT_VERSION) " build " XSTRINGIFY(OPENIBOOT_VERSION_BUILD) OPENIBOOT_VERSION_DEBUG OPENIBOOT_VERSION_CONFIG
+
 extern void* _start;
 extern void* OpenIBootEnd;
 

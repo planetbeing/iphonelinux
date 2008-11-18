@@ -17,6 +17,9 @@ static uint32_t FBHeight;
 int FramebufferHasInit = FALSE;
 static int DisplayText = FALSE;
 
+static uint32_t BackgroundColor;
+static uint32_t ForegroundColor;
+
 inline int getCharPixel(OpenIBootFont* font, int ch, int x, int y) {
 	register int bitIndex = ((font->width * font->height) * ch) + (font->width * y) + x;
 	return (font->data[bitIndex / 8] >> (bitIndex % 8)) & 0x1;
@@ -28,6 +31,8 @@ inline volatile uint32_t* PixelFromCoords(register uint32_t x, register uint32_t
 
 int framebuffer_setup() {
 	Font = (OpenIBootFont*) fontData;
+	BackgroundColor = COLOR_BLACK;
+	ForegroundColor = COLOR_WHITE;
 	FBWidth = currentWindow->framebuffer.width;
 	FBHeight = currentWindow->framebuffer.height;
 	TWidth = FBWidth / Font->width;
@@ -37,12 +42,17 @@ int framebuffer_setup() {
 	return 0;
 }
 
+void framebuffer_setcolors(uint32_t fore, uint32_t back) {
+	ForegroundColor = fore;
+	BackgroundColor = back;
+}
+
 void framebuffer_setdisplaytext(int onoff) {
 	DisplayText = onoff;
 }
 
 void framebuffer_clear() {
-	lcd_fill(COLOR_BLACK);
+	lcd_fill(BackgroundColor);
 	X = 0;
 	Y = 0;
 }
@@ -87,7 +97,7 @@ static void scrollup() {
 		*(oldFirstLine++) = *(newFirstLine++);
 	}
 	while(oldFirstLine < end) {
-		*(oldFirstLine++) = COLOR_BLACK;
+		*(oldFirstLine++) = BackgroundColor;
 	}
 	Y--;	
 }
@@ -107,9 +117,9 @@ void framebuffer_putc(int c) {
 		for(sy = 0; sy < Font->height; sy++) {
 			for(sx = 0; sx < Font->width; sx++) {
 				if(getCharPixel(Font, c, sx, sy)) {
-					*(PixelFromCoords(sx + (Font->width * X), sy + (Font->height * Y))) = COLOR_WHITE;
+					*(PixelFromCoords(sx + (Font->width * X), sy + (Font->height * Y))) = ForegroundColor;
 				} else {
-					*(PixelFromCoords(sx + (Font->width * X), sy + (Font->height * Y))) = COLOR_BLACK;
+					*(PixelFromCoords(sx + (Font->width * X), sy + (Font->height * Y))) = BackgroundColor;
 				}
 			}
 		}
@@ -137,6 +147,16 @@ void framebuffer_draw_image(uint32_t* image, int x, int y, int width, int height
 	}
 }
 
+void framebuffer_capture_image(uint32_t* image, int x, int y, int width, int height) {
+	register uint32_t sx;
+	register uint32_t sy;
+	for(sy = 0; sy < height; sy++) {
+		for(sx = 0; sx < width; sx++) {
+			image[(sy * width) + sx] = *(PixelFromCoords(sx + x, sy + y));
+		}
+	}
+}
+
 void framebuffer_draw_rect(uint32_t color, int x, int y, int width, int height) {
 	currentWindow->framebuffer.hline(&currentWindow->framebuffer, x, y, width, color);
 	currentWindow->framebuffer.hline(&currentWindow->framebuffer, x, y + height, width, color);
@@ -151,21 +171,7 @@ uint32_t* framebuffer_load_image(const char* data, int len, int* width, int* hei
 		bufferPrintf("framebuffer: %s\r\n", stbi_failure_reason());
 		return NULL;
 	}
-	uint32_t* imageData = malloc((*width) * (*height) * sizeof(uint32_t));
-	register uint32_t sx;
-	register uint32_t sy;
-	for(sy = 0; sy < *height; sy++) {
-		for(sx = 0; sx < *width; sx++) {
-			register uint32_t pixel = stbiData[(sy * (*width)) + sx];
-			if(alpha)
-				imageData[(sy * (*width)) + sx] = (pixel && 0xFF000000)
-					| ((pixel << 16) & 0xFF00000) | (pixel & 0xFF00) | ((pixel >> 16) & 0xFF);
-			else
-				imageData[(sy * (*width)) + sx] = ((pixel << 16) & 0xFF00000) | (pixel & 0xFF00) | ((pixel >> 16) & 0xFF);
-		}
-	}
-	stbi_image_free(stbiData);
-	return imageData;
+	return stbiData;
 }
 
 void framebuffer_blend_image(uint32_t* dst, int dstWidth, int dstHeight, uint32_t* src, int srcWidth, int srcHeight, int x, int y) {
@@ -176,9 +182,9 @@ void framebuffer_blend_image(uint32_t* dst, int dstWidth, int dstHeight, uint32_
 			register uint32_t* dstPixel = &dst[((sy + y) * dstWidth) + (sx + x)];
 			register uint32_t* srcPixel = &src[(sy * srcWidth) + sx];
 			*dstPixel =
-				((((*dstPixel & 0xFF) * (*srcPixel >> 24)) / 0xF) + (((*srcPixel & 0xFF) * (0xF - (*srcPixel >> 24))) / 0xF))
-				| (((((*dstPixel >> 8) & 0xFF) * (*srcPixel >> 24)) / 0xF) + ((((*srcPixel >> 8) & 0xFF) * (0xF - (*srcPixel >> 24))) / 0xF)) << 8
-				| (((((*dstPixel >> 16) & 0xFF) * (*srcPixel >> 24)) / 0xF) + ((((*srcPixel >> 16) & 0xFF) * (0xF - (*srcPixel >> 24))) / 0xF)) << 16;
+				(((((*dstPixel >> 16) & 0xFF) * (0xFF - (*srcPixel >> 24))) >> 8) + ((((*srcPixel >> 16) & 0xFF) * (*srcPixel >> 24)) >> 8)) << 16
+				| (((((*dstPixel >> 8) & 0xFF) * (0xFF - (*srcPixel >> 24))) >> 8) + ((((*srcPixel >> 8) & 0xFF) * (*srcPixel >> 24)) >> 8)) << 8
+				| ((((*dstPixel & 0xFF) * (0xFF - (*srcPixel >> 24))) >> 8) + (((*srcPixel & 0xFF) * (*srcPixel >> 24)) >> 8));
 		}
 	}
 }	

@@ -13,6 +13,8 @@ LIBRARY_PATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
 INC += -Iincludes
 CFLAGS += -Wall -O3
 CONFIGFLAGS =
+VERSION = "0.1"
+BUILD ?= "unknown"
 
 ifeq ($(PLATFORM),IPOD)
 	CONFIGFLAGS += -DCONFIG_IPOD
@@ -30,6 +32,8 @@ endif
 ifeq ($(DEBUG),YES)
 	CONFIGFLAGS += -DDEBUG
 endif
+
+CONFIGFLAGS += -DOPENIBOOT_VERSION=$(VERSION) -DOPENIBOOT_VERSION_BUILD=$(BUILD)
 
 CFLAGS += $(CONFIGFLAGS)
 
