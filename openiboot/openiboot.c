@@ -339,15 +339,15 @@ static int setup_openiboot() {
 	LeaveCriticalSection();
 
 	clock_set_sdiv(0);
-	lcd_setup();
-
-	framebuffer_setup();
 
 	aes_setup();
 
 	nor_setup();
 	images_setup();
 	nvram_setup();
+
+	lcd_setup();
+	framebuffer_setup();
 
 	return 0;
 }

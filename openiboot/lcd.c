@@ -11,6 +11,7 @@
 #include "i2c.h"
 #include "timer.h"
 #include "pmu.h"
+#include "nvram.h"
 
 static int lcd_has_init = FALSE;
 static int lcd_init_attempted = FALSE;
@@ -178,7 +179,13 @@ int lcd_setup() {
 	if(!lcd_has_init) {
 		if(!lcd_init_attempted) {
 			if(initDisplay() == 0) {
-				backlightLevel = 20;
+				const char* envBL = nvram_getvar("backlight-level");
+				if(envBL) {
+					backlightLevel = parseNumber(envBL);
+				}
+
+				if(backlightLevel == 0)
+					backlightLevel = 20;
 			} else {
 				backlightLevel = 0;
 			}
