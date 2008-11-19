@@ -22,6 +22,10 @@ void cmd_reboot(int argc, char** argv) {
 	Reboot();
 }
 
+void cmd_poweroff(int argc, char** argv) {
+	pmu_poweroff();
+}
+
 void cmd_md(int argc, char** argv) {
 	if(argc < 3) {
 		bufferPrintf("Usage: %s <address> <len>\r\n", argv[0]);
@@ -131,6 +135,9 @@ void cmd_go(int argc, char** argv) {
 
 	uint32_t address = parseNumber(argv[1]);
 	bufferPrintf("Jumping to 0x%x (interrupts disabled)\r\n", address);
+
+	// make as if iBoot was called from ROM
+	pmu_set_iboot_stage(0x1F);
 
 	udelay(100000);
 
@@ -297,6 +304,21 @@ void cmd_pmu_charge(int argc, char** argv) {
 	}
 }
 
+void cmd_pmu_nvram(int argc, char** argv) {
+	uint8_t reg;
+
+	pmu_get_gpmem_reg(PMU_IBOOTSTATE, &reg);
+	bufferPrintf("0: [iBootState] %02x\r\n", reg);
+	pmu_get_gpmem_reg(PMU_IBOOTDEBUG, &reg);
+	bufferPrintf("1: [iBootDebug] %02x\r\n", reg);
+	pmu_get_gpmem_reg(PMU_IBOOTSTAGE, &reg);
+	bufferPrintf("2: [iBootStage] %02x\r\n", reg);
+	pmu_get_gpmem_reg(PMU_IBOOTERRORCOUNT, &reg);
+	bufferPrintf("3: [iBootErrorCount] %02x\r\n", reg);
+	pmu_get_gpmem_reg(PMU_IBOOTERRORSTAGE, &reg);
+	bufferPrintf("4: [iBootErrorStage] %02x\r\n", reg);
+}
+
 void cmd_dma(int argc, char** argv) {
 	if(argc < 4) {
 		bufferPrintf("Usage: %s <source> <dest> <size>\r\n", argv[0]);
@@ -452,6 +474,7 @@ OPIBCommand CommandList[] =
 	{
 		{"install", "install openiboot onto the device", cmd_install},
 		{"reboot", "reboot the device", cmd_reboot},
+		{"poweroff", "power off the device", cmd_poweroff},
 		{"echo", "echo back a line", cmd_echo},
 		{"clear", "clears the screen", cmd_clear},
 		{"text", "turns text display on or off", cmd_text},
@@ -478,6 +501,7 @@ OPIBCommand CommandList[] =
 		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},
 		{"pmu_powersupply", "get the power supply type", cmd_pmu_powersupply},
 		{"pmu_charge", "turn on and off the power charger", cmd_pmu_charge},
+		{"pmu_nvram", "list powernvram registers", cmd_pmu_nvram},
 		{"malloc_stats", "display malloc stats", cmd_malloc_stats},
 		{"printenv", "list the environment variables in nvram", cmd_printenv},
 		{"setenv", "sets an environment variable", cmd_setenv},

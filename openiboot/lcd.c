@@ -170,6 +170,8 @@ static void displayPanelInfo(uint8_t* panelID);
 static void installGammaTables(uint32_t panelID);
 static void installGammaTable(int tableNo, uint8_t* table);
 
+static void syrah_quiesce();
+
 int lcd_setup() {
 	int backlightLevel = 0;
 
@@ -203,6 +205,15 @@ int lcd_setup() {
 	CurFramebuffer = currentWindow->framebuffer.buffer;
 
 	return 0;
+}
+
+void lcd_shutdown() {
+	lcd_fill(0x000000);
+	udelay(40000);
+	lcd_set_backlight_level(0);
+	lcd_fill(0xFFFFFF);
+	udelay(40000);
+	syrah_quiesce();
 }
 
 void lcd_fill(uint32_t color) {
@@ -1104,7 +1115,7 @@ static int getPanelRegister(int reg) {
 	return buffer[0];
 }
 
-void syrah_quiesce() {
+static void syrah_quiesce() {
 	bufferPrintf("syrah_quiesce()\r\n");
 	spi_set_baud(1, 1000000, SPIOption13Setting0, 1, 1, 1);
 	spi_set_baud(0, 500000, SPIOption13Setting0, 1, 0, 0);

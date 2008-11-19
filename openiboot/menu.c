@@ -12,6 +12,7 @@
 #include "images.h"
 #include "actions.h"
 #include "stb_image.h"
+#include "pmu.h"
 
 static uint32_t FBWidth;
 static uint32_t FBHeight;
@@ -99,6 +100,8 @@ int menu_setup() {
 	Selection = MenuSelectioniPhoneOS;
 
 	drawSelectionBox();
+
+	pmu_set_iboot_stage(0);
 
 	while(TRUE) {
 		if(buttons_is_hold_pushed()) {
