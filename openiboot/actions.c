@@ -106,8 +106,6 @@ struct atag {
 	} u;
 };
 
-typedef void (*LinuxKernel)(int zero, int arch, uint32_t params);
-
 void chainload(uint32_t address) {
 	EnterCriticalSection();
 	arm_disable_caches();
@@ -197,17 +195,16 @@ static void setup_tags(struct atag* parameters, const char* commandLine)
 }
 
 void boot_linux(uint32_t image) {
-	uint32_t exec_at = 0x09000000;
-	uint32_t param_at = exec_at + 0x01000000;
-	memmove((void*) exec_at, (void*) image, 0x01000000);
+	uint32_t exec_at = image;
+	uint32_t param_at = image - 0x1000;
 	setup_tags((struct atag*) param_at, "");
 
 	uint32_t mach_type = MACH_APPLE_IPHONE;
 
-	LinuxKernel kernel = (LinuxKernel) exec_at;
-
+	EnterCriticalSection();
 	arm_disable_caches();
 	mmu_disable();
-	kernel(0, mach_type, param_at);
+
+	CallKernel(exec_at, 0, mach_type, param_at);
 }
 
