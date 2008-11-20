@@ -470,6 +470,16 @@ void cmd_malloc_stats(int argc, char** argv) {
 	malloc_stats();
 }
 
+void cmd_frequency(int argc, char** argv) {
+	bufferPrintf("Clock frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseClock));
+	bufferPrintf("Memory frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseMemory));
+	bufferPrintf("Bus frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseBus));
+	bufferPrintf("Peripheral frequency: %d Hz\r\n", clock_get_frequency(FrequencyBasePeripheral));
+	bufferPrintf("Display frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseDisplay));
+	bufferPrintf("Fixed frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseFixed));
+	bufferPrintf("Timebase frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseTimebase));
+}
+
 void cmd_version(int argc, char** argv) {
 	bufferPrintf("%s\r\n", OPENIBOOT_VERSION_STR);
 }
@@ -515,6 +525,7 @@ OPIBCommand CommandList[] =
 		{"pmu_charge", "turn on and off the power charger", cmd_pmu_charge},
 		{"pmu_nvram", "list powernvram registers", cmd_pmu_nvram},
 		{"malloc_stats", "display malloc stats", cmd_malloc_stats},
+		{"frequency", "display clock frequencies", cmd_frequency},
 		{"printenv", "list the environment variables in nvram", cmd_printenv},
 		{"setenv", "sets an environment variable", cmd_setenv},
 		{"saveenv", "saves the environment variables in nvram", cmd_saveenv},
