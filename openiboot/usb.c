@@ -1077,3 +1077,16 @@ static int8_t ringBufferEnqueue(RingBuffer* buffer, uint8_t value) {
 	return value;
 }
 
+USBSpeed usb_get_speed() {
+	switch(usb_speed) {
+		case USB_HIGHSPEED:
+			return USBHighSpeed;
+		case USB_FULLSPEED:
+		case USB_FULLSPEED_48_MHZ:
+			return USBFullSpeed;
+		case USB_LOWSPEED:
+			return USBLowSpeed;
+	}
+
+	return USBLowSpeed;
+}

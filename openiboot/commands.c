@@ -360,7 +360,7 @@ void cmd_nand_read(int argc, char** argv) {
 
 		pages--;
 		page++;
-		address += Data->bytesPerSpare;
+		address += Data->bytesPerPage;
 	}
 
 	bufferPrintf("done!\r\n");

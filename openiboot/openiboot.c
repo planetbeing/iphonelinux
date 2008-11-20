@@ -103,7 +103,7 @@ static size_t rxLeft = 0;
 static uint8_t* sendFilePtr = NULL;
 static uint32_t sendFileBytesLeft = 0;
 
-#define USB_BYTES_AT_A_TIME 0x80
+static int USB_BYTES_AT_A_TIME = 0;
 
 static void addToCommandQueue(const char* command) {
 	EnterCriticalSection();
@@ -195,7 +195,7 @@ static void controlReceived(uint32_t token) {
 		if(sendFileBytesLeft > 0) {
 			length = sendFileBytesLeft;
 		} else {
-			length = getScrollbackLen(); // getScrollbackLen();// 0x80;
+			length = getScrollbackLen(); // getScrollbackLen();// USB_BYTES_AT_A_TIME;
 		}
 
 		reply->command = OPENIBOOTCMD_DUMPBUFFER_LEN;
@@ -282,19 +282,25 @@ static void enumerateHandler(USBInterface* interface) {
 	usb_add_endpoint(interface, 4, USBOut, USBInterrupt);
 
 	if(!controlSendBuffer)
-		controlSendBuffer = memalign(DMA_ALIGN, 0x80);
+		controlSendBuffer = memalign(DMA_ALIGN, 512);
 
 	if(!controlRecvBuffer)
-		controlRecvBuffer = memalign(DMA_ALIGN, 0x80);
+		controlRecvBuffer = memalign(DMA_ALIGN, 512);
 
 	if(!dataSendBuffer)
-		dataSendBuffer = memalign(DMA_ALIGN, 0x80);
+		dataSendBuffer = memalign(DMA_ALIGN, 512);
 
 	if(!dataRecvBuffer)
-		dataRecvBuffer = commandRecvBuffer = memalign(DMA_ALIGN, 0x80);
+		dataRecvBuffer = commandRecvBuffer = memalign(DMA_ALIGN, 512);
 }
 
 static void startHandler() {
+	if(usb_get_speed() == USBHighSpeed) {
+		USB_BYTES_AT_A_TIME = 512;
+	} else {
+		USB_BYTES_AT_A_TIME = 0x80;
+	}
+
 	usb_receive_interrupt(4, controlRecvBuffer, sizeof(OpenIBootCmd));
 }
 
