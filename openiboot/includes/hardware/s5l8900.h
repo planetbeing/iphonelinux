@@ -8,14 +8,15 @@
  */
 
 #define OpenIBootLoad 0x00000000
-#define PageTable 0x07FFC000
 #define MemoryStart 0x00000000
 #define MemoryEnd 0xFFFFFFFF
+#define RAMStart 0x00000000
+#define RAMEnd 0x08000000
 #define MemoryHigher 0x80000000
-#define LargeMemoryStart 0x08000000
-#define HeapStart (LargeMemoryStart + 0x02000000)
+#define HeapStart (RAMStart + 0x02000000)
+#define PageTable (RAMEnd - 0x4000)
 #define ExceptionVector MemoryStart
-#define GeneralStack ((PageTable - 4) + LargeMemoryStart)
+#define GeneralStack ((PageTable - 4) + RAMStart)
 
 /*
  *	Devices

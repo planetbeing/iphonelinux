@@ -48,6 +48,16 @@ char* strdup(const char* str) {
 	return toRet;
 }
 
+char* strcpy(char* dst, const char* src) {
+	char* origDest =dst;
+	while(*src != '\0') {
+		*dst = *src;
+		dst++;
+		src++;
+	}
+	return origDest;
+}
+
 int memcmp(const void* s1, const void* s2, uint32_t size) {
 	uint32_t i;
 	const uint8_t* a = s1;

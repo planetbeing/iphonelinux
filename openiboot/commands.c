@@ -127,6 +127,18 @@ void cmd_images_read(int argc, char** argv) {
 	bufferPrintf("Read %d of %s to 0x%x - 0x%x\r\n", length, argv[1], address, address + length);
 }
 
+void cmd_boot(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <address>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	bufferPrintf("Booting kernel at %08x\r\n", address);
+
+	boot_linux(address);
+}
+
 void cmd_go(int argc, char** argv) {
 	if(argc < 2) {
 		bufferPrintf("Usage: %s <address>\r\n", argv[0]);
@@ -508,6 +520,7 @@ OPIBCommand CommandList[] =
 		{"saveenv", "saves the environment variables in nvram", cmd_saveenv},
 		{"bgcolor", "fill the framebuffer with a color", cmd_bgcolor},
 		{"backlight", "set the backlight level", cmd_backlight},
+		{"boot", "boot a Linux kernel", cmd_boot},
 		{"go", "jump to a specified address (interrupts disabled)", cmd_go},
 		{"jump", "jump to a specified address (interrupts enabled)", cmd_jump},
 		{"version", "display the version string", cmd_version},
