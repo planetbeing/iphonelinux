@@ -41,7 +41,6 @@
 
 .global CallArm
 .global CallThumb
-.global CallKernel
 
 .global Reboot
 
@@ -109,14 +108,6 @@ LeaveCriticalSection_return:
 .thumb_func
 CallArm:
 	BX	R0
-
-.thumb_func
-CallKernel:
-	MOV	R4, R0
-	MOV	R0, R1
-	MOV	R1, R2
-	MOV	R2, R3
-	BX	R4
 
 .code 32
 

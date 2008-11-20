@@ -39,7 +39,6 @@ void ClearCPUCaches();
 
 void CallArm(uint32_t address);
 void CallThumb(uint32_t address);
-void CallKernel(uint32_t address, int zero, int arch, uint32_t params);
 
 void Reboot();
 

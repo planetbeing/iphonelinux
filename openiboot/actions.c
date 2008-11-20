@@ -205,6 +205,21 @@ void boot_linux(uint32_t image) {
 	arm_disable_caches();
 	mmu_disable();
 
-	CallKernel(exec_at, 0, mach_type, param_at);
+	/* FIXME: This overwrites openiboot! We make the semi-reasonable assumption
+	 * that this function's own code doesn't reside in 0x0100-0x1100 */
+
+	int i;
+	for(i = 0; i < (0x1000/sizeof(uint32_t)); i++) {
+		((uint32_t*)0x100)[i] = ((uint32_t*)param_at)[i];
+	}
+
+	asm (	"MOV	R4, %0\n"
+		"MOV	R0, #0\n"
+		"MOV	R1, %1\n"
+		"MOV	R2, %2\n"
+		"BX	R4"
+		:
+		: "r"(exec_at), "r"(mach_type), "r"(0x100)
+	    );
 }
 
