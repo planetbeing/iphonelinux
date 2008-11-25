@@ -127,16 +127,34 @@ void cmd_images_read(int argc, char** argv) {
 	bufferPrintf("Read %d of %s to 0x%x - 0x%x\r\n", length, argv[1], address, address + length);
 }
 
-void cmd_boot(int argc, char** argv) {
+void cmd_kernel(int argc, char** argv) {
 	if(argc < 2) {
-		bufferPrintf("Usage: %s <address>\r\n", argv[0]);
+		bufferPrintf("Usage: %s <address> <size>\r\n", argv[0]);
 		return;
 	}
 
 	uint32_t address = parseNumber(argv[1]);
-	bufferPrintf("Booting kernel at %08x\r\n", address);
+	uint32_t size = parseNumber(argv[2]);
+	set_kernel((void*) address, size);
+	bufferPrintf("Loaded kernel at %08x - %08x\r\n", address, address + size);
+}
 
-	boot_linux(address);
+void cmd_ramdisk(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <address> <size>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t size = parseNumber(argv[2]);
+	set_ramdisk((void*) address, size);
+	bufferPrintf("Loaded ramdisk at %08x - %08x\r\n", address, address + size);
+}
+
+void cmd_boot(int argc, char** argv) {
+	bufferPrintf("Booting kernel...\r\n");
+
+	boot_linux();
 }
 
 void cmd_go(int argc, char** argv) {
@@ -531,6 +549,8 @@ OPIBCommand CommandList[] =
 		{"saveenv", "saves the environment variables in nvram", cmd_saveenv},
 		{"bgcolor", "fill the framebuffer with a color", cmd_bgcolor},
 		{"backlight", "set the backlight level", cmd_backlight},
+		{"kernel", "load a Linux kernel", cmd_kernel},
+		{"ramdisk", "load a Linux ramdisk", cmd_ramdisk},
 		{"boot", "boot a Linux kernel", cmd_boot},
 		{"go", "jump to a specified address (interrupts disabled)", cmd_go},
 		{"jump", "jump to a specified address (interrupts enabled)", cmd_jump},

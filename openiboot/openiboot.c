@@ -99,6 +99,7 @@ static uint8_t* commandRecvBuffer = NULL;
 static uint8_t* dataRecvPtr = NULL;
 static size_t left = 0;
 static size_t rxLeft = 0;
+static size_t lastRxLen = 0;
 
 static uint8_t* sendFilePtr = NULL;
 static uint32_t sendFileBytesLeft = 0;
@@ -111,7 +112,7 @@ static void addToCommandQueue(const char* command) {
 	if(dataRecvBuffer != commandRecvBuffer) {
 		// in file mode, but we just received the whole thing
 		dataRecvBuffer = commandRecvBuffer;
-		bufferPrintf("file received.\r\n");
+		bufferPrintf("file received (%d bytes).\r\n", lastRxLen);
 		LeaveCriticalSection();
 		return;
 	}
@@ -223,6 +224,7 @@ static void controlReceived(uint32_t token) {
 	} else if(cmd->command == OPENIBOOTCMD_SENDCOMMAND) {
 		dataRecvPtr = dataRecvBuffer;
 		rxLeft = cmd->dataLen;
+		lastRxLen = rxLeft;
 
 		//uartPrintf("got sendcommand, receiving length: %d\r\n", (int)rxLeft);
 

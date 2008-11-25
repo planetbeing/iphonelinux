@@ -4,6 +4,8 @@
 #include "openiboot.h"
 
 void chainload(uint32_t address);
-void boot_linux(uint32_t image);
+void set_kernel(void* location, int size);
+void set_ramdisk(void* location, int size);
+void boot_linux();
 
 #endif

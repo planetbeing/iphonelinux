@@ -131,6 +131,29 @@ static void setup_core_tag(void * address, long pagesize)
 	params = tag_next(params);              /* move pointer to next tag */
 }
 
+static void setup_ramdisk_tag(uint32_t size)
+{
+	params->hdr.tag = ATAG_RAMDISK;         /* Ramdisk tag */
+	params->hdr.size = tag_size(atag_ramdisk);  /* size tag */
+
+	params->u.ramdisk.flags = 0;            /* Load the ramdisk */
+	params->u.ramdisk.size = size;          /* Decompressed ramdisk size */
+	params->u.ramdisk.start = 0;            /* Unused */
+
+	params = tag_next(params);              /* move pointer to next tag */
+}
+
+static void setup_initrd2_tag(uint32_t start, uint32_t size)
+{
+	params->hdr.tag = ATAG_INITRD2;         /* Initrd2 tag */
+	params->hdr.size = tag_size(atag_initrd2);  /* size tag */
+
+	params->u.initrd2.start = start;        /* physical start */
+	params->u.initrd2.size = size;          /* compressed ramdisk size */
+
+	params = tag_next(params);              /* move pointer to next tag */
+}
+
 static void setup_mem_tag(uint32_t start, uint32_t len)
 {
 	params->hdr.tag = ATAG_MEM;             /* Memory tag */
@@ -185,18 +208,37 @@ static void setup_end_tag()
 	params->hdr.size = 0;                   /* zero length */
 }
 
+static void* kernel;
+static uint32_t kernelSize;
+static void* ramdisk;
+static uint32_t ramdiskSize;
+
+void set_ramdisk(void* location, int size) {
+	ramdiskSize = size;
+	ramdisk = malloc(size);
+	memcpy(ramdisk, location, size);
+}
+
+void set_kernel(void* location, int size) {
+	kernelSize = size;
+	kernel = malloc(size);
+	memcpy(kernel, location, size);
+}
+
 static void setup_tags(struct atag* parameters, const char* commandLine)
 {
 	setup_core_tag(parameters, 4096);       /* standard core tag 4k pagesize */
 	setup_mem_tag(MemoryStart, 0x08000000);    /* 128Mb at 0x00000000 */
+	setup_ramdisk_tag(300);
+	setup_initrd2_tag((uint32_t)ramdisk, ramdiskSize);
 	setup_cmdline_tag(commandLine);
 	setup_video_lfb_tag();
 	setup_end_tag();                    /* end of tags */
 }
 
-void boot_linux(uint32_t image) {
-	uint32_t exec_at = image;
-	uint32_t param_at = image - 0x1000;
+void boot_linux() {
+	uint32_t exec_at = (uint32_t) kernel;
+	uint32_t param_at = exec_at - 0x1000;
 	setup_tags((struct atag*) param_at, "");
 
 	uint32_t mach_type = MACH_APPLE_IPHONE;
