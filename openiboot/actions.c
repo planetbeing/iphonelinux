@@ -225,12 +225,14 @@ void set_kernel(void* location, int size) {
 	memcpy(kernel, location, size);
 }
 
+#define INITRD_LOAD 0x00800000
+
 static void setup_tags(struct atag* parameters, const char* commandLine)
 {
 	setup_core_tag(parameters, 4096);       /* standard core tag 4k pagesize */
 	setup_mem_tag(MemoryStart, 0x08000000);    /* 128Mb at 0x00000000 */
 	setup_ramdisk_tag(300);
-	setup_initrd2_tag((uint32_t)ramdisk, ramdiskSize);
+	setup_initrd2_tag(INITRD_LOAD, ramdiskSize);
 	setup_cmdline_tag(commandLine);
 	setup_video_lfb_tag();
 	setup_end_tag();                    /* end of tags */
@@ -251,6 +253,11 @@ void boot_linux() {
 	 * that this function's own code doesn't reside in 0x0100-0x1100 */
 
 	int i;
+
+	for(i = 0; i < ((ramdiskSize + sizeof(uint32_t) - 1)/sizeof(uint32_t)); i++) {
+		((uint32_t*)INITRD_LOAD)[i] = ((uint32_t*)ramdisk)[i];
+	}
+
 	for(i = 0; i < (0x1000/sizeof(uint32_t)); i++) {
 		((uint32_t*)0x100)[i] = ((uint32_t*)param_at)[i];
 	}
