@@ -152,9 +152,15 @@ void cmd_ramdisk(int argc, char** argv) {
 }
 
 void cmd_boot(int argc, char** argv) {
-	bufferPrintf("Booting kernel...\r\n");
+	char* arguments = "";
 
-	boot_linux();
+	if(argc >= 2) {
+		arguments = argv[1];
+	}
+
+	bufferPrintf("Booting kernel with arguments (%s)...\r\n", arguments);
+
+	boot_linux(arguments);
 }
 
 void cmd_go(int argc, char** argv) {

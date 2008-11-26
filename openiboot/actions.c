@@ -231,17 +231,17 @@ static void setup_tags(struct atag* parameters, const char* commandLine)
 {
 	setup_core_tag(parameters, 4096);       /* standard core tag 4k pagesize */
 	setup_mem_tag(MemoryStart, 0x08000000);    /* 128Mb at 0x00000000 */
-	setup_ramdisk_tag(300);
+	setup_ramdisk_tag(1024);
 	setup_initrd2_tag(INITRD_LOAD, ramdiskSize);
 	setup_cmdline_tag(commandLine);
 	setup_video_lfb_tag();
 	setup_end_tag();                    /* end of tags */
 }
 
-void boot_linux() {
+void boot_linux(const char* args) {
 	uint32_t exec_at = (uint32_t) kernel;
 	uint32_t param_at = exec_at - 0x1000;
-	setup_tags((struct atag*) param_at, "");
+	setup_tags((struct atag*) param_at, args);
 
 	uint32_t mach_type = MACH_APPLE_IPHONE;
 

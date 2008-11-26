@@ -190,12 +190,23 @@ unsigned long int strtoul(const char* str, char** endptr, int base) {
 char** tokenize(char* commandline, int* argc) {
 	char** arguments;
 	int curArg = 1;
+	int inQuote = FALSE;
 	arguments = (char**) malloc(sizeof(char*) * 10);
 	arguments[0] = commandline;
 	while(*commandline != '\0') {
-		if(*commandline == ' ') {
+		if(*commandline == '\"') {
+		       	if(inQuote) {
+				inQuote = FALSE;
+				*commandline = '\0';
+			} else {
+				inQuote = TRUE;
+			}
+		} else if(*commandline == ' ' && inQuote == FALSE) {
 			*commandline = '\0';
 			arguments[curArg] = commandline + 1;
+			if(*arguments[curArg] == '\"')
+				arguments[curArg]++;
+
 			curArg++;
 		}
 		commandline++;
