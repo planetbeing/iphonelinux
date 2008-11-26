@@ -236,7 +236,7 @@ HandleFIQ_checkVIC1:
 	MOV	R4, #VIC_InterruptSeparator
 
 HandleFIQ_callHandler:
-	BLX	__ctzsi2			// Get correct bit in the status flag
+	BL	__ctzsi2			// Get correct bit in the status flag
 	LDR	R2, =InterruptHandlerTable
 	ADD	R0, R0,	R4			// Index into the InterruptHandlerTable
 	LSL	R3, R0,	#1
