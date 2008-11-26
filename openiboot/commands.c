@@ -140,14 +140,15 @@ void cmd_kernel(int argc, char** argv) {
 }
 
 void cmd_ramdisk(int argc, char** argv) {
-	if(argc < 2) {
-		bufferPrintf("Usage: %s <address> <size>\r\n", argv[0]);
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <address> <size> <uncompressed size in KB>\r\n", argv[0]);
 		return;
 	}
 
 	uint32_t address = parseNumber(argv[1]);
 	uint32_t size = parseNumber(argv[2]);
-	set_ramdisk((void*) address, size);
+	uint32_t realSize = parseNumber(argv[3]);
+	set_ramdisk((void*) address, size, realSize);
 	bufferPrintf("Loaded ramdisk at %08x - %08x\r\n", address, address + size);
 }
 

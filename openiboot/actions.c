@@ -212,11 +212,13 @@ static void* kernel = NULL;
 static uint32_t kernelSize;
 static void* ramdisk = NULL;
 static uint32_t ramdiskSize;
+static uint32_t ramdiskRealSize;
 
-void set_ramdisk(void* location, int size) {
+void set_ramdisk(void* location, int size, int realSize) {
 	if(ramdisk)
 		free(ramdisk);
 
+	ramdiskRealSize = realSize;
 	ramdiskSize = size;
 	ramdisk = malloc(size);
 	memcpy(ramdisk, location, size);
@@ -238,7 +240,7 @@ static void setup_tags(struct atag* parameters, const char* commandLine)
 	setup_core_tag(parameters, 4096);       /* standard core tag 4k pagesize */
 	setup_mem_tag(MemoryStart, 0x08000000);    /* 128Mb at 0x00000000 */
 	if(ramdisk != NULL && ramdiskSize > 0) {
-		setup_ramdisk_tag(1024);
+		setup_ramdisk_tag(ramdiskRealSize);
 		setup_initrd2_tag(INITRD_LOAD, ramdiskSize);
 	}
 	setup_cmdline_tag(commandLine);
