@@ -116,6 +116,8 @@ int menu_setup() {
 
 	if(Selection == MenuSelectioniPhoneOS) {
 		Image* image = images_get(fourcc("ibox"));
+		if(image == NULL)
+			image = images_get(fourcc("ibot"));
 		void* imageData;
 		images_read(image, &imageData);
 		chainload((uint32_t)imageData);
