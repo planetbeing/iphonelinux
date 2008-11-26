@@ -62,7 +62,7 @@ void OpenIBootStart() {
 	}
 
 	fs_setup();
-	//pmu_set_iboot_stage(0);
+	pmu_set_iboot_stage(0);
 
 	bufferPrintf("-----------------------------------------------\r\n");
 	bufferPrintf("              WELCOME TO OPENIBOOT\r\n");
