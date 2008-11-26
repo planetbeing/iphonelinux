@@ -9,7 +9,7 @@ ASFLAGS += -mcpu=arm11
 ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
 LDFLAGS += -Ttext=0x00000000 --nostdlib
 LIBRARIES += -lgcc -nostdlib
-LIBRARY_PATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
+LIBPATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
 INC += -Iincludes
 CFLAGS += -Wall -O3
 CONFIGFLAGS =
@@ -50,13 +50,13 @@ all:	openiboot.img2	openiboot.img3 openiboot.bin
 all-payload: openiboot-payload.img2 openiboot-payload.bin
 
 openiboot:	$(OPENIBOOT_OBJS)
-	$(LD) $(LDFLAGS) $(OPENIBOOT_OBJS) $(LIBRARIES) $(LIBRARY_PATH) -o $@
+	$(LD) $(LDFLAGS) $(OPENIBOOT_OBJS) $(LIBRARIES) $(LIBPATH) -o $@
 
 payload.o:	payload.bin
 	$(OBJCOPY) -I binary -O elf32-little -B arm $< $@
 
 openiboot-payload: $(OPENIBOOT_OBJS) payload.o
-	$(LD) --no-warn-mismatch $(LDFLAGS) $(OPENIBOOT_OBJS) payload.o $(LIBRARIES) $(LIBRARY_PATH) -o $@
+	$(LD) --no-warn-mismatch $(LDFLAGS) $(OPENIBOOT_OBJS) payload.o $(LIBRARIES) $(LIBPATH) -o $@
 
 mk8900image/mk8900image:
 	cd mk8900image/; make
