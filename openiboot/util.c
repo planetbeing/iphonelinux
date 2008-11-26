@@ -10,6 +10,11 @@ void __assert(const char* file, int line, const char* m) {
 	panic();
 }
 
+void abort() {
+	bufferPrintf("openiboot ABORT!!\r\n");
+	while(TRUE);
+}
+
 void panic() {
 	bufferPrintf("openiboot PANIC!!\r\n");
 	while(TRUE);
@@ -95,7 +100,7 @@ void* memmove(void *dest, const void* src, size_t length)
 	return dest;
 }
 
-int strlen(const char* str) {
+size_t strlen(const char* str) {
 	int ret = 0;
 	while(*str != '\0') {
 		++str;

@@ -20,7 +20,7 @@ char* strdup(const char* str);
 char* strcpy(char* dst, const char* src);
 int memcmp(const void* s1, const void* s2, uint32_t size);
 void* memmove(void *dest, const void* src, size_t length);
-int strlen(const char* str);
+size_t strlen(const char* str);
 int tolower(int c);
 int putchar(int c);
 unsigned long int parseNumber(const char* str);

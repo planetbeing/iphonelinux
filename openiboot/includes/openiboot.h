@@ -36,7 +36,9 @@ typedef enum OnOff {
 	ON = 1
 } OnOff;
 
+#ifndef NULL
 #define NULL 0
+#endif
 #define uSecPerSec 1000000
 
 typedef struct Event Event;
