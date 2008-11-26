@@ -208,18 +208,24 @@ static void setup_end_tag()
 	params->hdr.size = 0;                   /* zero length */
 }
 
-static void* kernel;
+static void* kernel = NULL;
 static uint32_t kernelSize;
-static void* ramdisk;
+static void* ramdisk = NULL;
 static uint32_t ramdiskSize;
 
 void set_ramdisk(void* location, int size) {
+	if(ramdisk)
+		free(ramdisk);
+
 	ramdiskSize = size;
 	ramdisk = malloc(size);
 	memcpy(ramdisk, location, size);
 }
 
 void set_kernel(void* location, int size) {
+	if(kernel)
+		free(kernel);
+
 	kernelSize = size;
 	kernel = malloc(size);
 	memcpy(kernel, location, size);
@@ -231,8 +237,10 @@ static void setup_tags(struct atag* parameters, const char* commandLine)
 {
 	setup_core_tag(parameters, 4096);       /* standard core tag 4k pagesize */
 	setup_mem_tag(MemoryStart, 0x08000000);    /* 128Mb at 0x00000000 */
-	setup_ramdisk_tag(1024);
-	setup_initrd2_tag(INITRD_LOAD, ramdiskSize);
+	if(ramdisk != NULL && ramdiskSize > 0) {
+		setup_ramdisk_tag(1024);
+		setup_initrd2_tag(INITRD_LOAD, ramdiskSize);
+	}
 	setup_cmdline_tag(commandLine);
 	setup_video_lfb_tag();
 	setup_end_tag();                    /* end of tags */
