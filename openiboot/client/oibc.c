@@ -204,8 +204,9 @@ void* doInput(void* threadid) {
 			readIntoOutput = toRead;
 			pthread_mutex_unlock(&lock);
 		} else {
+			commandBuffer[len] = '\n';
 			pthread_mutex_lock(&lock);
-			sendBuffer(commandBuffer, len);
+			sendBuffer(commandBuffer, len + 1);
 			pthread_mutex_unlock(&lock);
 		}
 

@@ -213,6 +213,9 @@ char** tokenize(char* commandline, int* argc) {
 				arguments[curArg]++;
 
 			curArg++;
+		} else if(*commandline == '\r' || *commandline =='\n') {
+			*commandline = '\0';
+			break;
 		}
 		commandline++;
 	}
