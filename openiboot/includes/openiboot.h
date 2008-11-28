@@ -25,6 +25,7 @@
 
 extern void* _start;
 extern void* OpenIBootEnd;
+extern int received_file_size;
 
 typedef enum Boolean {
 	FALSE = 0,

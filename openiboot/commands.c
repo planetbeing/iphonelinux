@@ -128,26 +128,40 @@ void cmd_images_read(int argc, char** argv) {
 }
 
 void cmd_kernel(int argc, char** argv) {
-	if(argc < 2) {
-		bufferPrintf("Usage: %s <address> <size>\r\n", argv[0]);
-		return;
+	uint32_t address;
+	uint32_t size;
+
+	if(argc < 3) {
+		address = 0x09000000;
+		size = received_file_size;
+	} else {
+		address = parseNumber(argv[1]);
+		size = parseNumber(argv[2]);
 	}
 
-	uint32_t address = parseNumber(argv[1]);
-	uint32_t size = parseNumber(argv[2]);
 	set_kernel((void*) address, size);
 	bufferPrintf("Loaded kernel at %08x - %08x\r\n", address, address + size);
 }
 
 void cmd_ramdisk(int argc, char** argv) {
-	if(argc < 3) {
-		bufferPrintf("Usage: %s <address> <size> <uncompressed size in KB>\r\n", argv[0]);
-		return;
+	uint32_t address;
+	uint32_t size;
+	uint32_t realSize;
+
+	if(argc < 4) {
+		if(argc < 2) {
+			bufferPrintf("Usage: %s [address] [size] <uncompressed size in KB>\r\n", argv[0]);
+			return;
+		}
+		address = 0x09000000;
+		size = received_file_size;
+		realSize = parseNumber(argv[1]);
+	} else {
+		address = parseNumber(argv[1]);
+		size = parseNumber(argv[2]);
+		realSize = parseNumber(argv[3]);
 	}
 
-	uint32_t address = parseNumber(argv[1]);
-	uint32_t size = parseNumber(argv[2]);
-	uint32_t realSize = parseNumber(argv[3]);
 	set_ramdisk((void*) address, size, realSize);
 	bufferPrintf("Loaded ramdisk at %08x - %08x\r\n", address, address + size);
 }
@@ -165,12 +179,14 @@ void cmd_boot(int argc, char** argv) {
 }
 
 void cmd_go(int argc, char** argv) {
+	uint32_t address;
+
 	if(argc < 2) {
-		bufferPrintf("Usage: %s <address>\r\n", argv[0]);
-		return;
+		address = 0x09000000;
+	} else {
+		address = parseNumber(argv[1]);
 	}
 
-	uint32_t address = parseNumber(argv[1]);
 	bufferPrintf("Jumping to 0x%x (interrupts disabled)\r\n", address);
 
 	// make as if iBoot was called from ROM

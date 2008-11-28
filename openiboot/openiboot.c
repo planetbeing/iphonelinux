@@ -32,6 +32,8 @@
 #include "hfs/bdev.h"
 #include "hfs/fs.h"
 
+int received_file_size;
+
 static int setup_devices();
 static int setup_openiboot();
 
@@ -113,6 +115,7 @@ static void addToCommandQueue(const char* command) {
 		// in file mode, but we just received the whole thing
 		dataRecvBuffer = commandRecvBuffer;
 		bufferPrintf("file received (%d bytes).\r\n", lastRxLen);
+		received_file_size = lastRxLen;
 		LeaveCriticalSection();
 		return;
 	}
