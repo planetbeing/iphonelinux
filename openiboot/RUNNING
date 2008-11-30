@@ -1,11 +1,28 @@
-To run OpeniBoot:
-
-	0. Build an ARM toolchain (see the toolchain folder)
-	1. Compile OpeniBoot (try the openiboot.img3 target to be loaded on 2.x phones)
-		a. If you have a 64-bit OS (only), rm mk8900image/libxpwn.a; ln -s libxpwn64.a mk89000image/libxpwn.a
-		b. For iPod touch: PLATFORM=IPOD make
-		c. For iPhone 2G: PLATFORM=IPHONE make
-	2. Compile all in client/ (requires libusb, libreadline and pthread)
+For the first time:
+	0. Build an ARM toolchain (see the toolchain folder); will take a while (but you don't have to repeat that step, unless the toolchain is updated)
+Then:
+	1. Compile OpeniBoot:
+		A. To run openiboot from the recovery mode (a.K.a iboot), you'll need to create an img3 image.
+			a. A system capable of running x86 Linux binaries is required.
+			b. For iPod touch: PLATFORM=IPOD make openiboot.img3
+			c. For iPhone 2G: PLATFORM=IPHONE make openiboot.img3
+			d. For iPhone 3G: PLATFORM=3G make openiboot.img3
+	2. Compile all in client/ : cd client && make all && cd .. (requires libusb, libreadline and pthread)
 	3. sudo client/loadibec openiboot.img3
-	4. Run the client: sudo ~/client/oibc
+	4. Run the client: sudo client/oibc
+To install openiboot in the NOR (optional): run	"install" in openiboot client (to uninstall, restore/update/run QuickPwn)
 
+To update openiboot:
+	0. Pull the new code from Git: ("git pull" if you downloaded the code using Git)
+	1. Compile openiboot, but this time you don't have to make an img3 image.
+		a. For iPod touch: PLATFORM=IPOD make
+		b. For iPhone 2G: PLATFORM=IPHONE make
+		c. For iPhone 3G: PLATFORM=3G make
+	2. Compile all in client/: cd client && make all && cd .. (requires libusb, libreadline and pthread)
+	3. Launch openiboot
+	4. Run the client: sudo client/oibc
+	5. Copy the openiboot binary in the device memory: !openiboot.bin
+	6. Jump to it: go 0x09000000 
+	7. Relaunch openiboot console
+	8. Relaunch the client: sudo client/oibc
+	9. Install the new version: install

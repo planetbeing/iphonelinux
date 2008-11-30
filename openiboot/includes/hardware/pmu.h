@@ -36,12 +36,15 @@
 #define PMU_GPIO_CHARGER_USB_500_1000 0x1705
 #define PMU_GPIO_CHARGER_USB_1000 0x704
 
+#define PMU_OOCSHDWN 0xC
 #define PMU_ADCC3 0x52
 #define PMU_ADCC2 0x53
 #define PMU_ADCC1 0x54
 #define PMU_ADCS3 0x57
 #define PMU_ADCS1 0x55
 #define PMU_MBCS1 0x4B
+
+#define PMU_OOCSHDWN_GOSTBY (1 << 0)
 
 #define PMU_MBCS1_ADAPTPRES (1 << 2)
 #define PMU_MBCS1_USBOK (1 << 0)

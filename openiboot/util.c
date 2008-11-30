@@ -5,6 +5,16 @@
 #include "openiboot-asmhelpers.h"
 #include "framebuffer.h"
 
+void __assert(const char* file, int line, const char* m) {
+	bufferPrintf("ASSERT FAILED: %s at %s:%d\r\n", m, file, line);
+	panic();
+}
+
+void abort() {
+	bufferPrintf("openiboot ABORT!!\r\n");
+	while(TRUE);
+}
+
 void panic() {
 	bufferPrintf("openiboot PANIC!!\r\n");
 	while(TRUE);
@@ -41,6 +51,16 @@ char* strdup(const char* str) {
 	memcpy(toRet, str, len);
 	toRet[len] = '\0';
 	return toRet;
+}
+
+char* strcpy(char* dst, const char* src) {
+	char* origDest =dst;
+	while(*src != '\0') {
+		*dst = *src;
+		dst++;
+		src++;
+	}
+	return origDest;
 }
 
 int memcmp(const void* s1, const void* s2, uint32_t size) {
@@ -80,7 +100,7 @@ void* memmove(void *dest, const void* src, size_t length)
 	return dest;
 }
 
-int strlen(const char* str) {
+size_t strlen(const char* str) {
 	int ret = 0;
 	while(*str != '\0') {
 		++str;
@@ -97,15 +117,14 @@ int tolower(int c) {
 }
 
 int putchar(int c) {
-	char ch = (char) c;
-	if(uart_write(0, &ch, 1) == 0)
-		return c;
-	else
-		return -1;
+	char toPrint[] = {c, 0};
+	bufferPrint(toPrint);
+	return c;
 }
 
 int puts(const char *str) {
-	return uart_write(0, str, strlen(str));
+	bufferPrint(str);
+	return 0;
 }
 
 unsigned long int parseNumber(const char* str) {
@@ -176,13 +195,27 @@ unsigned long int strtoul(const char* str, char** endptr, int base) {
 char** tokenize(char* commandline, int* argc) {
 	char** arguments;
 	int curArg = 1;
+	int inQuote = FALSE;
 	arguments = (char**) malloc(sizeof(char*) * 10);
 	arguments[0] = commandline;
 	while(*commandline != '\0') {
-		if(*commandline == ' ') {
+		if(*commandline == '\"') {
+		       	if(inQuote) {
+				inQuote = FALSE;
+				*commandline = '\0';
+			} else {
+				inQuote = TRUE;
+			}
+		} else if(*commandline == ' ' && inQuote == FALSE) {
 			*commandline = '\0';
 			arguments[curArg] = commandline + 1;
+			if(*arguments[curArg] == '\"')
+				arguments[curArg]++;
+
 			curArg++;
+		} else if(*commandline == '\r' || *commandline =='\n') {
+			*commandline = '\0';
+			break;
 		}
 		commandline++;
 	}

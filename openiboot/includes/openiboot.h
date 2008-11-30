@@ -3,8 +3,29 @@
 
 #include <stdint.h>
 
+#ifdef DEBUG
+#define OPENIBOOT_VERSION_DEBUG " (DEBUG)"
+#else
+#define OPENIBOOT_VERSION_DEBUG ""
+#endif
+
+#ifdef CONFIG_IPHONE
+#define OPENIBOOT_VERSION_CONFIG " for iPhone 2G"
+#endif
+#ifdef CONFIG_IPOD
+#define OPENIBOOT_VERSION_CONFIG " for iPod touch 1G"
+#endif
+#ifdef CONFIG_3G
+#define OPENIBOOT_VERSION_CONFIG " for iPhone 3G"
+#endif
+
+#define XSTRINGIFY(s) STRINGIFY(s)
+#define STRINGIFY(s) #s
+#define OPENIBOOT_VERSION_STR "openiboot " XSTRINGIFY(OPENIBOOT_VERSION) " commit " XSTRINGIFY(OPENIBOOT_VERSION_BUILD) OPENIBOOT_VERSION_DEBUG OPENIBOOT_VERSION_CONFIG
+
 extern void* _start;
 extern void* OpenIBootEnd;
+extern int received_file_size;
 
 typedef enum Boolean {
 	FALSE = 0,
@@ -16,7 +37,9 @@ typedef enum OnOff {
 	ON = 1
 } OnOff;
 
+#ifndef NULL
 #define NULL 0
+#endif
 #define uSecPerSec 1000000
 
 typedef struct Event Event;

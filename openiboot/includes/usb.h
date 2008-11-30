@@ -73,6 +73,12 @@ enum USBDescriptorType {
 	USBDeviceQualifierDescriptorType = 6
 };
 
+typedef enum USBSpeed {
+	USBHighSpeed = 0,
+	USBFullSpeed = 1,
+	USBLowSpeed = 2
+} USBSpeed;
+
 typedef void (*USBEndpointHandler)(uint32_t token);
 
 typedef struct USBEndpointHandlerInfo {
@@ -245,6 +251,7 @@ void usb_send_interrupt(uint8_t endpoint, void* buffer, int bufferLen);
 void usb_send_bulk(uint8_t endpoint, void* buffer, int bufferLen);
 void usb_receive_bulk(uint8_t endpoint, void* buffer, int bufferLen);
 void usb_receive_interrupt(uint8_t endpoint, void* buffer, int bufferLen);
+USBSpeed usb_get_speed();
 
 USBDeviceDescriptor* usb_get_device_descriptor();
 USBDeviceQualifierDescriptor* usb_get_device_qualifier_descriptor();

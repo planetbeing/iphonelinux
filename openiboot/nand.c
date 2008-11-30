@@ -277,7 +277,7 @@ int nand_setup() {
 	Data.field_2F = 3;
 	Data.pagesPerBlock = nandType->pagesPerBlock;
 
-	if(Data.sectorsPerPage >= 4) {
+	if(Data.sectorsPerPage > 4) {
 		LargePages = TRUE;
 	} else {
 		LargePages = FALSE;

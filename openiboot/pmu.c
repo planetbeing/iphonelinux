@@ -4,12 +4,40 @@
 #include "i2c.h"
 #include "timer.h"
 #include "gpio.h"
+#include "lcd.h"
 
 static uint32_t GPMemCachedPresent = 0;
 static uint8_t GPMemCache[PMU_MAXREG + 1];
 
 int pmu_setup() {
 	return 0;
+}
+
+static void pmu_write_oocshdwn(int data) {
+	uint8_t registers[1];
+	uint8_t discardData[5];
+	uint8_t poweroffData[] = {7, 0xAA, 0xFC, 0x0, 0x0, 0x0};
+	registers[0] = 2;
+	i2c_rx(PMU_I2C_BUS, PMU_GETADDR, registers, sizeof(registers), discardData, sizeof(data));
+	i2c_tx(PMU_I2C_BUS, PMU_SETADDR, poweroffData, sizeof(poweroffData));
+	pmu_write_reg(PMU_OOCSHDWN, data, FALSE);
+	while(TRUE) {
+		udelay(100000);
+	}
+}
+
+void pmu_poweroff() {
+	lcd_shutdown();
+	pmu_write_oocshdwn(PMU_OOCSHDWN_GOSTBY);
+}
+
+void pmu_set_iboot_stage(uint8_t stage) {
+	int8_t state;
+	pmu_get_gpmem_reg(PMU_IBOOTSTATE, (uint8_t*) &state);
+
+	if(state >= 0) {
+		pmu_set_gpmem_reg(PMU_IBOOTSTAGE, stage);
+	}
 }
 
 int pmu_get_gpmem_reg(int reg, uint8_t* out) {
@@ -31,6 +59,16 @@ int pmu_get_gpmem_reg(int reg, uint8_t* out) {
 	*out = GPMemCache[reg];
 
 	return 0;	
+}
+
+int pmu_set_gpmem_reg(int reg, uint8_t data) {
+	if(pmu_write_reg(reg + 0x67, data, TRUE) == 0) {
+		GPMemCache[reg] = data;
+		GPMemCachedPresent |= (0x1 << reg);
+		return 0;
+	}
+
+	return -1;
 }
 
 int pmu_get_reg(int reg) {

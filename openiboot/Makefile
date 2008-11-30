@@ -1,18 +1,18 @@
-AS = arm-elf-as
-LD = arm-elf-ld
-CC = arm-elf-gcc
-OBJCOPY = arm-elf-objcopy
+CROSS ?= arm-elf-
+CC = $(CROSS)gcc
+OBJCOPY = $(CROSS)objcopy
 HFS_OBJS = hfs/btree.o hfs/catalog.o hfs/extents.o hfs/fastunicodecompare.o hfs/rawfile.o hfs/utility.o hfs/volume.o hfs/bdev.o hfs/fs.o
-OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o i2c.o images.o sha1.o commands.o pmu.o buttons.o framebuffer.o menu.o actions.o nvram.o nand.o ftl.o
+OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o i2c.o images.o sha1.o commands.o pmu.o buttons.o framebuffer.o menu.o actions.o nvram.o nand.o ftl.o stb_image.o
 OPENIBOOT_OBJS += $(HFS_OBJS)
-ASFLAGS += -mcpu=arm11
 ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
 LDFLAGS += -Ttext=0x00000000 --nostdlib
 LIBRARIES += -lgcc -nostdlib
-LIBRARY_PATH += -L/usr/local/lib/gcc/arm-elf/4.1.1/interwork/vfp
 INC += -Iincludes
 CFLAGS += -Wall -O3
 CONFIGFLAGS =
+VERSION = "0.1"
+COMMIT = $(shell git log | head -n1 | cut -b8-14)
+BUILD = "$(COMMIT)"
 
 ifeq ($(PLATFORM),IPOD)
 	CONFIGFLAGS += -DCONFIG_IPOD
@@ -31,10 +31,12 @@ ifeq ($(DEBUG),YES)
 	CONFIGFLAGS += -DDEBUG
 endif
 
+CONFIGFLAGS += -DOPENIBOOT_VERSION=$(VERSION) -DOPENIBOOT_VERSION_BUILD=$(BUILD)
+
 CFLAGS += $(CONFIGFLAGS)
 
 %.o:	%.S
-	$(CC) $(INC) $(CONFIGFLAGS) -E -x c $< | $(AS) $(ASFLAGS) $(ARCHFLAGS) -o $@
+	$(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
 
 %.o:	%.c
 	$(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
@@ -45,13 +47,13 @@ all:	openiboot.img2	openiboot.img3 openiboot.bin
 all-payload: openiboot-payload.img2 openiboot-payload.bin
 
 openiboot:	$(OPENIBOOT_OBJS)
-	$(LD) $(LDFLAGS) $(OPENIBOOT_OBJS) $(LIBRARIES) $(LIBRARY_PATH) -o $@
+	$(CC) $(ARCHFLAGS) $(LDFLAGS) $(OPENIBOOT_OBJS) $(LIBRARIES) -o $@
 
 payload.o:	payload.bin
 	$(OBJCOPY) -I binary -O elf32-little -B arm $< $@
 
 openiboot-payload: $(OPENIBOOT_OBJS) payload.o
-	$(LD) --no-warn-mismatch $(LDFLAGS) $(OPENIBOOT_OBJS) payload.o $(LIBRARIES) $(LIBRARY_PATH) -o $@
+	$(CC) --no-warn-mismatch $(LDFLAGS) $(OPENIBOOT_OBJS) payload.o $(LIBRARIES) -o $@
 
 mk8900image/mk8900image:
 	cd mk8900image/; make

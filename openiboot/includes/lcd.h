@@ -73,7 +73,7 @@ extern volatile uint32_t* CurFramebuffer;
 
 int lcd_setup();
 void lcd_fill(uint32_t color);
-void syrah_quiesce();
+void lcd_shutdown();
 void lcd_set_backlight_level(int level);
 
 #endif

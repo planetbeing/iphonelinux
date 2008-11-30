@@ -32,6 +32,8 @@
 #include "hfs/bdev.h"
 #include "hfs/fs.h"
 
+int received_file_size;
+
 static int setup_devices();
 static int setup_openiboot();
 
@@ -62,6 +64,7 @@ void OpenIBootStart() {
 	}
 
 	fs_setup();
+	pmu_set_iboot_stage(0);
 
 	bufferPrintf("-----------------------------------------------\r\n");
 	bufferPrintf("              WELCOME TO OPENIBOOT\r\n");
@@ -98,11 +101,12 @@ static uint8_t* commandRecvBuffer = NULL;
 static uint8_t* dataRecvPtr = NULL;
 static size_t left = 0;
 static size_t rxLeft = 0;
+static size_t lastRxLen = 0;
 
 static uint8_t* sendFilePtr = NULL;
 static uint32_t sendFileBytesLeft = 0;
 
-#define USB_BYTES_AT_A_TIME 0x80
+static int USB_BYTES_AT_A_TIME = 0;
 
 static void addToCommandQueue(const char* command) {
 	EnterCriticalSection();
@@ -110,7 +114,8 @@ static void addToCommandQueue(const char* command) {
 	if(dataRecvBuffer != commandRecvBuffer) {
 		// in file mode, but we just received the whole thing
 		dataRecvBuffer = commandRecvBuffer;
-		bufferPrintf("file received.\r\n");
+		bufferPrintf("file received (%d bytes).\r\n", lastRxLen);
+		received_file_size = lastRxLen;
 		LeaveCriticalSection();
 		return;
 	}
@@ -194,7 +199,7 @@ static void controlReceived(uint32_t token) {
 		if(sendFileBytesLeft > 0) {
 			length = sendFileBytesLeft;
 		} else {
-			length = getScrollbackLen(); // getScrollbackLen();// 0x80;
+			length = getScrollbackLen(); // getScrollbackLen();// USB_BYTES_AT_A_TIME;
 		}
 
 		reply->command = OPENIBOOTCMD_DUMPBUFFER_LEN;
@@ -222,6 +227,7 @@ static void controlReceived(uint32_t token) {
 	} else if(cmd->command == OPENIBOOTCMD_SENDCOMMAND) {
 		dataRecvPtr = dataRecvBuffer;
 		rxLeft = cmd->dataLen;
+		lastRxLen = rxLeft;
 
 		//uartPrintf("got sendcommand, receiving length: %d\r\n", (int)rxLeft);
 
@@ -281,19 +287,25 @@ static void enumerateHandler(USBInterface* interface) {
 	usb_add_endpoint(interface, 4, USBOut, USBInterrupt);
 
 	if(!controlSendBuffer)
-		controlSendBuffer = memalign(DMA_ALIGN, 0x80);
+		controlSendBuffer = memalign(DMA_ALIGN, 512);
 
 	if(!controlRecvBuffer)
-		controlRecvBuffer = memalign(DMA_ALIGN, 0x80);
+		controlRecvBuffer = memalign(DMA_ALIGN, 512);
 
 	if(!dataSendBuffer)
-		dataSendBuffer = memalign(DMA_ALIGN, 0x80);
+		dataSendBuffer = memalign(DMA_ALIGN, 512);
 
 	if(!dataRecvBuffer)
-		dataRecvBuffer = commandRecvBuffer = memalign(DMA_ALIGN, 0x80);
+		dataRecvBuffer = commandRecvBuffer = memalign(DMA_ALIGN, 512);
 }
 
 static void startHandler() {
+	if(usb_get_speed() == USBHighSpeed) {
+		USB_BYTES_AT_A_TIME = 512;
+	} else {
+		USB_BYTES_AT_A_TIME = 0x80;
+	}
+
 	usb_receive_interrupt(4, controlRecvBuffer, sizeof(OpenIBootCmd));
 }
 
@@ -339,15 +351,15 @@ static int setup_openiboot() {
 	LeaveCriticalSection();
 
 	clock_set_sdiv(0);
-	lcd_setup();
-
-	framebuffer_setup();
 
 	aes_setup();
 
 	nor_setup();
 	images_setup();
 	nvram_setup();
+
+	lcd_setup();
+	framebuffer_setup();
 
 	return 0;
 }

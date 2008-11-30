@@ -5,8 +5,8 @@
 #include "openiboot-asmhelpers.h"
 
 #define HAVE_MMAP 0
-#define MALLOC_FAILURE_ACTION
-#define ABORT while(1) { printf("malloc error"); udelay(uSecPerSec); }
+#define MALLOC_FAILURE_ACTION { printf("malloc failed!\r\n"); }
+#define ABORT while(1) { printf("malloc error\r\n"); udelay(uSecPerSec); }
 #define LACKS_STRING_H
 #define LACKS_SYS_MMAN_H
 #define LACKS_FCNTL_H
@@ -24,12 +24,16 @@ extern char _end;
 // Hacky sbrk implementation
 void* sbrk(intptr_t incr) {
 	if(CurBreakValue == NULL) {
-		CurBreakValue = (void*) &_end;
+		CurBreakValue = (void*) HeapStart;
 	}
 
 	void *oldBreakValue = CurBreakValue;
 
 	CurBreakValue = (void*)((intptr_t)CurBreakValue +  incr);
+
+	if(incr > 0) {
+		memset(oldBreakValue, 0, incr);
+	}
 
 	return oldBreakValue;
 }

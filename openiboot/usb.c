@@ -202,7 +202,7 @@ int usb_start(USBEnumerateHandler hEnumerate, USBStartHandler hStart) {
 
 	SET_REG(USB + GAHBCFG, GAHBCFG_DMAEN | GAHBCFG_BSTLEN_INCR8 | GAHBCFG_MASKINT);
 	SET_REG(USB + GUSBCFG, GUSBCFG_PHYIF16BIT | GUSBCFG_SRPENABLE | GUSBCFG_HNPENABLE | ((5 & GUSBCFG_TURNAROUND_MASK) << GUSBCFG_TURNAROUND_SHIFT));
-	SET_REG(USB + DCFG, DCFG_NZSTSOUTHSHK); // some random setting. See specs
+	SET_REG(USB + DCFG, DCFG_HISPEED); // some random setting. See specs
 	SET_REG(USB + DCFG, GET_REG(USB + DCFG) & ~(DCFG_DEVICEADDRMSK));
 	InEPRegs[0].control = USB_EPCON_ACTIVE;
 	OutEPRegs[0].control = USB_EPCON_ACTIVE;
@@ -809,8 +809,11 @@ USBConfigurationDescriptor* usb_get_configuration_descriptor(int index, uint8_t 
 }
 
 void usb_add_endpoint(USBInterface* interface, int endpoint, USBDirection direction, USBTransferType transferType) {
-	if(transferType == USBInterrupt) { 
-		addEndpointDescriptor(interface, endpoint, direction, transferType, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(usb_speed), 32);
+	if(transferType == USBInterrupt) {
+		if(usb_speed == USB_HIGHSPEED)
+			addEndpointDescriptor(interface, endpoint, direction, transferType, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(usb_speed), 9);
+		else
+			addEndpointDescriptor(interface, endpoint, direction, transferType, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(usb_speed), 32);
 	} else {
 		addEndpointDescriptor(interface, endpoint, direction, transferType, USBNoSynchronization, USBDataEndpoint, packetsizeFromSpeed(usb_speed), 0);
 	}
@@ -1074,3 +1077,16 @@ static int8_t ringBufferEnqueue(RingBuffer* buffer, uint8_t value) {
 	return value;
 }
 
+USBSpeed usb_get_speed() {
+	switch(usb_speed) {
+		case USB_HIGHSPEED:
+			return USBHighSpeed;
+		case USB_FULLSPEED:
+		case USB_FULLSPEED_48_MHZ:
+			return USBFullSpeed;
+		case USB_LOWSPEED:
+			return USBLowSpeed;
+	}
+
+	return USBLowSpeed;
+}

@@ -3,17 +3,13 @@
 #include <string.h>
 #include <usb.h>
 #include <pthread.h>
-#include <readline/readline.h>
+#include <ncurses.h>
 
 #define OPENIBOOTCMD_DUMPBUFFER 0
 #define OPENIBOOTCMD_DUMPBUFFER_LEN 1
 #define OPENIBOOTCMD_DUMPBUFFER_GOAHEAD 2
 #define OPENIBOOTCMD_SENDCOMMAND 3
 #define OPENIBOOTCMD_SENDCOMMAND_GOAHEAD 4
-
-#ifdef WIN32
-#define pthread_yield sched_yield
-#endif
 
 typedef struct OpenIBootCmd {
 	uint32_t command;
@@ -39,7 +35,7 @@ void* doOutput(void* threadid) {
 		cmd.dataLen = 0;
 		usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
 		if(usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000) < 0) {
-			rl_deprep_terminal();
+			endwin();
 			exit(0);
 		}
 		totalLen = cmd.dataLen;
@@ -123,96 +119,13 @@ void sendBuffer(char* buffer, size_t size) {
 }
 
 void* doInput(void* threadid) {
-	char* commandBuffer = NULL;
-	char toSendBuffer[USB_BYTES_AT_A_TIME];
-
-	rl_basic_word_break_characters = " \t\n\"\\'`@$><=;|&{(~!:";
-	rl_completion_append_character = '\0';
-
 	while(1) {
-		if(commandBuffer != NULL)
-			free(commandBuffer);
+		int ch = getch();
 
-		commandBuffer = readline(NULL);
-		if(commandBuffer && *commandBuffer) {
-			add_history(commandBuffer);
-			write_history(".oibc-history");
-		}
-
-		char* fileBuffer = NULL;
-		int len = strlen(commandBuffer);
-
-		if(commandBuffer[0] == '!') {
-			char* atLoc = strchr(&commandBuffer[1], '@');
-
-			if(atLoc != NULL)
-				*atLoc = '\0';
-
-			FILE* file = fopen(&commandBuffer[1], "rb");
-			if(!file) {
-				fprintf(stderr, "file not found: %s\n", &commandBuffer[1]);
-				continue;
-			}
-			fseek(file, 0, SEEK_END);
-			len = ftell(file);
-			fseek(file, 0, SEEK_SET);
-			fileBuffer = malloc(len);
-			fread(fileBuffer, 1, len, file);
-			fclose(file);
-
-			if(atLoc != NULL) {
-				sprintf(toSendBuffer, "sendfile %s", atLoc + 1);
-			} else {
-				sprintf(toSendBuffer, "sendfile 0x09000000");
-			}
-
-			pthread_mutex_lock(&lock);
-			sendBuffer(toSendBuffer, strlen(toSendBuffer));
-			sendBuffer(fileBuffer, len);
-			pthread_mutex_unlock(&lock);
-			free(fileBuffer);
-		} else if(commandBuffer[0] == '~') {
-			char* sizeLoc = strchr(&commandBuffer[1], ':');
-
-			if(sizeLoc == NULL) {
-				fprintf(stderr, "must specify length to read\n");
-				continue;
-			}
-			
-			*sizeLoc = '\0';
-			sizeLoc++;
-
-			int toRead;
-			sscanf(sizeLoc, "%i", &toRead);
-
-			char* atLoc = strchr(&commandBuffer[1], '@');
-
-			if(atLoc != NULL)
-				*atLoc = '\0';
-
-			FILE* file = fopen(&commandBuffer[1], "wb");
-			if(!file) {
-				fprintf(stderr, "cannot open file: %s\n", &commandBuffer[1]);
-				continue;
-			}
-
-			if(atLoc != NULL) {
-				sprintf(toSendBuffer, "getfile %s %d", atLoc + 1, toRead);
-			} else {
-				sprintf(toSendBuffer, "getfile 0x09000000 %d", toRead);
-			}
-
-			pthread_mutex_lock(&lock);
-			sendBuffer(toSendBuffer, strlen(toSendBuffer));
-			outputFile = file;
-			readIntoOutput = toRead;
-			pthread_mutex_unlock(&lock);
-		} else {
-			commandBuffer[len] = '\n';
-			pthread_mutex_lock(&lock);
-			sendBuffer(commandBuffer, len + 1);
-			pthread_mutex_unlock(&lock);
-		}
+		char theChar = ch;
+		pthread_mutex_lock(&lock);
+		sendBuffer(&theChar, 1);
+		pthread_mutex_unlock(&lock);
 
 		pthread_yield();
 	}
@@ -227,8 +140,6 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 #endif
-
-	read_history(".oibc-history");
 
 	usb_init();
 	usb_find_busses();
@@ -265,6 +176,8 @@ int main(int argc, char* argv[]) {
 	return 1;
 
 done:
+	initscr();
+	noecho();
 
 	device = usb_open(dev);
 	if(!device) {

@@ -151,6 +151,7 @@ static void do_i2c(I2CInfo* i2c) {
 					}
 				} else {
 					// ack not received
+					bufferPrintf("i2c: ack not received before register/command %d\r\n", i2c->cursor);
 					i2c->error_code = -1;
 					i2c->state = I2CFinish;
 					proceed = TRUE;
@@ -204,6 +205,7 @@ static void do_i2c(I2CInfo* i2c) {
 					}
 				} else {
 					// ack not received
+					bufferPrintf("i2c: ack not received before byte %d\r\n", i2c->cursor);
 					i2c->error_code = -1;
 					i2c->state = I2CFinish;
 					proceed = TRUE;

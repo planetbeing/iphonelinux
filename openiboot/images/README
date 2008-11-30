@@ -1,15 +1,12 @@
 openiboot image resources
 -------------------------
 
-These are the images used for the menu items in the openiboot boot menu. They
-are pretty temporary because they are very ugly. If someone would like to
-design a better menu, please contact me.
+Images currently used by openiboot are grayscale PNGs linked into the binary
+via bin2c. The graphics are provided by poorlad (licensing information
+pending). 
 
-As it is, these images are generated using GIMP, exporting to a C header file,
-and then slightly modified to make the HEADER_PIXEL nested inside an ifndef.
-The position of the two images here on the screen are hardcoded inside menu.c.
-
-The icons used in the images are from Wikimedia Commons. The console icon is
-LGPL licensed and the apple icon is a public domain work by Oleg Alexandrov.
-The font used is DejaVu Sans Bold.
-
+The Apple logo is a trademark of Apple Inc., and is included for proper
+identification of Apple software on the device, and is believed to be
+necessary to avoid tarnishing or misrepresenting its image. It does not imply
+any association with or endorsement by the company, and its inclusion is
+believed to be fair use under United States copyright law.

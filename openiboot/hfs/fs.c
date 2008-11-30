@@ -104,6 +104,7 @@ void fs_cmd_ls(int argc, char** argv) {
 
 	if(argc < 2) {
 		bufferPrintf("usage: %s <partition> <directory>\r\n", argv[0]);
+		return;
 	}
 
 	io = bdev_open(parseNumber(argv[1]));
@@ -133,6 +134,7 @@ void fs_cmd_cat(int argc, char** argv) {
 
 	if(argc < 3) {
 		bufferPrintf("usage: %s <partition> <file>\r\n", argv[0]);
+		return;
 	}
 
 	io = bdev_open(parseNumber(argv[1]));
@@ -178,6 +180,7 @@ void fs_cmd_extract(int argc, char** argv) {
 
 	if(argc < 4) {
 		bufferPrintf("usage: %s <partition> <file> <location>\r\n", argv[0]);
+		return;
 	}
 
 	io = bdev_open(parseNumber(argv[1]));
