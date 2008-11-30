@@ -519,6 +519,10 @@ void images_uninstall() {
 				cur = cur->next;
 			}
 
+			bufferPrintf("Reading: ");
+			print_fourcc(curImage->type);
+			bufferPrintf(" (%d bytes)\r\n", curImage->padded);
+
 			cur->type = curImage->type;
 			cur->next = NULL;
 			cur->data = malloc(curImage->padded);
@@ -527,6 +531,10 @@ void images_uninstall() {
 			if(cur->type == fourcc("ibox")) {
 				iboot = cur;
 			}
+		} else {
+			bufferPrintf("Skipping: ");
+			print_fourcc(curImage->type);
+			bufferPrintf(" (%d bytes)\r\n", curImage->padded);
 		}
 
 		curImage = curImage->next;
@@ -543,6 +551,7 @@ void images_uninstall() {
 		return;
 	}
 
+	iboot->type = fourcc("ibot");
 	images_change_type(iboot->data, fourcc("ibot"));
 
 	bufferPrintf("Flashing...\r\n");
@@ -557,7 +566,7 @@ void images_uninstall() {
 		print_fourcc(cur->type);
 		bufferPrintf(" (%x, %d bytes)\r\n", cur->data, header->base.size);
 
-		//images_append(cur->data, header->base.size);
+		images_append(cur->data, header->base.size);
 
 		free(cur->data);
 		free(cur);
