@@ -498,6 +498,75 @@ void images_install(void* newData, size_t newDataLen) {
 	bufferPrintf("Refreshed image list\r\n");
 }
 
+void images_uninstall() {
+	ImageDataList* list = NULL;
+	ImageDataList* cur = NULL;
+	ImageDataList* iboot = NULL;
+
+	Image* curImage = imageList;
+
+	bufferPrintf("Reading images...\r\n");
+	while(curImage != NULL) {
+		if(curImage->type != fourcc("ibot")) {
+			if(cur == NULL) {
+				list = cur = malloc(sizeof(ImageDataList));
+			} else {
+				cur->next = malloc(sizeof(ImageDataList));
+				cur = cur->next;
+			}
+
+			cur->type = curImage->type;
+			cur->next = NULL;
+			cur->data = malloc(curImage->padded);
+			nor_read(cur->data, curImage->offset, curImage->padded);
+
+			if(cur->type == fourcc("ibox")) {
+				iboot = cur;
+			}
+		}
+
+		curImage = curImage->next;
+	}
+
+	if(iboot == NULL) {
+		bufferPrintf("openiboot does not seem to be installed\n");
+		while(list != NULL) {
+			cur = list;
+			list = list->next;
+			free(cur->data);
+			free(cur);
+		}
+		return;
+	}
+
+	images_change_type(iboot->data, fourcc("ibot"));
+
+	bufferPrintf("Flashing...\r\n");
+
+	images_rewind();
+	while(list != NULL) {
+		cur = list;
+		list = list->next;
+		AppleImg3RootHeader* header = (AppleImg3RootHeader*) cur->data;
+
+		bufferPrintf("Flashing: ");
+		print_fourcc(cur->type);
+		bufferPrintf(" (%x, %d bytes)\r\n", cur->data, header->base.size);
+
+		//images_append(cur->data, header->base.size);
+
+		free(cur->data);
+		free(cur);
+	}
+
+	bufferPrintf("Done with installation!\r\n");
+
+	images_release();
+	images_setup();
+
+	bufferPrintf("Refreshed image list\r\n");
+}
+
 void images_change_type(const void* img3Data, uint32_t type) {
 	AppleImg3RootHeader* header = (AppleImg3RootHeader*) img3Data;
 	header->extra.name = type;

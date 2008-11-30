@@ -107,4 +107,5 @@ void images_append(void* data, int len);
 void images_rewind();
 void* images_inject_img3(const void* img3Data, const void* newData, size_t newDataLen);
 void images_install(void* newData, size_t newDataLen);
+void images_uninstall();
 void images_change_type(const void* img3Data, uint32_t type);
