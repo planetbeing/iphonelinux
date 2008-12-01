@@ -3,6 +3,6 @@
 
 #include "openiboot.h"
 
-int menu_setup();
+int menu_setup(int timeout);
 
 #endif

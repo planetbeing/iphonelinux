@@ -60,7 +60,12 @@ void OpenIBootStart() {
 		framebuffer_clear();
 		bufferPrintf("Boot menu hidden. Use 'setenv opib-hide-menu false' and then 'saveenv' to unhide.\r\n");
 	} else {
-		menu_setup();
+		const char* sMenuTimeout = nvram_getvar("opib-menu-timeout");
+		int menuTimeout = -1;
+		if(sMenuTimeout)
+			menuTimeout = parseNumber(sMenuTimeout);
+
+		menu_setup(menuTimeout);
 	}
 
 	fs_setup();

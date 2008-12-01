@@ -66,7 +66,7 @@ static void toggle() {
 	}
 	drawSelectionBox();
 }
-int menu_setup() {
+int menu_setup(int timeout) {
 	FBWidth = currentWindow->framebuffer.width;
 	FBHeight = currentWindow->framebuffer.height;	
 
@@ -103,12 +103,18 @@ int menu_setup() {
 
 	pmu_set_iboot_stage(0);
 
+	uint64_t startTime = timer_get_system_microtime();
 	while(TRUE) {
 		if(buttons_is_hold_pushed()) {
 			toggle();
+			startTime = timer_get_system_microtime();
 			udelay(200000);
 		}
 		if(buttons_is_home_pushed()) {
+			break;
+		}
+		if(timeout > 0 && has_elapsed(startTime, (uint64_t)timeout * 1000)) {
+			bufferPrintf("menu: timed out, selecting current item\r\n");
 			break;
 		}
 		udelay(10000);
