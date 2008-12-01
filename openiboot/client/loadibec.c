@@ -81,22 +81,6 @@ int get_response(usb_dev_handle* device) {
 	return usb_bulk_read(device, 0x81, response_buffer, sizeof(response_buffer), 1000);
 }
 
-char* strnstr(const char* haystack, const char* needle, int len) {
-	int i;
-	const char* x = needle;
-	for(i = 0; i < len; i++) {
-		if(haystack[i] == *x) {
-			x++;
-			if(*x == '\0')
-				return (char*)(&haystack[i] - (x - needle));
-		} else {
-			x = needle;
-		}
-	}
-
-	return NULL;
-}
-
 int interactive(usb_dev_handle* device) {
 	int len;
 	char* commandBuffer = NULL;
@@ -105,12 +89,13 @@ int interactive(usb_dev_handle* device) {
 		do {
 			usleep(100000);
 			len = get_response(device);
+			response_buffer[len] = '\0';
 
 			if(len > 0) {
 				fwrite(response_buffer, 1, len, stdout);
 				fflush(stdout);
 			}
-		} while(len > 0 && strnstr(response_buffer, "] ", len) == NULL);
+		} while(len > 0 && strstr(response_buffer, "] ") == NULL);
 
 		if(len < 0)
 			break;

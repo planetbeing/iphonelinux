@@ -84,7 +84,7 @@ void* doOutput(void* threadid) {
 
 		pthread_mutex_unlock(&lock);
 
-		pthread_yield();
+		sched_yield();
 	}
 	pthread_exit(NULL);
 }
@@ -127,7 +127,7 @@ void* doInput(void* threadid) {
 		sendBuffer(&theChar, 1);
 		pthread_mutex_unlock(&lock);
 
-		pthread_yield();
+		sched_yield();
 	}
 	pthread_exit(NULL);
 }
