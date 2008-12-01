@@ -76,8 +76,10 @@ DecrementCriticalLock:
 EnterCriticalSection:
 	PUSH	{LR}
 
-	BLX	DisableCPUIRQ
-	BLX	DisableCPUFIQ
+	LDR	R0, =DisableCPUIRQ
+	BLX	R0
+	LDR	R0, =DisableCPUFIQ
+	BLX	R0
 
 	LDR	R1, =CurrentRunning
 	LDR	R2, [R1]
@@ -99,8 +101,10 @@ LeaveCriticalSection:
 	BNE	LeaveCriticalSection_return				@ check the Zero flag set by the previous SUB operation
 									@ remember in thumb mode, everything has set flag set
 
-	BLX	EnableCPUFIQ
-	BLX	EnableCPUIRQ
+	LDR	R0, =EnableCPUFIQ
+	BLX	R0
+	LDR	R0, =EnableCPUIRQ
+	BLX	R0
 
 LeaveCriticalSection_return:
 	POP	{PC}
