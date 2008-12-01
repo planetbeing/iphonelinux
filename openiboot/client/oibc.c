@@ -11,6 +11,10 @@
 #define OPENIBOOTCMD_SENDCOMMAND 3
 #define OPENIBOOTCMD_SENDCOMMAND_GOAHEAD 4
 
+#ifdef WIN32
+#define pthread_yield sched_yield
+#endif
+
 typedef struct OpenIBootCmd {
 	uint32_t command;
 	uint32_t dataLen;

@@ -304,6 +304,10 @@ void cmd_install(int argc, char** argv) {
 	images_install(&_start, (uint32_t)&OpenIBootEnd - (uint32_t)&_start);
 }
 
+void cmd_uninstall(int argc, char** argv) {
+	images_uninstall();
+}
+
 void cmd_pmu_voltage(int argc, char** argv) {
 	bufferPrintf("battery voltage: %d mV\r\n", pmu_get_battery_voltage());
 }
@@ -536,6 +540,7 @@ void cmd_help(int argc, char** argv) {
 OPIBCommand CommandList[] = 
 	{
 		{"install", "install openiboot onto the device", cmd_install},
+		{"uninstall", "uninstall openiboot from the device", cmd_uninstall},
 		{"reboot", "reboot the device", cmd_reboot},
 		{"poweroff", "power off the device", cmd_poweroff},
 		{"echo", "echo back a line", cmd_echo},
