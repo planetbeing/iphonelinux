@@ -824,6 +824,10 @@ static void initializeDescriptors() {
 	stringDescriptors = NULL;
 	configurations = NULL;
 	firstStringDescriptor = NULL;
+	firstStringDescriptor = (USBFirstStringDescriptor*) malloc(sizeof(USBFirstStringDescriptor) + (sizeof(uint16_t) * 1));
+	firstStringDescriptor->bLength = sizeof(USBFirstStringDescriptor) + (sizeof(uint16_t) * 1);
+	firstStringDescriptor->bDescriptorType = USBStringDescriptorType;
+	firstStringDescriptor->wLANGID[0] = USB_LANGID_ENGLISH_US;
 }
 
 static void releaseConfigurations() {
@@ -918,14 +922,13 @@ static uint8_t addStringDescriptor(const char* descriptorString) {
 
 	int sLen = strlen(descriptorString);
 	stringDescriptors[newIndex] = (USBStringDescriptor*) malloc(sizeof(USBStringDescriptor) + sLen);
-	stringDescriptors[newIndex]->bLength = sizeof(USBStringDescriptor) + sLen;
+	stringDescriptors[newIndex]->bLength = sizeof(USBStringDescriptor) + sLen * 2;
 	stringDescriptors[newIndex]->bDescriptorType = USBStringDescriptorType;
-	memcpy(stringDescriptors[newIndex]->bString, descriptorString, sLen);
-
-	firstStringDescriptor = (USBFirstStringDescriptor*) realloc(firstStringDescriptor, sizeof(USBFirstStringDescriptor) + (sizeof(uint16_t) * numStringDescriptors));
-	firstStringDescriptor->bLength = sizeof(USBFirstStringDescriptor) + (sizeof(uint16_t) * numStringDescriptors);
-	firstStringDescriptor->bDescriptorType = USBStringDescriptorType;
-	firstStringDescriptor->wLANGID[newIndex] = USB_LANGID_ENGLISH_US;
+	uint16_t* string = (uint16_t*) stringDescriptors[newIndex]->bString;
+	int i;
+	for(i = 0; i < sLen; i++) {
+		string[i] = descriptorString[i];
+	}
 
 	return (newIndex + 1);
 }
