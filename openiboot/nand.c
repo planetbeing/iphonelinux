@@ -62,7 +62,7 @@ static int wait_for_ready(int timeout) {
 	return 0;
 }
 
-static int wait_for_status_bit_2(int timeout) {
+static int wait_for_address_complete(int timeout) {
 	if((GET_REG(NAND + NAND_STATUS) & (1 << 2)) != 0) {
 		SET_REG(NAND + NAND_STATUS, 1 << 2);
 		return 0;
@@ -219,7 +219,7 @@ int nand_setup() {
 		SET_REG(NAND + NAND_CONFIG3, 0);
 		SET_REG(NAND + NAND_CON, NAND_CON_SETUPTRANSFER);
 
-		wait_for_status_bit_2(500);
+		wait_for_address_complete(500);
 		nand_bank_reset_helper(bank, 100);
 
 		SET_REG(NAND + NAND_TRANSFERSIZE, 8);
@@ -492,7 +492,7 @@ static int isEmptyBlock(uint8_t* buffer, int size) {
 		return 0;
 }
 
-int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBadBlocks) {
+int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBlank) {
 	if(bank >= Data.banksTotal)
 		return ERROR_ARG;
 
@@ -524,7 +524,7 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 	}
 
 	SET_REG(NAND + NAND_CON, NAND_CON_SETUPTRANSFER);
-	if(wait_for_status_bit_2(500) != 0) {
+	if(wait_for_address_complete(500) != 0) {
 		bufferPrintf("nand: setup transfer failed\r\n");
 		goto FIL_read_error;
 	}
@@ -575,7 +575,7 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 		}
 	}
 
-	if(eccFailed || checkBadBlocks) {
+	if(eccFailed || checkBlank) {
 		if(isEmptyBlock(aTemporarySBuf, Data.bytesPerSpare) != 0) {
 			return ERROR_EMPTYBLOCK;
 		} else if(eccFailed) {
