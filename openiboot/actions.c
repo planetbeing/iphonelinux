@@ -4,6 +4,8 @@
 #include "lcd.h"
 #include "mmu.h"
 #include "util.h"
+#include "hfs/fs.h"
+#include "nand.h"
 
 #define MACH_APPLE_IPHONE 1506
 
@@ -20,6 +22,7 @@
 #define ATAG_REVISION   0x54410007
 #define ATAG_VIDEOLFB   0x54410008
 #define ATAG_CMDLINE    0x54410009
+#define ATAG_IPHONE_NAND    0x54411001
 
 /* structures for each atag */
 struct atag_header {
@@ -91,6 +94,13 @@ struct atag_cmdline {
 	char    cmdline[1];
 };
 
+struct atag_iphone_nand {
+	uint32_t	nandID;
+	uint32_t	numBanks;
+	int		banksTable[8];
+	ExtentList	extentList;
+};
+
 struct atag {
 	struct atag_header hdr;
 	union {
@@ -103,6 +113,7 @@ struct atag {
 		struct atag_revision     revision;
 		struct atag_videolfb     videolfb;
 		struct atag_cmdline      cmdline;
+		struct atag_iphone_nand  nand;
 	} u;
 };
 
@@ -180,25 +191,32 @@ static void setup_cmdline_tag(const char * line)
 	params = tag_next(params);              /* move pointer to next tag */
 }
 
-static void setup_video_lfb_tag() {
-	params->hdr.tag = ATAG_VIDEOLFB;             /* Memory tag */
-	params->hdr.size = tag_size(atag_videolfb);  /* size tag */
+static int rootfs_partition = 0;
+static char* rootfs_filename = NULL;
 
-	params->u.videolfb.lfb_width = currentWindow->framebuffer.width;
-	params->u.videolfb.lfb_height = currentWindow->framebuffer.height;
-	params->u.videolfb.lfb_depth = 32;
-	params->u.videolfb.lfb_linelength = currentWindow->lineBytes;
-	params->u.videolfb.lfb_base = (uint32_t) currentWindow->framebuffer.buffer;
-	params->u.videolfb.lfb_size = params->u.videolfb.lfb_linelength * params->u.videolfb.lfb_height;
-	params->u.videolfb.blue_size = 8;
-	params->u.videolfb.blue_pos = 0;
-	params->u.videolfb.green_size = 8;
-	params->u.videolfb.green_pos = 8;
-	params->u.videolfb.red_size = 8;
-	params->u.videolfb.red_pos = 16;
-	params->u.videolfb.rsvd_size = 8;
-	params->u.videolfb.rsvd_pos = 24;
+static void setup_iphone_nand_tag()
+{
+	int i;
 
+	if(!rootfs_filename)
+		return;
+
+	ExtentList* extentList = fs_get_extents(rootfs_partition, rootfs_filename);
+	if(!extentList)
+		return;
+
+	params->u.nand.nandID = (nand_get_geometry())->DeviceID;
+	params->u.nand.numBanks = (nand_get_geometry())->banksTotal;
+	memcpy(&params->u.nand.banksTable, (nand_get_geometry())->banksTable, sizeof(params->u.nand.banksTable));
+	params->u.nand.extentList.numExtents = extentList->numExtents;
+	for(i = 0; i < extentList->numExtents; i++) {
+		params->u.nand.extentList.extents[i].startBlock = extentList->extents[i].startBlock;
+		params->u.nand.extentList.extents[i].blockCount = extentList->extents[i].blockCount;
+	}
+	free(extentList);
+
+	params->hdr.tag = ATAG_IPHONE_NAND;         /* iPhone NAND tag */
+	params->hdr.size = tag_size(atag_iphone_nand);
 	params = tag_next(params);              /* move pointer to next tag */
 }
 
@@ -233,6 +251,13 @@ void set_kernel(void* location, int size) {
 	memcpy(kernel, location, size);
 }
 
+void set_rootfs(int partition, const char* fileName) {
+	rootfs_partition = partition;
+	if(rootfs_filename)
+		free(rootfs_filename);
+	rootfs_filename = strdup(fileName);
+}
+
 #define INITRD_LOAD 0x00800000
 
 static void setup_tags(struct atag* parameters, const char* commandLine)
@@ -244,7 +269,7 @@ static void setup_tags(struct atag* parameters, const char* commandLine)
 		setup_initrd2_tag(INITRD_LOAD, ramdiskSize);
 	}
 	setup_cmdline_tag(commandLine);
-	setup_video_lfb_tag();
+	setup_iphone_nand_tag();
 	setup_end_tag();                    /* end of tags */
 }
 

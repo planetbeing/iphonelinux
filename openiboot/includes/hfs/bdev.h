@@ -28,6 +28,7 @@ typedef struct MBR {
 extern int HasBDevInit;
 
 int bdev_setup();
+unsigned int bdev_get_start(int partition);
 io_func* bdev_open(int partition);
 
 #endif

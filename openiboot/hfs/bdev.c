@@ -51,6 +51,11 @@ static void bdevClose(io_func* io) {
 	free(io);
 }
 
+unsigned int bdev_get_start(int partition)
+{
+	return MBRData.partitions[partition].beginLBA;
+}
+
 io_func* bdev_open(int partition) {
 	io_func* io;
 

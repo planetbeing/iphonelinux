@@ -250,6 +250,7 @@ int nand_setup() {
 	}
 
 	Data.DeviceID = nandType->id;
+	Data.banksTable = banksTable;
 
 	NANDSetting2 = (((clock_get_frequency(FrequencyBaseBus) * (nandType->NANDSetting2 + 1)) + 99999999)/100000000) - 1;
 	NANDSetting1 = (((clock_get_frequency(FrequencyBaseBus) * (nandType->NANDSetting1 + 1)) + 99999999)/100000000) - 1;

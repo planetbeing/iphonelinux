@@ -166,6 +166,22 @@ void cmd_ramdisk(int argc, char** argv) {
 	bufferPrintf("Loaded ramdisk at %08x - %08x\r\n", address, address + size);
 }
 
+void cmd_rootfs(int argc, char** argv) {
+	int partition;
+	const char* fileName;
+
+	if(argc < 3) {
+		bufferPrintf("usage: %s <partition> <path>\r\n", argv[0]);
+		return;
+	} else {
+		partition = parseNumber(argv[1]);
+		fileName = argv[2];
+	}
+
+	set_rootfs(partition, fileName);
+	bufferPrintf("set rootfs to %s on partition %d\r\n", fileName, partition);
+}
+
 void cmd_boot(int argc, char** argv) {
 	char* arguments = "";
 
@@ -579,6 +595,7 @@ OPIBCommand CommandList[] =
 		{"backlight", "set the backlight level", cmd_backlight},
 		{"kernel", "load a Linux kernel", cmd_kernel},
 		{"ramdisk", "load a Linux ramdisk", cmd_ramdisk},
+		{"rootfs", "specify a file as the Linux rootfs", cmd_rootfs},
 		{"boot", "boot a Linux kernel", cmd_boot},
 		{"go", "jump to a specified address (interrupts disabled)", cmd_go},
 		{"jump", "jump to a specified address (interrupts enabled)", cmd_jump},

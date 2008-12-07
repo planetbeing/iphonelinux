@@ -6,6 +6,7 @@
 void chainload(uint32_t address);
 void set_kernel(void* location, int size);
 void set_ramdisk(void* location, int size, int realSize);
+void set_rootfs(int partition, const char* fileName);
 void boot_linux(const char* args);
 
 #endif

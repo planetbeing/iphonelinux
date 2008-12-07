@@ -64,6 +64,7 @@ typedef struct NANDData {
 	uint16_t banksTotal;
 	uint8_t field_2E;
 	uint8_t field_2F;
+	int* banksTable;
 } NANDData;
 
 extern int HasNANDInit;

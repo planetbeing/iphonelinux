@@ -4,6 +4,7 @@
 #include "hfs/fs.h"
 #include "hfs/hfsplus.h"
 #include "util.h"
+#include "nand.h"
 
 int HasFSInit = FALSE;
 
@@ -218,6 +219,81 @@ void fs_cmd_extract(int argc, char** argv) {
 
 	closeVolume(volume);
 	CLOSE(io);
+}
+
+ExtentList* fs_get_extents(int partition, const char* fileName) {
+	Volume* volume;
+	io_func* io;
+	unsigned int partitionStart;
+	unsigned int physBlockSize;
+	ExtentList* list = NULL;
+
+	io = bdev_open(partition);
+	if(io == NULL) {
+		return NULL;
+	}
+
+	physBlockSize = (nand_get_geometry())->bytesPerPage;
+	partitionStart = bdev_get_start(partition);
+
+	volume = openVolume(io);
+	if(volume == NULL) {
+		goto out;
+	}
+
+	HFSPlusCatalogRecord* record;
+
+	record = getRecordFromPath(fileName, volume, NULL, NULL);
+
+	if(record != NULL) {
+		if(record->recordType == kHFSPlusFileRecord) {
+			io_func* fileIO;
+			HFSPlusCatalogFile* file = (HFSPlusCatalogFile*) record;
+			unsigned int allocationBlockSize = volume->volumeHeader->blockSize;
+			int numExtents = 0;
+			Extent* extent;
+			int i;
+
+			fileIO = openRawFile(file->fileID, &file->dataFork, record, volume);
+			if(!fileIO)
+				goto out_free;
+
+			extent = ((RawFile*)fileIO->data)->extents;
+			while(extent != NULL)
+			{
+				numExtents++;
+				extent = extent->next;
+			}
+
+			list = (ExtentList*) malloc(sizeof(ExtentList));
+			list->numExtents = numExtents;
+
+			extent = ((RawFile*)fileIO->data)->extents;
+			for(i = 0; i < list->numExtents; i++)
+			{
+				list->extents[i].startBlock = partitionStart + (extent->startBlock * (allocationBlockSize / physBlockSize));
+				list->extents[i].blockCount = extent->blockCount * (allocationBlockSize / physBlockSize);
+				extent = extent->next;
+			}
+
+			CLOSE(fileIO);
+		} else {
+			goto out_free;
+		}
+	} else {
+		goto out_close;
+	}
+
+out_free:
+	free(record);
+
+out_close:
+	closeVolume(volume);
+
+out:
+	CLOSE(io);
+
+	return list;
 }
 
 int fs_setup() {
