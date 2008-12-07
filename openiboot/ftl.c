@@ -791,7 +791,7 @@ int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf) {
 		if(pstFTLCxt->pLog[i].wVbn == 0xFFFF)
 			continue;
 
-		if(pstFTLCxt->pLog[i].field_6 == lbn) {
+		if(pstFTLCxt->pLog[i].wLbn == lbn) {
 			pLog = &pstFTLCxt->pLog[i];
 			break;
 		}
@@ -899,7 +899,7 @@ int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf) {
 
 				pLog = NULL;
 				for(i = 0; i < 17; i++) {
-					if(pstFTLCxt->pLog[i].wVbn != 0xFFFF && pstFTLCxt->pLog[i].field_6 == lbn) {
+					if(pstFTLCxt->pLog[i].wVbn != 0xFFFF && pstFTLCxt->pLog[i].wLbn == lbn) {
 						pLog = &pstFTLCxt->pLog[i];
 						break;
 					}

@@ -23,7 +23,7 @@ typedef struct VFLCxt {
 typedef struct FTLCxtLog {
 	void* field_0;					// 0x0
 	uint16_t wVbn;					// 0x4
-	uint16_t field_6;				// 0x6
+	uint16_t wLbn;					// 0x6
 	uint16_t* wPageOffsets;				// 0x8
 	uint16_t field_C;				// 0xC
 	uint16_t field_E;				// 0xE
