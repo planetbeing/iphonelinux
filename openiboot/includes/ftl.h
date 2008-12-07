@@ -39,7 +39,7 @@ typedef struct FTLCxt {
 	uint8_t unk1[0x38];				// 0x0
 	uint32_t pages_for_dataVbn[18];			// 0x38
 	uint32_t pages_for_19C[36];			// 0x80
-	uint32_t pages_for_1A0[34];			// 0x110
+	uint32_t pages_for_wPageOffsets[34];		// 0x110
 	uint16_t* dataVbn;				// 0x198
 	uint16_t* field_19C;				// 0x19C
 	uint16_t* wPageOffsets;				// 0x1A0

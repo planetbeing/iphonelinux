@@ -627,8 +627,8 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 
 	int pagesToRead;
 
-	pagesToRead = (Data->userSubBlksTotal * 2) / Data->bytesPerPage;
-	if(((Data->userSubBlksTotal * 2) % Data->bytesPerPage) != 0)
+	pagesToRead = (Data->userSubBlksTotal * sizeof(uint16_t)) / Data->bytesPerPage;
+	if(((Data->userSubBlksTotal * sizeof(uint16_t)) % Data->bytesPerPage) != 0)
 		pagesToRead++;
 
 	for(i = 0; i < pagesToRead; i++) {
@@ -636,24 +636,24 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 			goto FTL_Open_Error_Release;
 
 		int toRead = Data->bytesPerPage;
-		if(toRead > ((Data->userSubBlksTotal * 2) - (i * Data->bytesPerPage))) {
-			toRead = (Data->userSubBlksTotal * 2) - (i * Data->bytesPerPage);
+		if(toRead > ((Data->userSubBlksTotal * sizeof(uint16_t)) - (i * Data->bytesPerPage))) {
+			toRead = (Data->userSubBlksTotal * sizeof(uint16_t)) - (i * Data->bytesPerPage);
 		}
 
 		memcpy(((uint8_t*)pstFTLCxt->dataVbn) + (i * Data->bytesPerPage), pageBuffer, toRead);	
 	}
 
-	pagesToRead = (Data->pagesPerSubBlk * 34) / Data->bytesPerPage;
-	if(((Data->pagesPerSubBlk * 34) % Data->bytesPerPage) != 0)
+	pagesToRead = (Data->pagesPerSubBlk * (17 * sizeof(uint16_t))) / Data->bytesPerPage;
+	if(((Data->pagesPerSubBlk * (17 * sizeof(uint16_t))) % Data->bytesPerPage) != 0)
 		pagesToRead++;
 
 	for(i = 0; i < pagesToRead; i++) {
-		if(VFL_Read(pstFTLCxt->pages_for_1A0[i], pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
+		if(VFL_Read(pstFTLCxt->pages_for_wPageOffsets[i], pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
 			goto FTL_Open_Error_Release;
 
 		int toRead = Data->bytesPerPage;
-		if(toRead > ((Data->pagesPerSubBlk * 34) - (i * Data->bytesPerPage))) {
-			toRead = (Data->pagesPerSubBlk * 34) - (i * Data->bytesPerPage);
+		if(toRead > ((Data->pagesPerSubBlk * (17 * sizeof(uint16_t))) - (i * Data->bytesPerPage))) {
+			toRead = (Data->pagesPerSubBlk * (17 * sizeof(uint16_t))) - (i * Data->bytesPerPage);
 		}
 
 		memcpy(((uint8_t*)pstFTLCxt->wPageOffsets) + (i * Data->bytesPerPage), pageBuffer, toRead);	
@@ -1013,4 +1013,12 @@ int ftl_read(void* buffer, uint64_t offset, int size) {
 
 	free(tBuffer);
 	return TRUE;
+}
+
+void ftl_printdata() {
+	bufferPrintf("Block mapping:\r\n");
+	int i;
+	for(i = 0; i < Data->userSubBlksTotal; i++) {
+		bufferPrintf("\t%d => %d\r\n", i, pstFTLCxt[i]);
+	}
 }

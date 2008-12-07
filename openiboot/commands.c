@@ -553,6 +553,11 @@ void cmd_help(int argc, char** argv) {
 	}
 }
 
+void ftl_printdata();
+void cmd_ftl_mapping(int argc, char** argv) {
+	ftl_printdata();
+}
+
 OPIBCommand CommandList[] = 
 	{
 		{"install", "install openiboot onto the device", cmd_install},
@@ -573,6 +578,7 @@ OPIBCommand CommandList[] =
 		{"nand_read_spare", "read a page of NAND's spare into RAM", cmd_nand_read_spare},
 		{"vfl_read", "read a page of VFL into RAM", cmd_vfl_read},
 		{"ftl_read", "read a page of FTL into RAM", cmd_ftl_read},
+		{"ftl_mapping", "print FTL mapping information", cmd_ftl_mapping},
 		{"bdev_read", "read bytes from a NAND block device", cmd_bdev_read},
 		{"fs_ls", "list files and folders", fs_cmd_ls},
 		{"fs_cat", "display a file", fs_cmd_cat},
