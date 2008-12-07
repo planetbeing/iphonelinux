@@ -152,7 +152,7 @@ static int FTL_Init() {
 	pstFTLCxt->field_31C = 0;
 
 	pstFTLCxt->dataVbn = (uint16_t*) malloc(Data->userSubBlksTotal * sizeof(uint16_t));
-	pstFTLCxt->field_1A0 = (uint16_t*) malloc((Data->pagesPerSubBlk * 18) * sizeof(uint16_t));
+	pstFTLCxt->wPageOffsets = (uint16_t*) malloc((Data->pagesPerSubBlk * 18) * sizeof(uint16_t));
 	pstFTLCxt->field_19C = (uint16_t*) malloc((Data->userSubBlksTotal + 23) * sizeof(uint16_t));
 	pstFTLCxt->field_3B0 = (uint16_t*) malloc((Data->userSubBlksTotal + 23) * sizeof(uint16_t));
 
@@ -165,13 +165,13 @@ static int FTL_Init() {
 	StoreCxt = malloc(Data->bytesPerPage * numPagesToWriteInStoreCxt);
 	ScatteredVirtualPageNumberBuffer = (uint32_t*) malloc(Data->pagesPerSubBlk * sizeof(uint32_t*));
 
-	if(!pstFTLCxt->dataVbn || !pstFTLCxt->field_1A0 || !pstFTLCxt->field_19C || !FTLCxtBuffer->field_3B0 || ! FTLSpareBuffer || !StoreCxt || !ScatteredVirtualPageNumberBuffer)
+	if(!pstFTLCxt->dataVbn || !pstFTLCxt->wPageOffsets || !pstFTLCxt->field_19C || !FTLCxtBuffer->field_3B0 || ! FTLSpareBuffer || !StoreCxt || !ScatteredVirtualPageNumberBuffer)
 		return -1;
 
 	int i;
 	for(i = 0; i < 18; i++) {
-		pstFTLCxt->pLog[i].field_8 = pstFTLCxt->field_1A0 + (i * Data->pagesPerSubBlk);
-		memset(pstFTLCxt->pLog[i].field_8, 0xFF, Data->pagesPerSubBlk * 2);
+		pstFTLCxt->pLog[i].wPageOffsets = pstFTLCxt->wPageOffsets + (i * Data->pagesPerSubBlk);
+		memset(pstFTLCxt->pLog[i].wPageOffsets, 0xFF, Data->pagesPerSubBlk * 2);
 		pstFTLCxt->pLog[i].field_10 = 1;
 		pstFTLCxt->pLog[i].field_C = 0;
 		pstFTLCxt->pLog[i].field_E = 0;
@@ -548,7 +548,7 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 	uint16_t* dataVbn = pstFTLCxt->dataVbn;
 	uint16_t* field_19C = pstFTLCxt->field_19C;
 	void* field_3B0 = pstFTLCxt->field_3B0;
-	uint16_t* field_1A0 = pstFTLCxt->field_1A0;
+	uint16_t* wPageOffsets = pstFTLCxt->wPageOffsets;
 
 	void* thing;
 	if((thing = VFL_get_maxThing()) == NULL)
@@ -614,10 +614,10 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 	pstFTLCxt->dataVbn = dataVbn;
 	pstFTLCxt->field_19C = field_19C;
 	pstFTLCxt->field_3B0 = field_3B0;
-	pstFTLCxt->field_1A0 = field_1A0;
+	pstFTLCxt->wPageOffsets = wPageOffsets;
 
 	for(i = 0; i < 18; i++) {
-		pstFTLCxt->pLog[i].field_8 = pstFTLCxt->field_1A0 + (i * Data->pagesPerSubBlk);
+		pstFTLCxt->pLog[i].wPageOffsets = pstFTLCxt->wPageOffsets + (i * Data->pagesPerSubBlk);
 	}
 
 	if(!ftlCxtFound)
@@ -656,7 +656,7 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 			toRead = (Data->pagesPerSubBlk * 34) - (i * Data->bytesPerPage);
 		}
 
-		memcpy(((uint8_t*)pstFTLCxt->field_1A0) + (i * Data->bytesPerPage), pageBuffer, toRead);	
+		memcpy(((uint8_t*)pstFTLCxt->wPageOffsets) + (i * Data->bytesPerPage), pageBuffer, toRead);	
 	}
 
 	pagesToRead = ((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) / Data->bytesPerPage;
@@ -751,9 +751,9 @@ FTL_Open_Error:
 }
 
 uint32_t FTL_map_page(FTLCxtLog* pLog, int lbn, int offset) {
-	if(pLog && pLog->field_8[offset] != 0xFFFF) {
-		if(((pLog->wVbn * Data->pagesPerSubBlk) + pLog->field_8[offset] + 1) != 0)
-			return (pLog->wVbn * Data->pagesPerSubBlk) + pLog->field_8[offset];
+	if(pLog && pLog->wPageOffsets[offset] != 0xFFFF) {
+		if(((pLog->wVbn * Data->pagesPerSubBlk) + pLog->wPageOffsets[offset] + 1) != 0)
+			return (pLog->wVbn * Data->pagesPerSubBlk) + pLog->wPageOffsets[offset];
 	}
 
 	return (pstFTLCxt->dataVbn[lbn] * Data->pagesPerSubBlk) + offset;
