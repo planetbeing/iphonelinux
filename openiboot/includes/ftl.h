@@ -36,20 +36,25 @@ typedef struct FTLCxtElement2 {
 } FTLCxtElement2;
 
 typedef struct FTLCxt {
-	uint8_t unk1[0x38];				// 0x0
-	uint32_t pages_for_dataVbn[18];			// 0x38
-	uint32_t pages_for_19C[36];			// 0x80
+	uint32_t unk0;					// 0x0
+	uint32_t unk1;					// 0x4
+	uint16_t wNumOfFreeVb;				// 0x8
+	uint16_t unkSpace[6];				// 0xA
+	uint16_t awFreeVb[10];				// 0x16
+	uint16_t awUnknown[7];				// 0x2A
+	uint32_t pages_for_pawMapTable[18];		// 0x38
+	uint32_t pages_for_pawEraseCounterTable[36];	// 0x80
 	uint32_t pages_for_wPageOffsets[34];		// 0x110
-	uint16_t* dataVbn;				// 0x198
-	uint16_t* field_19C;				// 0x19C
+	uint16_t* pawMapTable;				// 0x198
+	uint16_t* pawEraseCounterTable;			// 0x19C
 	uint16_t* wPageOffsets;				// 0x1A0
 	FTLCxtLog pLog[18];				// 0x1A4
 	uint8_t unk2[6];				// 0x30C
 	uint16_t thing[3];				// 0x312
 	uint32_t field_318;				// 0x318
 	uint32_t field_31C;				// 0x31C
-	uint32_t pages_for_3B0[36];			// 0x320
-	uint16_t* field_3B0;				// 0x3B0
+	uint32_t pages_for_pawReadCounterTable[36];	// 0x320
+	uint16_t* pawReadCounterTable;			// 0x3B0
 	FTLCxtElement2 elements2[5];			// 0x3B4
 	uint32_t field_3C8;				// 0x3C8
 	uint32_t field_3CC;				// 0x3CC

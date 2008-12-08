@@ -337,6 +337,7 @@ int nand_setup() {
 	bufferPrintf("nand: SECTORS_PER_PAGE: %d\r\n", Data.sectorsPerPage);
 	bufferPrintf("nand: BYTES_PER_SPARE: %d\r\n", Data.bytesPerSpare);
 	bufferPrintf("nand: BYTES_PER_PAGE: %d\r\n", Data.bytesPerPage);
+	bufferPrintf("nand: PAGES_PER_BLOCK: %d\r\n", Data.pagesPerBlock);
 
 	aTemporaryReadEccBuf = (uint8_t*) malloc(Data.bytesPerPage);
 	memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
