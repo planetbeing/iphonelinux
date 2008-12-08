@@ -39,9 +39,11 @@ typedef struct FTLCxt {
 	uint32_t unk0;					// 0x0
 	uint32_t unk1;					// 0x4
 	uint16_t wNumOfFreeVb;				// 0x8
-	uint16_t unkSpace[6];				// 0xA
+	uint16_t wUnk2;					// 0xA
+	uint16_t wUnk3;					// 0xC
+	uint16_t awUnkBlockList1[4];			// 0xE
 	uint16_t awFreeVb[10];				// 0x16
-	uint16_t awUnknown[7];				// 0x2A
+	uint16_t awUnkBlockList2[7];			// 0x2A
 	uint32_t pages_for_pawMapTable[18];		// 0x38
 	uint32_t pages_for_pawEraseCounterTable[36];	// 0x80
 	uint32_t pages_for_wPageOffsets[34];		// 0x110

@@ -1019,6 +1019,18 @@ int ftl_read(void* buffer, uint64_t offset, int size) {
 void ftl_printdata() {
 	int i, j;
 
+	bufferPrintf("Unknown block list 1:\r\n");
+	for(i = 0; i < 4; i++)
+	{
+		bufferPrintf("\t%u: %u\r\n", i, pstFTLCxt->awUnkBlockList1[i]);
+	}
+
+	bufferPrintf("Unknown block list 2:\r\n");
+	for(i = 0; i < 7; i++)
+	{
+		bufferPrintf("\t%u: %u\r\n", i, pstFTLCxt->awUnkBlockList2[i]);
+	}
+
 	bufferPrintf("Free virtual blocks: %d\r\n", pstFTLCxt->wNumOfFreeVb);
 	for(i = 0; i < pstFTLCxt->wNumOfFreeVb; i++) {
 		bufferPrintf("\t%u: %u\r\n", i, pstFTLCxt->awFreeVb[i]);
