@@ -232,11 +232,13 @@ static void* ramdisk = NULL;
 static uint32_t ramdiskSize;
 static uint32_t ramdiskRealSize;
 
-void set_ramdisk(void* location, int size, int realSize) {
+void set_ramdisk(void* location, int size) {
 	if(ramdisk)
 		free(ramdisk);
 
-	ramdiskRealSize = realSize;
+	// the gzip file format places the uncompressed length in the last four bytes of the file. Read it and calculate the size in KB.
+	ramdiskRealSize = (*((uint32_t*)((uint8_t*)location + size - sizeof(uint32_t)))) / 1024;
+
 	ramdiskSize = size;
 	ramdisk = malloc(size);
 	memcpy(ramdisk, location, size);

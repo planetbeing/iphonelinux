@@ -146,23 +146,16 @@ void cmd_kernel(int argc, char** argv) {
 void cmd_ramdisk(int argc, char** argv) {
 	uint32_t address;
 	uint32_t size;
-	uint32_t realSize;
 
-	if(argc < 4) {
-		if(argc < 2) {
-			bufferPrintf("Usage: %s [address] [size] <uncompressed size in KB>\r\n", argv[0]);
-			return;
-		}
+	if(argc < 3) {
 		address = 0x09000000;
 		size = received_file_size;
-		realSize = parseNumber(argv[1]);
 	} else {
 		address = parseNumber(argv[1]);
 		size = parseNumber(argv[2]);
-		realSize = parseNumber(argv[3]);
 	}
 
-	set_ramdisk((void*) address, size, realSize);
+	set_ramdisk((void*) address, size);
 	bufferPrintf("Loaded ramdisk at %08x - %08x\r\n", address, address + size);
 }
 
