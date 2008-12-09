@@ -475,6 +475,17 @@ void cmd_vfl_read(int argc, char** argv) {
 	bufferPrintf("VFL_read: %x\r\n", VFL_Read(page, (uint8_t*) address, NULL, TRUE, NULL));
 }
 
+void cmd_vfl_erase(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <block>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t block = parseNumber(argv[1]);
+
+	bufferPrintf("VFL_Erase(%d): %x\r\n", block, VFL_Erase(block));
+}
+
 void cmd_ftl_read(int argc, char** argv) {
 	if(argc < 4) {
 		bufferPrintf("Usage: %s <address> <lpn> <pages>\r\n", argv[0]);
@@ -534,6 +545,14 @@ void cmd_frequency(int argc, char** argv) {
 	bufferPrintf("Timebase frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseTimebase));
 }
 
+void cmd_ftl_mapping(int argc, char** argv) {
+	ftl_printdata();
+}
+
+void cmd_nand_status(int agc, char** argv) {
+	bufferPrintf("nand status: %x\r\n", nand_read_status());
+}
+
 void cmd_version(int argc, char** argv) {
 	bufferPrintf("%s\r\n", OPENIBOOT_VERSION_STR);
 }
@@ -544,11 +563,6 @@ void cmd_help(int argc, char** argv) {
 		bufferPrintf("%-20s%s\r\n", curCommand->name, curCommand->description);
 		curCommand++;
 	}
-}
-
-void ftl_printdata();
-void cmd_ftl_mapping(int argc, char** argv) {
-	ftl_printdata();
 }
 
 OPIBCommand CommandList[] = 
@@ -569,7 +583,9 @@ OPIBCommand CommandList[] =
 		{"dma", "perform a DMA transfer", cmd_dma},
 		{"nand_read", "read a page of NAND into RAM", cmd_nand_read},
 		{"nand_read_spare", "read a page of NAND's spare into RAM", cmd_nand_read_spare},
+		{"nand_status", "read NAND status", cmd_nand_status},
 		{"vfl_read", "read a page of VFL into RAM", cmd_vfl_read},
+		{"vfl_erase", "erase a block of VFL", cmd_vfl_erase},
 		{"ftl_read", "read a page of FTL into RAM", cmd_ftl_read},
 		{"ftl_mapping", "print FTL mapping information", cmd_ftl_mapping},
 		{"bdev_read", "read bytes from a NAND block device", cmd_bdev_read},

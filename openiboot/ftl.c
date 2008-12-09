@@ -260,6 +260,22 @@ static uint16_t virtual_block_to_physical_block(uint16_t virtualBank, uint16_t v
 	return virtualBlock;
 }
 
+int VFL_Erase(uint16_t block) {
+	uint16_t physicalBlock;
+	int ret;
+	int bank;
+
+	for(bank = 0; bank < Data->banksTotal; bank++) {
+		physicalBlock = virtual_block_to_physical_block(bank, block + Data2->field_4);
+		ret = nand_erase(bank, physicalBlock);
+		if(ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int empty_ok, int* refresh_page) {
 	if(refresh_page) {
 		*refresh_page = FALSE;

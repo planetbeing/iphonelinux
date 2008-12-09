@@ -98,6 +98,26 @@ static int wait_for_status_bit_3(int timeout) {
 	return 0;
 }
 
+int nand_read_status()
+{
+	int status;
+
+	SET_REG(NAND + NAND_CONFIG6, GET_REG(NAND + NAND_CONFIG6) & ~(1 << 4));
+	SET_REG(NAND + NAND_CON, 0x7E0);
+	SET_REG(NAND + NAND_CMD, 0x70);
+	SET_REG(NAND + NAND_TRANSFERSIZE, 0);
+	SET_REG(NAND + NAND_CON, 0x7E2);
+
+	wait_for_status_bit_3(500);
+
+	status = GET_REG(NAND + NAND_DMA_SOURCE);
+	SET_REG(NAND + NAND_CON, 0x7E0);
+	SET_REG(NAND + NAND_STATUS, 1 << 3);
+	SET_REG(NAND + NAND_CONFIG6, GET_REG(NAND + NAND_CONFIG6) | (1 << 2));
+
+	return status;
+}
+
 static int nand_bank_reset_helper(int bank, int timeout) {
 	uint64_t startTime = timer_get_system_microtime();
 	if(NANDBankResetSetting)
@@ -489,6 +509,38 @@ static int isEmptyBlock(uint8_t* buffer, int size) {
 
 	if(found <= 1)
 		return 1;
+	else
+		return 0;
+}
+
+int nand_erase(int bank, int block) {
+	int pageAddr;
+
+	if(bank >= Data.banksTotal)
+		return ERROR_ARG;
+
+	if(block >= Data.blocksPerBank)
+		return ERROR_ARG;
+
+	pageAddr = block * Data.pagesPerBlock;
+
+	SET_REG(NAND + NAND_CONFIG,
+		((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
+		| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
+
+	SET_REG(NAND + NAND_CMD, 0x60);
+
+	SET_REG(NAND + NAND_CONFIG4, NAND_CONFIG4_TRANSFERSETTING);
+	SET_REG(NAND + NAND_CONFIG3, pageAddr << 16); // lower bits of the page number to the upper bits of CONFIG3
+	SET_REG(NAND + NAND_CON, NAND_CON_SETUPTRANSFER);
+
+	SET_REG(NAND + NAND_CMD, 0xD0);
+	wait_for_ready(500);
+
+	while((nand_read_status() & (1 << 6)) == 0);
+
+	if(nand_read_status() & 0x1)
+		return -1;
 	else
 		return 0;
 }

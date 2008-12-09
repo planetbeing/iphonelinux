@@ -9,7 +9,7 @@
 #define NAND_CLOCK_GATE1 0x8
 #define NAND_CLOCK_GATE2 0xC
 #define NANDECC_INT 0x2B
-
+#define NAND_INT 0x14
 
 // Registers
 #define NAND_CONFIG 0x0
