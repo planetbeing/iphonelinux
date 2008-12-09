@@ -656,8 +656,7 @@ FIL_erase_error:
 }
 
 int nand_calculate_ecc(uint8_t* data, uint8_t* ecc) {
-	ecc_generate(ECCType, 1, data, ecc);
-	return ecc_finish();
+	return generateECC(ECCType, data, ecc);
 }
 
 int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBlank) {
@@ -770,7 +769,10 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC) {
 
 	if(doECC) {
 		memcpy(aTemporarySBuf, spare, sizeof(SpareData));
-		generateECC(ECCType, buffer, aTemporarySBuf + sizeof(SpareData));
+		if(generateECC(ECCType, buffer, aTemporarySBuf + sizeof(SpareData)) != 0) {
+			bufferPrintf("nand: Unexpected error during ECC generation\r\n");
+			return ERROR_ARG;
+		}
 
 		memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
 		memcpy(aTemporaryReadEccBuf, spare, sizeof(SpareData));
@@ -778,6 +780,8 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC) {
 		ecc_generate(ECCType, 1, aTemporaryReadEccBuf, aTemporarySBuf + sizeof(SpareData) + TotalECCDataSize);
 		if(ecc_finish() != 0) {
 			memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
+			bufferPrintf("nand: Unexpected error during ECC generation\r\n");
+			return ERROR_ARG;
 		}
 	}
 
