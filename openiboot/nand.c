@@ -456,7 +456,7 @@ static void ecc_generate(int setting, int sectors, uint8_t* sectorData, uint8_t*
 	SET_REG(NANDECC + NANDECC_DATA, (uint32_t) sectorData);
 	SET_REG(NANDECC + NANDECC_ECC, (uint32_t) eccData);
 
-	CleanCPUDataCache();
+	CleanAndInvalidateCPUDataCache();
 
 	SET_REG(NANDECC + NANDECC_START, 2);
 }
