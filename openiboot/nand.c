@@ -237,7 +237,7 @@ int nand_setup() {
 
 		SET_REG(NAND + NAND_CONFIG4, 0);
 		SET_REG(NAND + NAND_CONFIG3, 0);
-		SET_REG(NAND + NAND_CON, NAND_CON_SETUPTRANSFER);
+		SET_REG(NAND + NAND_CON, NAND_CON_ADDRESSDONE);
 
 		wait_for_address_complete(500);
 		nand_bank_reset_helper(bank, 100);
@@ -568,7 +568,7 @@ int nand_erase(int bank, int block) {
 
 	SET_REG(NAND + NAND_CONFIG4, 2);
 	SET_REG(NAND + NAND_CONFIG3, pageAddr);
-	SET_REG(NAND + NAND_CON, NAND_CON_SETUPTRANSFER);
+	SET_REG(NAND + NAND_CON, NAND_CON_ADDRESSDONE);
 
 	if(wait_for_address_complete(500) != 0) {
 		bufferPrintf("nand (nand_erase): wait for address complete failed\r\n");
@@ -621,7 +621,7 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number	
 	}
 
-	SET_REG(NAND + NAND_CON, NAND_CON_SETUPTRANSFER);
+	SET_REG(NAND + NAND_CON, NAND_CON_ADDRESSDONE);
 	if(wait_for_address_complete(500) != 0) {
 		bufferPrintf("nand: setup transfer failed\r\n");
 		goto FIL_read_error;
@@ -718,7 +718,7 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare) {
 		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number	
 	}
 
-	SET_REG(NAND + NAND_CON, NAND_CON_SETUPTRANSFER);
+	SET_REG(NAND + NAND_CON, NAND_CON_ADDRESSDONE);
 	if(wait_for_address_complete(500) != 0) {
 		bufferPrintf("nand: setup transfer failed\r\n");
 		goto FIL_write_error;
