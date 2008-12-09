@@ -404,6 +404,41 @@ static int transferFromFlash(void* buffer, int size) {
 	return 0;
 }
 
+static int transferToFlash(void* buffer, int size) {
+	int controller = 0;
+	int channel = 0;
+
+	if((((uint32_t)buffer) & 0x3) != 0) {
+		// the buffer needs to be aligned for DMA, last two bits have to be clear
+		return ERROR_ALIGN;
+	}
+
+	SET_REG(NAND + NAND_CONFIG, GET_REG(NAND + NAND_CONFIG) | (1 << NAND_CONFIG_DMASETTINGSHIFT));
+	SET_REG(NAND + NAND_TRANSFERSIZE, size - 1);
+	SET_REG(NAND + NAND_CON, NAND_CON_BEGINTRANSFER);
+
+	CleanCPUDataCache();
+
+	dma_request(DMA_MEMORY, 4, 4, DMA_NAND, 4, 4, &controller, &channel);
+	dma_perform((uint32_t)buffer, DMA_NAND, size, 0, &controller, &channel);
+
+	if(dma_finish(controller, channel, 500) != 0) {
+		bufferPrintf("nand: dma timed out\r\n");
+		return ERROR_TIMEOUT;
+	}
+
+	if(wait_for_status_bit_3(500) != 0) {
+		bufferPrintf("nand: waiting for status bit 3 timed out\r\n");
+		return ERROR_TIMEOUT;
+	}
+
+	SET_REG(NAND + NAND_CON, NAND_CON_SETTING1);
+
+	CleanAndInvalidateCPUDataCache();
+
+	return 0;
+}
+
 static void ecc_perform(int setting, int sectors, uint8_t* sectorData, uint8_t* eccData) {
 	SET_REG(NANDECC + NANDECC_CLEARINT, 1);
 	SET_REG(NANDECC + NANDECC_SETUP, ((sectors - 1) & 0x3) | setting);
@@ -555,6 +590,8 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 	if(buffer == NULL && spare == NULL)
 		return ERROR_ARG;
 
+	bufferPrintf("nand_read: bank = %d, page = %d\r\n", bank, page);
+
 	SET_REG(NAND + NAND_CONFIG,
 		((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
 		| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
@@ -635,6 +672,69 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 			return ERROR_NAND;
 		}
 	}
+
+	return 0;
+
+FIL_read_error:
+	nand_bank_reset(bank, 100);
+	return ERROR_NAND;
+}
+
+int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare) {
+	if(bank >= Data.banksTotal)
+		return ERROR_ARG;
+
+	if(page >= Data.pagesPerBank)
+		return ERROR_ARG;
+
+	if(buffer == NULL && spare == NULL)
+		return ERROR_ARG;
+
+	SET_REG(NAND + NAND_CONFIG,
+		((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
+		| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
+
+	SET_REG(NAND + NAND_CMD, 0x80);
+	if(wait_for_ready(500) != 0) {
+		bufferPrintf("nand: bank setting failed\r\n");
+		goto FIL_read_error;
+	}
+
+	SET_REG(NAND + NAND_CONFIG4, NAND_CONFIG4_TRANSFERSETTING);
+
+	if(buffer) {
+		SET_REG(NAND + NAND_CONFIG3, page << 16); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number
+	} else {
+		SET_REG(NAND + NAND_CONFIG3, (page << 16) | Data.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number	
+	}
+
+	SET_REG(NAND + NAND_CON, NAND_CON_SETUPTRANSFER);
+	if(wait_for_address_complete(500) != 0) {
+		bufferPrintf("nand: setup transfer failed\r\n");
+		goto FIL_read_error;
+	}
+	
+	if(transferToFlash(buffer, Data.bytesPerPage) != 0) {
+		bufferPrintf("nand: transferFromFlash failed\r\n");
+		goto FIL_read_error;
+	}
+
+	if(transferToFlash(aTemporarySBuf, Data.bytesPerSpare) != 0) {
+		bufferPrintf("nand: transferFromFlash for spare failed\r\n");
+		goto FIL_read_error;
+	}
+
+	SET_REG(NAND + NAND_CMD, 0x10);
+	wait_for_ready(500);
+
+	while((nand_read_status() & (1 << 6)) == 0);
+
+	if(nand_read_status() & 0x1)
+		return -1;
+	else
+		return 0;
 
 	return 0;
 

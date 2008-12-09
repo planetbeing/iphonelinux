@@ -432,6 +432,20 @@ void cmd_nand_read(int argc, char** argv) {
 	bufferPrintf("done!\r\n");
 }
 
+void cmd_nand_write(int argc, char** argv) {
+	if(argc < 4) {
+		bufferPrintf("Usage: %s <page> <spare> <bank> <page>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t spare = parseNumber(argv[2]);
+	uint32_t bank = parseNumber(argv[3]);
+	uint32_t page = parseNumber(argv[4]);
+
+	bufferPrintf("nand_write(%d, %d, %x, %x) = %d\r\n", bank, page, address, spare, nand_write(bank, page, (uint8_t*) address, (uint8_t*) spare));
+}
+
 void cmd_nand_read_spare(int argc, char** argv) {
 	if(argc < 4) {
 		bufferPrintf("Usage: %s <address> <bank> <page> [pages]\r\n", argv[0]);
@@ -582,6 +596,7 @@ OPIBCommand CommandList[] =
 		{"gpio_pinstate", "get the state of a GPIO pin", cmd_gpio_pinstate},
 		{"dma", "perform a DMA transfer", cmd_dma},
 		{"nand_read", "read a page of NAND into RAM", cmd_nand_read},
+		{"nand_write", "write a page of NAND", cmd_nand_write},
 		{"nand_read_spare", "read a page of NAND's spare into RAM", cmd_nand_read_spare},
 		{"nand_status", "read NAND status", cmd_nand_status},
 		{"vfl_read", "read a page of VFL into RAM", cmd_vfl_read},
