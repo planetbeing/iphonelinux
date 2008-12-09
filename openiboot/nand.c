@@ -450,6 +450,17 @@ static void ecc_perform(int setting, int sectors, uint8_t* sectorData, uint8_t* 
 	SET_REG(NANDECC + NANDECC_START, 1);
 }
 
+static void ecc_generate(int setting, int sectors, uint8_t* sectorData, uint8_t* eccData) {
+	SET_REG(NANDECC + NANDECC_CLEARINT, 1);
+	SET_REG(NANDECC + NANDECC_SETUP, ((sectors - 1) & 0x3) | setting);
+	SET_REG(NANDECC + NANDECC_DATA, (uint32_t) sectorData);
+	SET_REG(NANDECC + NANDECC_ECC, (uint32_t) eccData);
+
+	CleanCPUDataCache();
+
+	SET_REG(NANDECC + NANDECC_START, 2);
+}
+
 static int wait_for_ecc_interrupt(int timeout) {
 	uint64_t startTime = timer_get_system_microtime();
 	uint32_t mask = (1 << (NANDECC_INT - VIC_InterruptSeparator));
@@ -475,6 +486,60 @@ static int ecc_finish() {
 
 	if((GET_REG(NANDECC + NANDECC_STATUS) & 0x1) != 0)
 		return ERROR_ECC;
+
+	return 0;
+}
+
+static int generateECC(int setting, uint8_t* data, uint8_t* ecc) {
+	int eccSize = 0;
+
+	if(setting == 4) {
+		eccSize = 15;
+	} else if(setting == 8) {
+		eccSize = 20;
+	} else if(setting == 0) {
+		eccSize = 10;
+	} else {
+		return ERROR_ECC;
+	}
+
+	uint8_t* dataPtr = data;
+	uint8_t* eccPtr = ecc;
+	int sectorsLeft = Data.sectorsPerPage;
+
+	while(sectorsLeft > 0) {
+		int toCheck;
+		if(sectorsLeft > 4)
+			toCheck = 4;
+		else
+			toCheck = sectorsLeft;
+
+		ecc_generate(setting, toCheck, dataPtr, eccPtr);
+		if(ecc_finish() != 0)
+			return ERROR_ECC;
+
+		if(LargePages) {
+			// If there are more than 4 sectors in a page...
+			int i;
+			for(i = 0; i < toCheck; i++) {
+				// loop through each sector that we have generated this time's ECC
+				uint8_t* x = &eccPtr[eccSize * i]; // first byte of ECC
+				uint8_t* y = x + eccSize - 1; // last byte of ECC
+				while(x < y) {
+					// swap the byte order of them
+					uint8_t t = *y;
+					*y = *x;
+					*x = t;
+					x++;
+					y--;
+				}
+			}
+		}
+
+		dataPtr += toCheck * SECTOR_SIZE;
+		eccPtr += toCheck * eccSize;
+		sectorsLeft -= toCheck;
+	}
 
 	return 0;
 }
@@ -590,6 +655,11 @@ FIL_erase_error:
 
 }
 
+int nand_calculate_ecc(uint8_t* data, uint8_t* ecc) {
+	ecc_generate(ECCType, 1, data, ecc);
+	return ecc_finish();
+}
+
 int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBlank) {
 	if(bank >= Data.banksTotal)
 		return ERROR_ARG;
@@ -688,7 +758,7 @@ FIL_read_error:
 	return ERROR_NAND;
 }
 
-int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare) {
+int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC) {
 	if(bank >= Data.banksTotal)
 		return ERROR_ARG;
 
@@ -697,6 +767,19 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare) {
 
 	if(buffer == NULL && spare == NULL)
 		return ERROR_ARG;
+
+	if(doECC) {
+		memcpy(aTemporarySBuf, spare, sizeof(SpareData));
+		generateECC(ECCType, buffer, aTemporarySBuf + sizeof(SpareData));
+
+		memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
+		memcpy(aTemporaryReadEccBuf, spare, sizeof(SpareData));
+
+		ecc_generate(ECCType, 1, aTemporaryReadEccBuf, aTemporarySBuf + sizeof(SpareData) + TotalECCDataSize);
+		if(ecc_finish() != 0) {
+			memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
+		}
+	}
 
 	SET_REG(NAND + NAND_CONFIG,
 		((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
@@ -731,7 +814,7 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare) {
 		}
 	}
 
-	if(transferToFlash(spare, Data.bytesPerSpare) != 0) {
+	if(transferToFlash(aTemporarySBuf, Data.bytesPerSpare) != 0) {
 		bufferPrintf("nand: transferToFlash for spare failed\r\n");
 		goto FIL_write_error;
 	}

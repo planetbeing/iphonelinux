@@ -432,9 +432,21 @@ void cmd_nand_read(int argc, char** argv) {
 	bufferPrintf("done!\r\n");
 }
 
+void cmd_nand_ecc(int argc, char** argv) {
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <data> <ecc>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t ecc = parseNumber(argv[2]);
+
+	bufferPrintf("nand_calculate_ecc(%x, %x) = %d\r\n", address, ecc, nand_calculate_ecc((uint8_t*) address, (uint8_t*) ecc));
+}
+
 void cmd_nand_write(int argc, char** argv) {
-	if(argc < 4) {
-		bufferPrintf("Usage: %s <page> <spare> <bank> <page>\r\n", argv[0]);
+	if(argc < 6) {
+		bufferPrintf("Usage: %s <data> <spare> <bank> <page> <ecc>\r\n", argv[0]);
 		return;
 	}
 
@@ -442,8 +454,9 @@ void cmd_nand_write(int argc, char** argv) {
 	uint32_t spare = parseNumber(argv[2]);
 	uint32_t bank = parseNumber(argv[3]);
 	uint32_t page = parseNumber(argv[4]);
+	uint32_t ecc = parseNumber(argv[5]);
 
-	bufferPrintf("nand_write(%d, %d, %x, %x) = %d\r\n", bank, page, address, spare, nand_write(bank, page, (uint8_t*) address, (uint8_t*) spare));
+	bufferPrintf("nand_write(%d, %d, %x, %x, %d) = %d\r\n", bank, page, address, spare, ecc, nand_write(bank, page, (uint8_t*) address, (uint8_t*) spare, ecc));
 }
 
 void cmd_nand_read_spare(int argc, char** argv) {
@@ -599,6 +612,7 @@ OPIBCommand CommandList[] =
 		{"nand_write", "write a page of NAND", cmd_nand_write},
 		{"nand_read_spare", "read a page of NAND's spare into RAM", cmd_nand_read_spare},
 		{"nand_status", "read NAND status", cmd_nand_status},
+		{"nand_ecc", "hardware ECC a page", cmd_nand_ecc},
 		{"vfl_read", "read a page of VFL into RAM", cmd_vfl_read},
 		{"vfl_erase", "erase a block of VFL", cmd_vfl_erase},
 		{"ftl_read", "read a page of FTL into RAM", cmd_ftl_read},

@@ -75,8 +75,9 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 int nand_read_multiple(uint16_t* bank, uint32_t* pages, uint8_t* main, SpareData* spare, int pagesCount);
 int nand_read_alternate_ecc(int bank, int page, uint8_t* buffer);
 int nand_erase(int bank, int block);
-int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare);
+int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC);
 int nand_read_status();
+int nand_calculate_ecc(uint8_t* data, uint8_t* ecc);
 NANDData* nand_get_geometry();
 UnknownNANDType* nand_get_data();
 
