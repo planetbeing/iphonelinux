@@ -131,6 +131,59 @@ int pmu_get_battery_voltage() {
 	return query_adc(0);
 }
 
+static int bcd_to_int(int bcd) {
+	return (bcd & 0xF) + (((bcd >> 4) & 0xF) * 10);
+}
+
+int pmu_get_seconds() {
+	return bcd_to_int(pmu_get_reg(PMU_RTCSC) & PMU_RTCSC_MASK);
+}
+
+int pmu_get_minutes() {
+	return bcd_to_int(pmu_get_reg(PMU_RTCMN) & PMU_RTCMN_MASK);
+}
+
+int pmu_get_hours() {
+	return bcd_to_int(pmu_get_reg(PMU_RTCHR) & PMU_RTCHR_MASK);
+}
+
+int pmu_get_dayofweek() {
+	return pmu_get_reg(PMU_RTCWD) & PMU_RTCWD_MASK;
+}
+
+const char* pmu_get_dayofweek_str() {
+	switch(pmu_get_dayofweek()) {
+		case 0:
+			return "Sunday";
+		case 1:
+			return "Monday";
+		case 2:
+			return "Tuesday";
+		case 3:
+			return "Wednesday";
+		case 4:
+			return "Thursday";
+		case 5:
+			return "Friday";
+		case 6:
+			return "Saturday";
+	}
+
+	return NULL;
+}
+
+int pmu_get_day() {
+	return bcd_to_int(pmu_get_reg(PMU_RTCDT) & PMU_RTCDT_MASK);
+}
+
+int pmu_get_month() {
+	return pmu_get_reg(PMU_RTCMT) & PMU_RTCMT_MASK;
+}
+
+int pmu_get_year() {
+	return bcd_to_int(pmu_get_reg(PMU_RTCYR) & PMU_RTCYR_MASK);
+}
+
 static PowerSupplyType identify_usb_charger() {
 	int dn;
 	int dp;

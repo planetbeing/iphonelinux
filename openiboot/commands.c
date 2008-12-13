@@ -584,6 +584,10 @@ void cmd_version(int argc, char** argv) {
 	bufferPrintf("%s\r\n", OPENIBOOT_VERSION_STR);
 }
 
+void cmd_time(int argc, char** argv) {
+	bufferPrintf("Current time: %02d:%02d:%02d, %s %02d/%02d/20%02d\r\n", pmu_get_hours(), pmu_get_minutes(), pmu_get_seconds(), pmu_get_dayofweek_str(), pmu_get_month(), pmu_get_day(), pmu_get_year());
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -644,6 +648,7 @@ OPIBCommand CommandList[] =
 		{"go", "jump to a specified address (interrupts disabled)", cmd_go},
 		{"jump", "jump to a specified address (interrupts enabled)", cmd_jump},
 		{"version", "display the version string", cmd_version},
+		{"time", "display the current time according to the RTC", cmd_time},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}
 	};

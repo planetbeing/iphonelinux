@@ -34,5 +34,13 @@ int pmu_write_regs(const PMURegisterData* regs, int num);
 int pmu_get_battery_voltage();
 PowerSupplyType pmu_get_power_supply();
 void pmu_charge_settings(int UseUSB, int SuspendUSB, int StopCharger);
+int pmu_get_seconds();
+int pmu_get_minutes();
+int pmu_get_hours();
+int pmu_get_dayofweek();
+const char* pmu_get_dayofweek_str();
+int pmu_get_day();
+int pmu_get_month();
+int pmu_get_year();
 
 #endif

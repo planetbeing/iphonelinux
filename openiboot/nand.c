@@ -515,8 +515,7 @@ static int generateECC(int setting, uint8_t* data, uint8_t* ecc) {
 			toCheck = sectorsLeft;
 
 		ecc_generate(setting, toCheck, dataPtr, eccPtr);
-		if(ecc_finish() != 0)
-			return ERROR_ECC;
+		ecc_finish();
 
 		if(LargePages) {
 			// If there are more than 4 sectors in a page...
@@ -778,11 +777,7 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC) {
 		memcpy(aTemporaryReadEccBuf, spare, sizeof(SpareData));
 
 		ecc_generate(ECCType, 1, aTemporaryReadEccBuf, aTemporarySBuf + sizeof(SpareData) + TotalECCDataSize);
-		if(ecc_finish() != 0) {
-			memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
-			bufferPrintf("nand: Unexpected error during ECC generation\r\n");
-			return ERROR_ARG;
-		}
+		ecc_finish();
 	}
 
 	SET_REG(NAND + NAND_CONFIG,

@@ -43,6 +43,21 @@
 #define PMU_ADCS3 0x57
 #define PMU_ADCS1 0x55
 #define PMU_MBCS1 0x4B
+#define PMU_RTCSC 0x59
+#define PMU_RTCMN 0x5A
+#define PMU_RTCHR 0x5B
+#define PMU_RTCWD 0x5C
+#define PMU_RTCDT 0x5D
+#define PMU_RTCMT 0x5E
+#define PMU_RTCYR 0x5F
+
+#define PMU_RTCSC_MASK 0x7F
+#define PMU_RTCMN_MASK 0x7F
+#define PMU_RTCHR_MASK 0x3F
+#define PMU_RTCWD_MASK 0x07
+#define PMU_RTCDT_MASK 0x3F
+#define PMU_RTCMT_MASK 0x1F
+#define PMU_RTCYR_MASK 0xFF
 
 #define PMU_OOCSHDWN_GOSTBY (1 << 0)
 
