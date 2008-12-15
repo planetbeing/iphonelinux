@@ -503,14 +503,25 @@ void cmd_vfl_read(int argc, char** argv) {
 }
 
 void cmd_vfl_erase(int argc, char** argv) {
+	int count;
+
 	if(argc < 2) {
-		bufferPrintf("Usage: %s <block>\r\n", argv[0]);
+		bufferPrintf("Usage: %s <block> [count]\r\n", argv[0]);
 		return;
 	}
 
-	uint32_t block = parseNumber(argv[1]);
+	if(argc < 3) {
+		count = 1;
+	} else {
+		count = parseNumber(argv[2]);
+	}
 
-	bufferPrintf("VFL_Erase(%d): %x\r\n", block, VFL_Erase(block));
+	uint32_t block = parseNumber(argv[1]);
+	uint32_t firstBlock = block;
+
+	for(; block < (firstBlock + count); block++) {
+		bufferPrintf("VFL_Erase(%d): %x\r\n", block, VFL_Erase(block));
+	}
 }
 
 void cmd_ftl_read(int argc, char** argv) {
