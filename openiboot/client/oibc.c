@@ -34,9 +34,9 @@ void* doOutput(void* threadid) {
 		cmd.command = OPENIBOOTCMD_DUMPBUFFER;
 		cmd.dataLen = 0;
 		usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
-		if(usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000) < 0) {
-			rl_deprep_terminal();
-			exit(0);
+		while(usb_interrupt_read(device, 3, (char*) (&cmd), sizeof(OpenIBootCmd), 1000) < 0) {
+			//rl_deprep_terminal();
+			//exit(0);
 		}
 		totalLen = cmd.dataLen;
 
