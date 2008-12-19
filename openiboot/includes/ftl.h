@@ -51,16 +51,17 @@ typedef struct FTLCxt {
 	uint16_t* pawEraseCounterTable;			// 0x19C
 	uint16_t* wPageOffsets;				// 0x1A0
 	FTLCxtLog pLog[18];				// 0x1A4
-	uint8_t unk2[6];				// 0x30C
+	uint32_t unk2;					// 0x30C
+	uint16_t unk3;					// 0x310
 	uint16_t thing[3];				// 0x312
-	uint32_t field_318;				// 0x318
+	uint32_t page_318;				// 0x318
 	uint32_t field_31C;				// 0x31C
 	uint32_t pages_for_pawReadCounterTable[36];	// 0x320
 	uint16_t* pawReadCounterTable;			// 0x3B0
 	FTLCxtElement2 elements2[5];			// 0x3B4
 	uint32_t field_3C8;				// 0x3C8
-	uint32_t field_3CC;				// 0x3CC
-	uint32_t field_3D0;				// 0x3D0
+	uint32_t totalReadCount;			// 0x3CC
+	uint32_t page_3D0;				// 0x3D0
 	uint32_t field_3D4;				// 0x3D4
 	uint8_t field_3D8[0x420];			// 0x3D8
 	uint32_t versionLower;				// 0x7F8

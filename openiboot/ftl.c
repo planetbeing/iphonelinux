@@ -108,26 +108,26 @@ static uint8_t* StoreCxt;
 static int FTL_Init() {
 	int numPagesToWriteInStoreCxt = 0;
 
-	int x = ((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) / Data->bytesPerPage;
+	int pagesPerCounterTable = ((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) / Data->bytesPerPage;
 	if((((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) % Data->bytesPerPage) != 0) {
-		x++;
+		pagesPerCounterTable++;
 	}
 
-	numPagesToWriteInStoreCxt = x * 2;
+	numPagesToWriteInStoreCxt = pagesPerCounterTable * 2;
 
-	int y = (Data->userSubBlksTotal * 2) / Data->bytesPerPage;
-	if(((Data->userSubBlksTotal * 2) % Data->bytesPerPage) != 0) {
-		y++;
+	int pagesForMapTable = (Data->userSubBlksTotal * sizeof(uint16_t)) / Data->bytesPerPage;
+	if(((Data->userSubBlksTotal * sizeof(uint16_t)) % Data->bytesPerPage) != 0) {
+		pagesForMapTable++;
 	}
 
-	numPagesToWriteInStoreCxt += y;
+	numPagesToWriteInStoreCxt += pagesForMapTable;
 
-	int z = (Data->pagesPerSubBlk * 34) / Data->bytesPerPage;
+	int pagesForLogPageOffsets = (Data->pagesPerSubBlk * 34) / Data->bytesPerPage;
 	if(((Data->pagesPerSubBlk * 34) % Data->bytesPerPage) != 0) {
-		z++;
+		pagesForLogPageOffsets++;
 	}
 
-	numPagesToWriteInStoreCxt += z + 2;
+	numPagesToWriteInStoreCxt += pagesForLogPageOffsets + 2;
 
 	if(numPagesToWriteInStoreCxt >= Data->pagesPerSubBlk) {
 		bufferPrintf("nand: error - FTL_NUM_PAGES_TO_WRITE_IN_STORECXT >= PAGES_PER_SUBLK\r\n");
@@ -715,9 +715,9 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 		}
 
 		if((pstFTLCxt->field_3D4 + 1) == 0) {
-			int x = pstFTLCxt->field_3D0 / Data->pagesPerSubBlk;
+			int x = pstFTLCxt->page_3D0 / Data->pagesPerSubBlk;
 			if(x == 0 || x <= Data->userSubBlksTotal) {
-				if(VFL_Read(pstFTLCxt->field_3D0, pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
+				if(VFL_Read(pstFTLCxt->page_3D0, pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
 					goto FTL_Open_Error_Release;
 
 				sum_data(pageBuffer);
@@ -781,7 +781,7 @@ int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf) {
 
 	FTLData1.field_8 += totalPagesToRead;
 	FTLData1.field_18++;
-	pstFTLCxt->field_3CC++;
+	pstFTLCxt->totalReadCount++;
 
 	if(!pBuf) {
 		return ERROR_ARG;
@@ -1035,6 +1035,19 @@ int ftl_read(void* buffer, uint64_t offset, int size) {
 void ftl_printdata() {
 	int i, j;
 
+	bufferPrintf("unk0: %u\r\n", pstFTLCxt->unk0);
+	bufferPrintf("unk1: %u\r\n", pstFTLCxt->unk1);
+	bufferPrintf("wUnk2: %u\r\n", pstFTLCxt->wUnk2);
+	bufferPrintf("wUnk3: %u\r\n", pstFTLCxt->wUnk3);
+	bufferPrintf("unk2: %u\r\n", pstFTLCxt->unk2);
+	bufferPrintf("unk3: %u\r\n", pstFTLCxt->unk3);
+	bufferPrintf("page_318: %u\r\n", pstFTLCxt->page_318);
+	bufferPrintf("field_31C: %u\r\n", pstFTLCxt->field_31C);
+	bufferPrintf("field_3C8: %u\r\n", pstFTLCxt->field_3C8);
+	bufferPrintf("page_3D0: %u\r\n", pstFTLCxt->page_3D0);
+	bufferPrintf("field_3D4: %u\r\n", pstFTLCxt->field_3D4);
+	bufferPrintf("Total read count: %u\r\n", pstFTLCxt->totalReadCount);
+
 	bufferPrintf("Unknown block list 1:\r\n");
 	for(i = 0; i < 4; i++)
 	{
@@ -1048,8 +1061,33 @@ void ftl_printdata() {
 	}
 
 	bufferPrintf("Free virtual blocks: %d\r\n", pstFTLCxt->wNumOfFreeVb);
-	for(i = 0; i < pstFTLCxt->wNumOfFreeVb; i++) {
+	for(i = 0; i < pstFTLCxt->wNumOfFreeVb; i++)
+	{
 		bufferPrintf("\t%u: %u\r\n", i, pstFTLCxt->awFreeVb[i]);
+	}
+
+	bufferPrintf("Pages for pawMapTable:\r\n");
+	for(i = 0; i < 18; i++)
+	{
+		bufferPrintf("\t%u: %u\r\n", i, pstFTLCxt->pages_for_pawMapTable[i]);
+	}
+
+	bufferPrintf("Pages for pawEraseCounterTable:\r\n");
+	for(i = 0; i < 36; i++)
+	{
+		bufferPrintf("\t%u: %u\r\n", i, pstFTLCxt->pages_for_pawEraseCounterTable[i]);
+	}
+
+	bufferPrintf("Pages for wPageOffsets:\r\n");
+	for(i = 0; i < 34; i++)
+	{
+		bufferPrintf("\t%u: %u\r\n", i, pstFTLCxt->pages_for_wPageOffsets[i]);
+	}
+
+	bufferPrintf("Pages for pawReadCounterTable:\r\n");
+	for(i = 0; i < 36; i++)
+	{
+		bufferPrintf("\t%u: %u\r\n", i, pstFTLCxt->pages_for_pawReadCounterTable[i]);
 	}
 
 	bufferPrintf("Log blocks (page-by-page remapping):\r\n");
