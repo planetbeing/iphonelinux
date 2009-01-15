@@ -6,6 +6,7 @@
 int miu_setup() {
 	if(POWER_ID_EPOCH(*((uint8_t*)(POWER + POWER_ID))) != 3) {
 		// Epoch mismatch
+		bufferPrintf("miu: epoch mismatch\r\n");
 		return -1;
 	}
 

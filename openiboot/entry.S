@@ -44,6 +44,20 @@ ArmReset:						// This function will setup the processor and kick off execution
 	LDR	R1, =_start
 	CMP	R0, R1
 	BEQ	ArmReset_zeroBSS
+
+	// We need to get the MIU settings right. First we have to setup the peripheral remap register
+
+	MOV	R1, #0x38000000				// Peripheral port at 0x38000000
+	ADD	R1, #0x12				// Peripheral port size 128 MB
+	MCR     p15, 0, R1, c15, c2, 4			// Write peripheral port settings
+
+	MOV	R1, #0x38000000				// MIU register
+	ADD	R1, #0x00100000
+	LDR	R2, [R1]				// Get current settings
+	BIC	R2, #0x7				// Mask out current MIU setting
+	ORR	R2, #1					// Change setting so 0x0 is physical memory
+	STR	R2, [R1]				// Set MIU settings
+
 	LDR	R1, =_start				// OMG, we're not in the right place! Copy us to the right place
 	LDR	R2, =(OpenIBootEnd - OpenIBootLoad)	// This is the size of OpenIBoot
 
