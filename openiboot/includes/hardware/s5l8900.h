@@ -7,16 +7,21 @@
  *	Constants
  */
 
-#define OpenIBootLoad 0x00000000
 #define MemoryStart 0x00000000
 #define MemoryEnd 0xFFFFFFFF
 #define LargeMemoryStart 0x08000000				/* FIXME: This is an ugly hack to get around iBoot's memory rearrangement. Linux boot will only work for installed openiboot! */
 #define RAMEnd 0x08000000
 #define MemoryHigher 0x80000000
+#define ExceptionVector MemoryStart
+#ifdef SMALL
+#define PageTable (OpenIBootLoad + 0x24000)
+#define HeapStart (PageTable + 0x4000)
+#else
+#define OpenIBootLoad 0x00000000
+#define GeneralStack ((PageTable - 4) + LargeMemoryStart)
 #define HeapStart (LargeMemoryStart + 0x02000000)
 #define PageTable (RAMEnd - 0x4000)
-#define ExceptionVector MemoryStart
-#define GeneralStack ((PageTable - 4) + LargeMemoryStart)
+#endif
 
 /*
  *	Devices

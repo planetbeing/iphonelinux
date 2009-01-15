@@ -54,12 +54,16 @@ void OpenIBootStart() {
 	setup_openiboot();
 	pmu_charge_settings(TRUE, FALSE, FALSE);
 
+	framebuffer_setdisplaytext(TRUE);
+	framebuffer_clear();
+
+#ifndef SMALL
+#ifndef NO_STBIMAGE
 	const char* hideMenu = nvram_getvar("opib-hide-menu");
 	if(hideMenu && (strcmp(hideMenu, "1") == 0 || strcmp(hideMenu, "true") == 0)) {
-		framebuffer_setdisplaytext(TRUE);
-		framebuffer_clear();
 		bufferPrintf("Boot menu hidden. Use 'setenv opib-hide-menu false' and then 'saveenv' to unhide.\r\n");
 	} else {
+		framebuffer_setdisplaytext(FALSE);
 		const char* sMenuTimeout = nvram_getvar("opib-menu-timeout");
 		int menuTimeout = -1;
 		if(sMenuTimeout)
@@ -67,8 +71,10 @@ void OpenIBootStart() {
 
 		menu_setup(menuTimeout);
 	}
+#endif
+#endif
 
-	ftl_setup();
+	nand_setup();
 #ifndef NO_HFS
 	fs_setup();
 #endif

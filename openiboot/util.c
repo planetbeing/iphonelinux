@@ -418,7 +418,8 @@ void uartPrint(const char* toBuffer) {
 }
 
 void bufferPrintf(const char* format, ...) {
-	char buffer[1000];
+	static char buffer[1000];
+	EnterCriticalSection();
 	buffer[0] = '\0';
 
 	va_list args;
@@ -426,6 +427,7 @@ void bufferPrintf(const char* format, ...) {
 	vsprintf(buffer, format, args);
 	va_end(args);
 	bufferPrint(buffer);
+	LeaveCriticalSection();
 }
 
 void bufferFlush(char* destination, size_t length) {
@@ -439,7 +441,8 @@ void bufferFlush(char* destination, size_t length) {
 }
 
 void uartPrintf(const char* format, ...) {
-	char buffer[1000];
+	static char buffer[1000];
+	EnterCriticalSection();
 	buffer[0] = '\0';
 
 	va_list args;
@@ -447,10 +450,12 @@ void uartPrintf(const char* format, ...) {
 	vsprintf(buffer, format, args);
 	va_end(args);
 	uartPrint(buffer);
+	LeaveCriticalSection();
 }
 
 void fbPrintf(const char* format, ...) {
-	char buffer[1000];
+	static char buffer[1000];
+	EnterCriticalSection();
 	buffer[0] = '\0';
 
 	va_list args;
@@ -458,6 +463,7 @@ void fbPrintf(const char* format, ...) {
 	vsprintf(buffer, format, args);
 	va_end(args);
 	framebuffer_print(buffer);
+	LeaveCriticalSection();
 }
 
 char* getScrollback() {

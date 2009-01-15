@@ -1,3 +1,6 @@
+#ifndef SMALL
+#ifndef NO_STBIMAGE
+
 #include "openiboot.h"
 #include "lcd.h"
 #include "util.h"
@@ -137,3 +140,5 @@ int menu_setup(int timeout) {
 	return 0;
 }
 
+#endif
+#endif

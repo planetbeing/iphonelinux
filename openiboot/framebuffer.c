@@ -3,7 +3,6 @@
 #include "lcd.h"
 #include "util.h"
 #include "pcf/6x10.h"
-#include "stb_image.h"
 
 static int TWidth;
 static int THeight;
@@ -169,6 +168,10 @@ void framebuffer_draw_rect(uint32_t color, int x, int y, int width, int height) 
 	currentWindow->framebuffer.vline(&currentWindow->framebuffer, y, x + width, height, color);
 }
 
+#ifndef SMALL
+#ifndef NO_STBIMAGE
+#include "stb_image.h"
+
 uint32_t* framebuffer_load_image(const char* data, int len, int* width, int* height, int alpha) {
 	int components;
 	uint32_t* stbiData = (uint32_t*) stbi_load_from_memory((stbi_uc const*)data, len, width, height, &components, 4);
@@ -178,6 +181,8 @@ uint32_t* framebuffer_load_image(const char* data, int len, int* width, int* hei
 	}
 	return stbiData;
 }
+#endif
+#endif
 
 void framebuffer_blend_image(uint32_t* dst, int dstWidth, int dstHeight, uint32_t* src, int srcWidth, int srcHeight, int x, int y) {
 	register uint32_t sx;

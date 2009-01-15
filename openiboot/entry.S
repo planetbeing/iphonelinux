@@ -362,6 +362,14 @@ ExceptionStackEnd:
 	.endr
 ExceptionStack:
 
+#ifdef SMALL
+GeneralStackEnd:
+	.rept	0x800
+	.byte	0x0
+	.endr
+GeneralStack:
+#endif
+
 .bss
 
 OpenIBootEnd:

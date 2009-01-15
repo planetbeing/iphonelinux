@@ -2,19 +2,23 @@ CROSS ?= arm-elf-
 CC = $(CROSS)gcc
 OBJCOPY = $(CROSS)objcopy
 HFS_OBJS = hfs/btree.o hfs/catalog.o hfs/extents.o hfs/fastunicodecompare.o hfs/rawfile.o hfs/utility.o hfs/volume.o hfs/bdev.o hfs/fs.o
-OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o i2c.o images.o sha1.o commands.o pmu.o buttons.o framebuffer.o menu.o actions.o nvram.o nand.o ftl.o stb_image.o
+MENU_OBJS = menu.o stb_image.o
+OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o i2c.o images.o sha1.o commands.o pmu.o buttons.o framebuffer.o actions.o nvram.o nand.o ftl.o
 ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
-LDFLAGS += -Ttext=0x00000000 --nostdlib
 LIBRARIES += -lgcc -nostdlib
 INC += -Iincludes
-CFLAGS += -Wall -Werror -O3
+CFLAGS += -Wall -Werror
 
 ifeq ($(SMALL),YES)
-CFLAGS += -Os -DNO_HFS
+LOAD ?= 0x22000000
+CFLAGS += -Os -DOpenIBootLoad=$(LOAD) -DNO_HFS -DNO_STBIMAGE -DSMALL
 else
+LOAD ?= 0x0
 CFLAGS += -O3
-OPENIBOOT_OBJS += $(HFS_OBJS)
+OPENIBOOT_OBJS += $(HFS_OBJS) $(MENU_OBJS)
 endif
+
+LDFLAGS += -Ttext=$(LOAD) --nostdlib
 
 CONFIGFLAGS =
 VERSION = "0.1"

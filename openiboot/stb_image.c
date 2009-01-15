@@ -64,6 +64,8 @@
       0.51   obey req_comp requests, 1-component jpegs return as 1-component,
              on 'test' only check type, not whether we support this variant
 */
+#ifndef SMALL
+#ifndef NO_STBIMAGE
 
 #include "stb_image.h"
 
@@ -3298,3 +3300,5 @@ int stbi_write_tga(char const *filename, int x, int y, int comp, void *data)
 
 #endif // STBI_HEADER_FILE_ONLY
 
+#endif
+#endif
