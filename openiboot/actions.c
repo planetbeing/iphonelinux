@@ -194,6 +194,7 @@ static void setup_cmdline_tag(const char * line)
 static int rootfs_partition = 0;
 static char* rootfs_filename = NULL;
 
+#ifndef NO_HFS
 static void setup_iphone_nand_tag()
 {
 	int i;
@@ -219,6 +220,7 @@ static void setup_iphone_nand_tag()
 	params->hdr.size = tag_size(atag_iphone_nand);
 	params = tag_next(params);              /* move pointer to next tag */
 }
+#endif
 
 static void setup_end_tag()
 {
@@ -271,7 +273,9 @@ static void setup_tags(struct atag* parameters, const char* commandLine)
 		setup_initrd2_tag(INITRD_LOAD, ramdiskSize);
 	}
 	setup_cmdline_tag(commandLine);
+#ifndef NO_HFS
 	setup_iphone_nand_tag();
+#endif
 	setup_end_tag();                    /* end of tags */
 }
 

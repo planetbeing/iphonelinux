@@ -68,7 +68,11 @@ void OpenIBootStart() {
 		menu_setup(menuTimeout);
 	}
 
+	ftl_setup();
+#ifndef NO_HFS
 	fs_setup();
+#endif
+
 	pmu_set_iboot_stage(0);
 
 	bufferPrintf("-----------------------------------------------\r\n");

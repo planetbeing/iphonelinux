@@ -633,9 +633,11 @@ OPIBCommand CommandList[] =
 		{"ftl_read", "read a page of FTL into RAM", cmd_ftl_read},
 		{"ftl_mapping", "print FTL mapping information", cmd_ftl_mapping},
 		{"bdev_read", "read bytes from a NAND block device", cmd_bdev_read},
+#ifndef NO_HFS
 		{"fs_ls", "list files and folders", fs_cmd_ls},
 		{"fs_cat", "display a file", fs_cmd_cat},
 		{"fs_extract", "extract a file into memory", fs_cmd_extract},
+#endif
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},
