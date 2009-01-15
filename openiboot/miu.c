@@ -2,6 +2,7 @@
 #include "miu.h"
 #include "clock.h"
 #include "hardware/power.h"
+#include "util.h"
 
 int miu_setup() {
 	if(POWER_ID_EPOCH(*((uint8_t*)(POWER + POWER_ID))) != 3) {

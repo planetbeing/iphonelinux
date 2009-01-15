@@ -8,7 +8,7 @@ ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
 LDFLAGS += -Ttext=0x00000000 --nostdlib
 LIBRARIES += -lgcc -nostdlib
 INC += -Iincludes
-CFLAGS += -Wall -O3
+CFLAGS += -Wall -Werror -O3
 CONFIGFLAGS =
 VERSION = "0.1"
 COMMIT = $(shell git log | head -n1 | cut -b8-14)
@@ -42,7 +42,7 @@ CFLAGS += $(CONFIGFLAGS)
 	$(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
 
 
-all:	openiboot.img2	openiboot.img3 openiboot.bin
+all:	openiboot.img2 openiboot-wtf.img2 openiboot.img3 openiboot.bin
 
 all-payload: openiboot-payload.img2 openiboot-payload.bin
 
@@ -64,6 +64,9 @@ openiboot.bin: openiboot mk8900image/mk8900image
 openiboot.img2:	openiboot mk8900image/mk8900image
 	mk8900image/mk8900image openiboot openiboot.img2 mk8900image/template.img2 mk8900image/iphonelinux.der
 
+openiboot-wtf.img2:	openiboot mk8900image/mk8900image
+	mk8900image/mk8900image openiboot openiboot-wtf.img2 mk8900image/template-wtf.img2
+
 openiboot.img3:	openiboot mk8900image/mk8900image
 	mk8900image/mk8900image openiboot openiboot.img3 $(IMG3TEMPLATE)
 
@@ -78,6 +81,7 @@ clean:
 	-rm hfs/*.o
 	-rm openiboot
 	-rm openiboot.img2
+	-rm openiboot-wtf.img2
 	-rm openiboot.img3
 	-rm openiboot.bin
 	-rm openiboot-payload
