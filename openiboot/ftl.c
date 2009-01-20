@@ -684,8 +684,8 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 			goto FTL_Open_Error_Release;
 
 		int toRead = Data->bytesPerPage;
-		if(toRead > (((Data->pagesPerSubBlk + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage))) {
-			toRead = ((Data->pagesPerSubBlk + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage);
+		if(toRead > (((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage))) {
+			toRead = ((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage);
 		}
 
 		memcpy(((uint8_t*)pstFTLCxt->pawEraseCounterTable) + (i * Data->bytesPerPage), pageBuffer, toRead);	
@@ -707,8 +707,8 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 			}
 
 			int toRead = Data->bytesPerPage;
-			if(toRead > (((Data->pagesPerSubBlk + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage))) {
-				toRead = ((Data->pagesPerSubBlk + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage);
+			if(toRead > (((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage))) {
+				toRead = ((Data->userSubBlksTotal + 23) * sizeof(uint16_t)) - (i * Data->bytesPerPage);
 			}
 
 			memcpy(((uint8_t*)pstFTLCxt->pawReadCounterTable) + (i * Data->bytesPerPage), pageBuffer, toRead);	
