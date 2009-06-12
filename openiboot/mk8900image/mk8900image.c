@@ -1,9 +1,9 @@
 #include "nor_files.h"
 #include <stdio.h>
 #include <string.h>
-#include <linux/elf.h>
-
 #define BUFFERSIZE (1024*1024)
+
+#include <linux/elf.h>
 
 char createImage(char* inElf, size_t inElfSize, char** outImage, size_t* outImageSize) {
 	Elf32_Ehdr* elf_hdr = (Elf32_Ehdr*) inElf;
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 
 	if(template) {
 		if(certificate != NULL) {
-			newFile = duplicateAbstractFileWithCertificate(template, outFile, certificate);
+			newFile = duplicateAbstractFile2(template, outFile, NULL, NULL, certificate);
 		} else {
 			newFile = duplicateAbstractFile(template, outFile);
 		}

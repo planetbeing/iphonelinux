@@ -50,6 +50,8 @@ typedef struct CommandQueue {
 
 CommandQueue* commandQueue = NULL;
 
+static void startUSB();
+
 void OpenIBootStart() {
 	setup_openiboot();
 	pmu_charge_settings(TRUE, FALSE, FALSE);
@@ -73,6 +75,8 @@ void OpenIBootStart() {
 	}
 #endif
 #endif
+
+	startUSB();
 
 	nand_setup();
 #ifndef NO_HFS
@@ -324,6 +328,16 @@ static void startHandler() {
 	usb_receive_interrupt(4, controlRecvBuffer, sizeof(OpenIBootCmd));
 }
 
+static void startUSB()
+{
+	usb_setup();
+	usb_install_ep_handler(4, USBOut, controlReceived, 0);
+	usb_install_ep_handler(2, USBOut, dataReceived, 0);
+	usb_install_ep_handler(3, USBIn, controlSent, 0);
+	usb_install_ep_handler(1, USBIn, dataSent, 0);
+	usb_start(enumerateHandler, startHandler);
+}
+
 static int setup_devices() {
 	// Basic prerequisites for everything else
 	miu_setup();
@@ -345,12 +359,6 @@ static int setup_devices() {
 	i2c_setup();
 
 	dma_setup();
-	usb_setup();
-	usb_install_ep_handler(4, USBOut, controlReceived, 0);
-	usb_install_ep_handler(2, USBOut, dataReceived, 0);
-	usb_install_ep_handler(3, USBIn, controlSent, 0);
-	usb_install_ep_handler(1, USBIn, dataSent, 0);
-	usb_start(enumerateHandler, startHandler);
 
 	spi_setup();
 
