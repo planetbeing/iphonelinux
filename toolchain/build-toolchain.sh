@@ -168,7 +168,7 @@ tar -zxvf $TOOLCHAIN_PATH/src/$PKG_NEWLIB >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to extract package $PKG_NEWLIB" $EXIT_TRUE
 
 echo -en "- Downloading t-arm-elf patch\n" 
-wget -r $PATCH_MIRROR/$PATCH_GCC411_ARMELF -O $TOOLCHAIN_PATH/t-arm-elf.patch >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+wget -c $PATCH_MIRROR/$PATCH_GCC411_ARMELF -O $TOOLCHAIN_PATH/t-arm-elf.patch >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to download patch $PATCH_GCC411_ARMELF" $EXIT_TRUE
 patch -p0 < $PATCH_GCC411_ARMELF >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to apply patch for t-arm-elf" $EXIT_TRUE
@@ -191,7 +191,7 @@ cd ../
 echo -en "- GCC Part 1 Completed\n"
 
 echo -en "- Downloading newlib makeinfo patch\n" 
-wget -r $PATCH_MIRROR/$PATCH_NEWLIB_MAKEINFO -O $TOOLCHAIN_PATH/$PATCH_NEWLIB_MAKEINFO >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+wget -c $PATCH_MIRROR/$PATCH_NEWLIB_MAKEINFO -O $TOOLCHAIN_PATH/$PATCH_NEWLIB_MAKEINFO >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to download patch $PATCH_NEWLIB_MAKEINFO" $EXIT_TRUE
 patch -p0 < $PATCH_NEWLIB_MAKEINFO >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to apply patch for newlib makeinfo" $EXIT_TRUE
