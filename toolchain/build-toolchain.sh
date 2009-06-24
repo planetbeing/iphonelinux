@@ -150,9 +150,11 @@ checkRet $? "Failed to configure binutils" $EXIT_TRUE
 
 echo -en "- Starting binutils build\n"
 make all >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to build binutils" $EXIT_TRUE
 
 echo -en "- Installing binutils\n"
 make install >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to install binutils" $EXIT_TRUE
 cd ../
 echo -en "- Binutils Completed\n"
 
@@ -180,9 +182,11 @@ checkRet $? "Failed to configure gcc" $EXIT_TRUE
 
 echo -en "- Starting GCC build\n"
 make all-gcc >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to build GCC" $EXIT_TRUE
 
 echo -en "- Installing GCC\n"
 make install-gcc >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to install GCC" $EXIT_TRUE
 cd ../
 echo -en "- GCC Part 1 Completed\n"
 
@@ -199,9 +203,11 @@ checkRet $? "Failed to configure newlib" $EXIT_TRUE
 
 echo -en "- Starting NewLib build\n"
 make all >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to build newlib" $EXIT_TRUE
 
 echo -en "- Installing NewLib\n"
 make install >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to install newlib" $EXIT_TRUE
 cd ../
 echo -en "- NewLib Completed\n"
 
@@ -209,8 +215,10 @@ echo "- Doing part 2 of GCC build"
 cd gcc-build
 echo "- Making all GCC"
 make all >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to build GCC" $EXIT_TRUE
 echo "- Installing GCC"
 make install >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+checkRet $? "Failed to install GCC" $EXIT_TRUE
 
 echo "- GCC part 2 complete"
 echo -en "Toolchain install successful\n"
