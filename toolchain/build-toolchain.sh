@@ -18,6 +18,16 @@ PATCH_MIRROR="http://www.iphonelinux.org"
 PATCH_GCC411_ARMELF="t-arm-elf.patch"
 PATCH_NEWLIB_MAKEINFO="newlib-1.14.0-missing-makeinfo.patch"
 
+NEEDROOT=0
+
+if [ -z "$IPHONELINUXDEV" ]; then
+	PREFIX=/usr/local
+	NEEDROOT=1
+else
+	PREFIX="$IPHONELINUXDEV"
+fi
+
+export PATH="$PATH:$PREFIX/bin"
 
 #LOG FILE
 BUILDLOG=build.log
@@ -25,9 +35,9 @@ BUILDLOG=build.log
 # display usage
 Usage () 
 { 
-	if [ "$(id -u)" != "0" ]; then
-   echo "This script must be run as root" 1>&2
-   exit 1
+	if [ "$NEEDROOT" == "1" -a "$(id -u)" != "0" ]; then
+		echo "This script must be run as root" 1>&2
+		exit 1
 	fi
 
 	if [ -z "$1" ];
@@ -144,7 +154,7 @@ checkRet $? "Failed to extract package $PKG_BINUTILS" $EXIT_TRUE
 
 echo -en "- Doing binutils configure\n"
 cd $TOOLCHAIN_PATH/binutils-build
-../binutils-2.17/configure --target=arm-elf --prefix=/usr/local \
+../binutils-2.17/configure --target=arm-elf --prefix=$PREFIX \
 	--enable-interwork --enable-multilib --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to configure binutils" $EXIT_TRUE
 
@@ -174,7 +184,7 @@ patch -p0 < $PATCH_GCC411_ARMELF >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to apply patch for t-arm-elf" $EXIT_TRUE
 echo -en "- Doing GCC configure\n"
 cd gcc-build
-../gcc-4.1.1/configure --target=arm-elf --prefix=/usr/local \
+../gcc-4.1.1/configure --target=arm-elf --prefix=$PREFIX \
     --enable-interwork --enable-multilib \
     --enable-languages="c,c++" --with-newlib \
     --with-headers=../newlib-1.14.0/newlib/libc/include --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
@@ -198,7 +208,7 @@ checkRet $? "Failed to apply patch for newlib makeinfo" $EXIT_TRUE
 echo -en "- Doing NewLib configure\n"
 cd newlib-build
 checkRet $? "Failed to configure newlib" $EXIT_TRUE
-../newlib-1.14.0/configure --target=arm-elf --prefix=/usr/local \
+../newlib-1.14.0/configure --target=arm-elf --prefix=$PREFIX \
 	--enable-interwork --enable-multilib --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 
 echo -en "- Making arm-elf-cc symlink\n"
