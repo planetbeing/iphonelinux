@@ -1,8 +1,8 @@
 OIBC_OBJS = oibc.o
 LOADIBEC_OBJS = loadibec.o
 LINUX_OBJS = linux.o
-LIBRARIES = -lusb -lpthread -lreadline
-CFLAGS += -DHAVE_GETEUID
+LIBRARIES = -L/opt/local-universal-10.4/lib -lusb -lpthread -lreadline
+CFLAGS += -DHAVE_GETEUID -I/opt/local-universal-10.4/include
 
 %.o:	%.c
 	$(CC) $(CFLAGS) -c $< -o $@

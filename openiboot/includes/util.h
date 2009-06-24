@@ -40,6 +40,9 @@ void bufferFlush(char* destination, size_t length);
 char* getScrollback();
 size_t getScrollbackLen();
 
+void hexToBytes(const char* hex, uint8_t** buffer, int* bytes);
+void bytesToHex(const uint8_t* buffer, int bytes);
+
 uint32_t crc32(uint32_t* ckSum, const void *buffer, size_t len);
 uint32_t adler32(uint8_t *buf, int32_t len);
 

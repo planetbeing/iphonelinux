@@ -17,6 +17,7 @@
 #include "nand.h"
 #include "ftl.h"
 #include "hfs/fs.h"
+#include "aes.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -36,6 +37,72 @@ void cmd_md(int argc, char** argv) {
 	uint32_t len = parseNumber(argv[2]);
 	bufferPrintf("dumping memory 0x%x - 0x%x\r\n", address, address + len);
 	buffer_dump_memory(address, len);
+}
+
+void cmd_aes(int argc, char** argv)
+{
+	AESKeyType keyType;
+
+	uint8_t* data = NULL;
+	uint8_t* key = NULL;
+	uint8_t* iv = NULL;
+
+	int dataLength;
+	int keyLength;
+	int ivLength;
+
+	if(argc < 4)
+	{
+		bufferPrintf("Usage: %s <enc/dec> <gid/uid/key> [data] [iv]\r\n", argv[0]);
+		return;
+	}
+
+	if(strcmp(argv[2], "gid") == 0)
+	{
+		keyType = AESGID;
+	}
+	else if(strcmp(argv[2], "uid") == 0)
+	{
+		keyType = AESUID;
+	}
+	else
+	{
+		hexToBytes(argv[2], &key, &keyLength);
+		keyType = AESCustom;
+	}
+
+	hexToBytes(argv[3], &data, &dataLength);
+
+	if(argc > 4)
+	{
+		hexToBytes(argv[4], &iv, &ivLength);
+	}
+
+	if(strcmp(argv[1], "enc") == 0)
+	{
+		aes_encrypt(data, dataLength, keyType, key, iv);
+		bytesToHex(data, dataLength);
+		bufferPrintf("\r\n");
+	}
+	else if(strcmp(argv[1], "dec") == 0)
+	{
+		aes_decrypt(data, dataLength, keyType, key, iv);
+		bytesToHex(data, dataLength);
+		bufferPrintf("\r\n");
+	}
+	else
+	{
+		bufferPrintf("Usage: %s <enc/dec> <GID/UID/key> [data] [iv]\r\n", argv[0]);
+	}
+
+	if(data)
+		free(data);
+
+	if(iv)
+		free(iv);
+
+	if(key)
+		free(key);
 }
 
 void cmd_hexdump(int argc, char** argv) {
@@ -619,6 +686,7 @@ OPIBCommand CommandList[] =
 		{"md", "display a block of memory as 32-bit integers", cmd_md},
 		{"mw", "write a 32-bit dword into a memory address", cmd_mw},
 		{"mwb", "write a byte into a memory address", cmd_mwb},
+		{"aes", "use the hardware crypto engine", cmd_aes},
 		{"hexdump", "display a block of memory like 'hexdump -C'", cmd_hexdump},
 		{"cat", "dumps a block of memory", cmd_cat},
 		{"gpio_pinstate", "get the state of a GPIO pin", cmd_gpio_pinstate},

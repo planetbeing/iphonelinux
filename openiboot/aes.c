@@ -98,6 +98,7 @@ void aes_encrypt(void* data, int size, AESKeyType keyType, const void* key, cons
 
 	if(size < AES_128_CBC_BLOCK_SIZE)
 		memcpy(data, destinationBuffer, size);
+
 }
 
 void aes_decrypt(void* data, int size, AESKeyType keyType, const void* key, const void* iv) {
@@ -203,6 +204,7 @@ static void doAES(int operation, void *buffer0, void *buffer1, void *buffer2, in
 	SET_REG(AES + SIZE3, size3);
 
 	unknown1 = 0;
+
 	SET_REG(AES + GO, 1);
 }
 

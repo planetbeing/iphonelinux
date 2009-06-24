@@ -192,6 +192,30 @@ unsigned long int strtoul(const char* str, char** endptr, int base) {
 	return result;
 }
 
+void hexToBytes(const char* hex, uint8_t** buffer, int* bytes) {
+	*bytes = strlen(hex) / 2;
+	*buffer = (uint8_t*) malloc(*bytes);
+	int i;
+	for(i = 0; i < *bytes; i++) {
+		uint32_t byte;
+		char buf[3];
+		buf[0] = hex[0];
+		buf[1] = hex[1];
+		buf[2] = '\0';
+		byte = strtoul(buf, NULL, 16);
+		(*buffer)[i] = byte;
+		hex += 2;
+	}
+}
+
+void bytesToHex(const uint8_t* buffer, int bytes) {
+	while(bytes > 0) {
+		bufferPrintf("%02x", *buffer);
+		buffer++;
+		bytes--;
+	}
+}
+
 char** tokenize(char* commandline, int* argc) {
 	char** arguments;
 	int curArg = 1;

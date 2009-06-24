@@ -241,7 +241,8 @@ int main(int argc, char* argv[]) {
 	for(bus = busses; bus; bus = bus->next) {
     		for (dev = bus->devices; dev; dev = dev->next) {
     			/* Check if this device is a printer */
-    			if (dev->descriptor.idVendor != 0x05ac || dev->descriptor.idProduct != 0x1280) {
+    			//if (dev->descriptor.idVendor != 0x05ac || dev->descriptor.idProduct != 0x1280) {
+    			if (dev->descriptor.idVendor != 0x0525 || dev->descriptor.idProduct != 0x1280) {
     				continue;
     			}
     

@@ -726,7 +726,7 @@ static void create_descriptors() {
 		deviceDescriptor.bDeviceSubClass = 0;
 		deviceDescriptor.bDeviceProtocol = 0;
 		deviceDescriptor.bMaxPacketSize = USB_MAX_PACKETSIZE;
-		deviceDescriptor.idVendor = VENDOR_APPLE;
+		deviceDescriptor.idVendor = 0x525;
 		deviceDescriptor.idProduct = PRODUCT_IPHONE;
 		deviceDescriptor.bcdDevice = DEVICE_IPHONE;
 		deviceDescriptor.iManufacturer = addStringDescriptor("Apple Inc.");
