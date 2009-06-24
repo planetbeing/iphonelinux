@@ -34,6 +34,7 @@ openiboot/*.img2
 openiboot/openiboot
 openiboot/client/oibc
 openiboot/client/loadibec
+openiboot/client/linux
 openiboot/mk8900image/mk8900image
 
 openiboot/images/bin2c
