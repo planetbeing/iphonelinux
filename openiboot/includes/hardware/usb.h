@@ -148,6 +148,7 @@
 #define USB_EPCON_ENABLE (1 << 31)
 #define USB_EPCON_SETNAK (1 << 27)
 #define USB_EPCON_CLEARNAK (1 << 26)
+#define USB_EPCON_STALL (1 << 21)
 #define USB_EPCON_ACTIVE (1 << 15)
 #define USB_EPCON_TYPE_MASK 0x3
 #define USB_EPCON_TYPE_SHIFT 18

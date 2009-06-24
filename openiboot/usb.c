@@ -483,6 +483,10 @@ static void sendControl(void* buffer, int bufferLen) {
 	advanceTxQueue();
 }
 
+static void stallControl(void) {
+	InEPRegs[USB_CONTROLEP].control = USB_EPCON_STALL;
+}
+
 void usb_send_bulk(uint8_t endpoint, void* buffer, int bufferLen) {
 	usbTxRx(endpoint, USBIn, USBBulk, buffer, bufferLen);
 	ringBufferEnqueue(txQueue, endpoint);
@@ -605,6 +609,7 @@ static void usbIRQHandler(uint32_t token) {
 						case USB_GET_DESCRIPTOR:
 							length = setupPacket->wLength;
 							// descriptor type is high, descriptor index is low
+							int stall = FALSE;
 							switch(setupPacket->wValue >> 8) {
 								case USBDeviceDescriptorType:
 									if(length > sizeof(USBDeviceDescriptor))
@@ -632,13 +637,14 @@ static void usbIRQHandler(uint32_t token) {
 									break;
 								default:
 									bufferPrintf("Unknown descriptor request: %d\r\n", setupPacket->wValue >> 8);
-									if(usb_state < USBError) {
-										change_state(USBUnknownDescriptorRequest);
-									}
+									stall = TRUE;
 							}
 
 							if(usb_state < USBError) {
-								sendControl(controlSendBuffer, length);
+								if(stall)
+									stallControl();
+								else
+									sendControl(controlSendBuffer, length);
 							}
 
 							break;
@@ -921,7 +927,7 @@ static uint8_t addStringDescriptor(const char* descriptorString) {
 	stringDescriptors = (USBStringDescriptor**) realloc(stringDescriptors, sizeof(USBStringDescriptor*) * numStringDescriptors);
 
 	int sLen = strlen(descriptorString);
-	stringDescriptors[newIndex] = (USBStringDescriptor*) malloc(sizeof(USBStringDescriptor) + sLen);
+	stringDescriptors[newIndex] = (USBStringDescriptor*) malloc(sizeof(USBStringDescriptor) + sLen * 2);
 	stringDescriptors[newIndex]->bLength = sizeof(USBStringDescriptor) + sLen * 2;
 	stringDescriptors[newIndex]->bDescriptorType = USBStringDescriptorType;
 	uint16_t* string = (uint16_t*) stringDescriptors[newIndex]->bString;
