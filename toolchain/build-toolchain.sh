@@ -201,6 +201,10 @@ checkRet $? "Failed to configure newlib" $EXIT_TRUE
 ../newlib-1.14.0/configure --target=arm-elf --prefix=/usr/local \
 	--enable-interwork --enable-multilib --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 
+echo -en "- Making arm-elf-cc symlink\n"
+ln -s arm-elf-gcc $PREFIX/bin/arm-elf-cc
+checkRet $? "Failed to create symlink" $EXIT_TRUE
+
 echo -en "- Starting NewLib build\n"
 make all >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to build newlib" $EXIT_TRUE
