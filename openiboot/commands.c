@@ -20,6 +20,7 @@
 #include "hfs/fs.h"
 #include "aes.h"
 #include "accel.h"
+#include "sdio.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -695,6 +696,10 @@ void cmd_accel(int argc, char** argv) {
 	bufferPrintf("x: %d, y: %d, z: %d\n", x, y, z);
 }
 
+void cmd_sdio_status(int argc, char** argv) {
+	sdio_status();
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -740,6 +745,7 @@ OPIBCommand CommandList[] =
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},
 		{"iic_read", "read a IIC register", cmd_iic_read},
 		{"accel", "display accelerometer data", cmd_accel},
+		{"sdio_status", "display sdio registers", cmd_sdio_status},
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
 		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},

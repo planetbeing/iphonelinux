@@ -22,6 +22,7 @@
 #include "images.h"
 #include "nvram.h"
 #include "accel.h"
+#include "sdio.h"
 
 #include "util.h"
 #include "commands.h"
@@ -79,6 +80,7 @@ void OpenIBootStart() {
 
 	startUSB();
 
+	sdio_setup();
 	accel_setup();
 
 	nand_setup();
