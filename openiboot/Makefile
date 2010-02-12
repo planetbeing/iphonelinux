@@ -3,7 +3,7 @@ CC = $(CROSS)gcc
 OBJCOPY = $(CROSS)objcopy
 HFS_OBJS = hfs/btree.o hfs/catalog.o hfs/extents.o hfs/fastunicodecompare.o hfs/rawfile.o hfs/utility.o hfs/volume.o hfs/bdev.o hfs/fs.o
 MENU_OBJS = menu.o stb_image.o
-OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o i2c.o images.o sha1.o commands.o pmu.o buttons.o framebuffer.o actions.o nvram.o nand.o ftl.o
+OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o i2c.o images.o sha1.o commands.o pmu.o buttons.o framebuffer.o actions.o nvram.o nand.o ftl.o accel.o
 ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
 LIBRARIES += -lgcc -nostdlib
 INC += -Iincludes

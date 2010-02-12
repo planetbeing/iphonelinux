@@ -21,6 +21,7 @@
 #include "tasks.h"
 #include "images.h"
 #include "nvram.h"
+#include "accel.h"
 
 #include "util.h"
 #include "commands.h"
@@ -76,17 +77,9 @@ void OpenIBootStart() {
 #endif
 #endif
 
-	clock_gate_switch(6, 1);
-	clock_gate_switch(0, 1);
-	SET_REG(0x38800050, 0x09000000);
-	SET_REG(0x38800054, 0x09000000);
-	SET_REG(0x38800084, 0x0a000000);
-	SET_REG(0x38800090, 1);
-	SET_REG(0x38800094, 0);
-	SET_REG(0x3880009C, 1);
-	//*(0x38800000) = 1;
-
 	startUSB();
+
+	accel_setup();
 
 	nand_setup();
 #ifndef NO_HFS

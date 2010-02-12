@@ -74,7 +74,7 @@ int do_printf(const char *fmt, va_list args, fnptr_t fn, void *ptr)
 	unsigned flags, actual_wd, count, given_wd;
 	char *where, buf[PR_BUFLEN];
 	unsigned char state, radix;
-	uint64_t num;
+	int64_t num;
 
 	state = flags = count = given_wd = 0;
 /* begin scanning format specifier list */

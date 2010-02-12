@@ -16,8 +16,10 @@
 #include "dma.h"
 #include "nand.h"
 #include "ftl.h"
+#include "i2c.h"
 #include "hfs/fs.h"
 #include "aes.h"
+#include "accel.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -666,6 +668,33 @@ void cmd_time(int argc, char** argv) {
 	bufferPrintf("Current time: %02d:%02d:%02d, %s %02d/%02d/20%02d\r\n", pmu_get_hours(), pmu_get_minutes(), pmu_get_seconds(), pmu_get_dayofweek_str(), pmu_get_month(), pmu_get_day(), pmu_get_year());
 }
 
+void cmd_iic_read(int argc, char** argv) {
+	if(argc < 4) {
+		bufferPrintf("Usage: %s <bus> <address> <register>\n", argv[0]);
+		return;
+	}
+
+
+	int bus = parseNumber(argv[1]);
+	int address = parseNumber(argv[2]);
+	uint8_t registers[1];
+	uint8_t out[1];
+
+	registers[0] = parseNumber(argv[3]);
+
+	i2c_rx(bus, address, registers, 1, out, 1);
+	
+	bufferPrintf("Result: %d\n", (int) out[0]);
+}
+
+void cmd_accel(int argc, char** argv) {
+	int x = accel_get_x();
+	int y = accel_get_y();
+	int z = accel_get_z();
+	
+	bufferPrintf("x: %d, y: %d, z: %d\n", x, y, z);
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -709,6 +738,8 @@ OPIBCommand CommandList[] =
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},
+		{"iic_read", "read a IIC register", cmd_iic_read},
+		{"accel", "display accelerometer data", cmd_accel},
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
 		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},
