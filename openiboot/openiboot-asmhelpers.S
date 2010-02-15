@@ -261,7 +261,7 @@ ClearCPUCaches:
 
 Reboot:
 	LDR	R0, =WDT_CTRL
-	MOVLS	R1, #WDT_REBOOTVALUE
+	MOVLS	R1, #WDT_ENABLE
 	STR	R1, [R0]
 	B	Reboot
 

@@ -21,6 +21,7 @@
 #include "aes.h"
 #include "accel.h"
 #include "sdio.h"
+#include "wdt.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -700,6 +701,12 @@ void cmd_sdio_status(int argc, char** argv) {
 	sdio_status();
 }
 
+
+void cmd_wdt(int argc, char** argv)
+{
+	bufferPrintf("counter: %d\n", wdt_counter());
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -767,6 +774,7 @@ OPIBCommand CommandList[] =
 		{"jump", "jump to a specified address (interrupts enabled)", cmd_jump},
 		{"version", "display the version string", cmd_version},
 		{"time", "display the current time according to the RTC", cmd_time},
+		{"wdt", "display the current wdt stats", cmd_wdt},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}
 	};

@@ -34,6 +34,8 @@
 #include "hfs/bdev.h"
 #include "hfs/fs.h"
 
+#include "wdt.h"
+
 int received_file_size;
 
 static int setup_devices();
@@ -357,6 +359,7 @@ static int setup_devices() {
 	// For scheduling/sleeping niceties
 	timer_setup();
 	event_setup();
+	wdt_setup();
 
 	// Other devices
 	usb_shutdown();

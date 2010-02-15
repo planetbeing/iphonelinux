@@ -31,13 +31,23 @@
 #define AMC0 0x22000000
 #define ROM 0x20000000
 #define WDT_CTRL 0x3E300000
+#define WDT_CNT 0x3E300004
+
+#define WDT_INT 0x33
 
 /*
  *	Values
  */
 
 #define EDRAM_CLOCKGATE 0x1B
-#define WDT_REBOOTVALUE 0x100000
+#define WDT_ENABLE 0x100000
+#define WDT_PRE_SHIFT 16
+#define WDT_PRE_MASK 0xF
+#define WDT_CS_SHIFT 12
+#define WDT_CS_MASK 0x7
+#define WDT_CLR 0xA00
+#define WDT_DIS 0xA5
+#define WDT_INT_EN 0x8000
 
 #define DMA_ALIGN 0x40
 
