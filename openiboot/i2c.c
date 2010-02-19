@@ -122,7 +122,7 @@ static void do_i2c(I2CInfo* i2c) {
 			case I2CStart:
 				if(i2c->num_regs != 0) {
 					SET_REG(i2c->register_IICCON, i2c->iiccon_settings);
-					SET_REG(i2c->register_IICDS, i2c->address);
+					SET_REG(i2c->register_IICDS, i2c->address & ~1);
 					i2c->operation_result = OPERATION_SEND;
 					i2c->current_iicstat =
 						(IICSTAT_MODE_MASTERTX << IICSTAT_MODE_SHIFT)
@@ -171,14 +171,15 @@ static void do_i2c(I2CInfo* i2c) {
 				break;
 			case I2CSetup:
 				SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_ACKGEN);
-				SET_REG(i2c->register_IICDS, i2c->address);
 				i2c->operation_result = OPERATION_SEND;
 				if(i2c->is_write) {
+					SET_REG(i2c->register_IICDS, i2c->address & ~1);
 					i2c->current_iicstat =
 						(IICSTAT_MODE_MASTERTX << IICSTAT_MODE_SHIFT)
 						| (IICSTAT_STARTSTOPGEN_START << IICSTAT_STARTSTOPGEN_SHIFT)
 						| (1 << IICSTAT_DATAOUTPUT_ENABLE_SHIFT);
 				} else {
+					SET_REG(i2c->register_IICDS, i2c->address | 1);
 					i2c->current_iicstat =
 						(IICSTAT_MODE_MASTERRX << IICSTAT_MODE_SHIFT)
 						| (IICSTAT_STARTSTOPGEN_START << IICSTAT_STARTSTOPGEN_SHIFT)
