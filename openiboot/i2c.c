@@ -229,6 +229,7 @@ static void do_i2c(I2CInfo* i2c) {
 						i2c->state = I2CFinish;
 					}
 				} else {
+					bufferPrintf("i2c: ack not received for rx\r\n"); 
 					i2c->error_code = -1;
 					i2c->state = I2CFinish;
 					proceed = TRUE;

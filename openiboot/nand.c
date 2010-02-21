@@ -384,7 +384,7 @@ static int transferFromFlash(void* buffer, int size) {
 
 	CleanCPUDataCache();
 
-	dma_request(DMA_NAND, 4, 4, DMA_MEMORY, 4, 4, &controller, &channel);
+	dma_request(DMA_NAND, 4, 4, DMA_MEMORY, 4, 4, &controller, &channel, NULL);
 	dma_perform(DMA_NAND, (uint32_t)buffer, size, 0, &controller, &channel);
 
 	if(dma_finish(controller, channel, 500) != 0) {
@@ -419,7 +419,7 @@ static int transferToFlash(void* buffer, int size) {
 
 	CleanCPUDataCache();
 
-	dma_request(DMA_MEMORY, 4, 4, DMA_NAND, 4, 4, &controller, &channel);
+	dma_request(DMA_MEMORY, 4, 4, DMA_NAND, 4, 4, &controller, &channel, NULL);
 	dma_perform((uint32_t)buffer, DMA_NAND, size, 0, &controller, &channel);
 
 	if(dma_finish(controller, channel, 500) != 0) {

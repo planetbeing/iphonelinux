@@ -39,7 +39,7 @@ static DMALinkedList* DMALists[DMA_NUMCONTROLLERS][DMA_NUMCHANNELS];
 
 static DMALinkedList StaticDMALists[DMA_NUMCONTROLLERS][DMA_NUMCHANNELS];
 
-static void dispatchRequest(volatile DMARequest *request);
+static void dispatchRequest(volatile DMARequest *request, int controller, int channel);
 
 static void dmaIRQHandler(uint32_t controller);
 
@@ -77,7 +77,7 @@ static void dmaIRQHandler(uint32_t controller) {
 	int channel;
 	for(channel = 0; channel < DMA_NUMCHANNELS; channel++) {
 		if((intTCStatus & (1 << channel)) != 0) {
-			dispatchRequest(&requests[controller - 1][channel]);
+			dispatchRequest(&requests[controller - 1][channel], controller, channel);
 			SET_REG(intTCClearReg, 1 << channel);
 		}
 		
@@ -87,12 +87,15 @@ static void dmaIRQHandler(uint32_t controller) {
 static int getFreeChannel(int* controller, int* channel) {
 	int i;
 
+	EnterCriticalSection();
+
 	if((*controller & (1 << 0)) != 0) {
 		for(i = 0; i < DMA_NUMCHANNELS; i++) {
 			if(Controller0FreeChannels[i] == 0) {
 				*controller = 1;
 				*channel = i;
 				Controller0FreeChannels[i] = 1;
+				LeaveCriticalSection();
 				return 0;
 			}
 		}
@@ -104,15 +107,17 @@ static int getFreeChannel(int* controller, int* channel) {
 				*controller = 2;
 				*channel = i;
 				Controller1FreeChannels[i] = 1;
+				LeaveCriticalSection();
 				return 0;
 			}
 		}
 	}
 
+	LeaveCriticalSection();
 	return ERROR_BUSY;
 }
 
-int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int Destination, int DestinationTransferWidth, int DestinationBurstSize, int* controller, int* channel) {
+int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int Destination, int DestinationTransferWidth, int DestinationBurstSize, int* controller, int* channel, DMAHandler handler) {
 	if(*controller == 0) {
 		*controller = ControllerLookupTable[Source] & ControllerLookupTable[Destination];
 
@@ -121,8 +126,9 @@ int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int De
 		}
 
 		while(getFreeChannel(controller, channel) == ERROR_BUSY);
-		requests[*controller][*channel].started = TRUE;
-		requests[*controller][*channel].done = FALSE;
+		requests[*controller - 1][*channel].started = TRUE;
+		requests[*controller - 1][*channel].done = FALSE;
+		requests[*controller - 1][*channel].handler = handler;
 	}
 
 	uint32_t DMACControl;
@@ -294,18 +300,22 @@ int dma_finish(int controller, int channel, int timeout) {
 		}
 	}
 
+	EnterCriticalSection();
 	requests[controller - 1][channel].started = FALSE;
 	requests[controller - 1][channel].done = FALSE;
 	if(controller == 1)
 		Controller0FreeChannels[channel] = 0;
 	else if(controller == 2)
 		Controller1FreeChannels[channel] = 0;
+	LeaveCriticalSection();
 
 	return 0;
 }
 
-static void dispatchRequest(volatile DMARequest *request) {
+static void dispatchRequest(volatile DMARequest *request, int controller, int channel) {
 	// TODO: Implement this
 	request->done = TRUE;
+	if(request->handler)
+		request->handler(1, controller, channel);
 }
 

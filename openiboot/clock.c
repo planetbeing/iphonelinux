@@ -1,5 +1,6 @@
 #include "openiboot.h"
 #include "clock.h"
+#include "util.h"
 #include "hardware/clock0.h"
 #include "hardware/clock1.h"
 
@@ -22,6 +23,10 @@ uint32_t TicksPerSec;
 int clock_setup() {
 	uint32_t config;
 
+	SET_REG(CLOCK1 + CLOCK1_PLLMODE, GET_REG(CLOCK1 + CLOCK1_PLLMODE) | 1 | 2 | 4 | 8);
+	SET_REG(CLOCK1 + CLOCK1_CL2_GATES, 0);
+	SET_REG(CLOCK1 + CLOCK1_CL3_GATES, 0);
+
 	config = GET_REG(CLOCK1 + CLOCK1_CONFIG0);
 	uint32_t clockPLL = CLOCK1_CLOCKPLL(config);
 	uint32_t clockDivisor;
@@ -31,6 +36,8 @@ int clock_setup() {
 	} else {
 		clockDivisor = 1;
 	}
+
+	bufferPrintf("PLL %d: off.\n", clockPLL);
 
 	uint32_t memoryPLL = CLOCK1_MEMORYPLL(config);
 	uint32_t memoryDivisor;
@@ -134,8 +141,10 @@ int clock_setup() {
 
 			PLLFrequencies[pll] = (uint32_t)afterSDiv;
 
+			bufferPrintf("PLL %d: %d\n", pll, PLLFrequencies[pll]);
 		} else {
 			PLLFrequencies[pll] = 0;
+			bufferPrintf("PLL %d: off.\n", pll);
 			continue;
 		}
 	}

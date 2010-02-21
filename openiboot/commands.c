@@ -22,6 +22,7 @@
 #include "accel.h"
 #include "sdio.h"
 #include "wdt.h"
+#include "wm8958.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -468,7 +469,7 @@ void cmd_dma(int argc, char** argv) {
 
 	int controller = 0;
 	int channel = 0;
-	bufferPrintf("dma_request: %d\r\n", dma_request(DMA_MEMORY, 4, 8, DMA_MEMORY, 4, 8, &controller, &channel));
+	bufferPrintf("dma_request: %d\r\n", dma_request(DMA_MEMORY, 4, 8, DMA_MEMORY, 4, 8, &controller, &channel, NULL));
 	bufferPrintf("dma_perform(controller: %d, channel %d): %d\r\n", controller, channel, dma_perform(source, dest, size, FALSE, &controller, &channel));
 	bufferPrintf("dma_finish(controller: %d, channel %d): %d\r\n", controller, channel, dma_finish(controller, channel, 500));
 }
@@ -648,6 +649,7 @@ void cmd_frequency(int argc, char** argv) {
 	bufferPrintf("Clock frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseClock));
 	bufferPrintf("Memory frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseMemory));
 	bufferPrintf("Bus frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseBus));
+	bufferPrintf("Unknown frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseUnknown));
 	bufferPrintf("Peripheral frequency: %d Hz\r\n", clock_get_frequency(FrequencyBasePeripheral));
 	bufferPrintf("Display frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseDisplay));
 	bufferPrintf("Fixed frequency: %d Hz\r\n", clock_get_frequency(FrequencyBaseFixed));
@@ -672,7 +674,7 @@ void cmd_time(int argc, char** argv) {
 
 void cmd_iic_read(int argc, char** argv) {
 	if(argc < 4) {
-		bufferPrintf("Usage: %s <bus> <address> <register>\n", argv[0]);
+		bufferPrintf("usage: %s <bus> <address> <register>\n", argv[0]);
 		return;
 	}
 
@@ -684,9 +686,26 @@ void cmd_iic_read(int argc, char** argv) {
 
 	registers[0] = parseNumber(argv[3]);
 
-	i2c_rx(bus, address, registers, 1, out, 1);
+	int error = i2c_rx(bus, address, registers, 1, out, 1);
 	
-	bufferPrintf("Result: %d\n", (int) out[0]);
+	bufferPrintf("result: %d, error: %d\r\n", (int) out[0], error);
+}
+
+void cmd_iic_write(int argc, char** argv) {
+	if(argc < 5) {
+		bufferPrintf("usage: %s <bus> <address> <register> <value>\r\n", argv[0]);
+		return;
+	}
+
+	uint8_t buffer[2];
+	int bus = parseNumber(argv[1]);
+	int address = parseNumber(argv[2]);
+	buffer[0] = parseNumber(argv[3]);
+	buffer[1] = parseNumber(argv[4]);
+
+	int error = i2c_tx(bus, address, buffer, 2);
+	
+	bufferPrintf("result: %d\r\n", error);
 }
 
 void cmd_accel(int argc, char** argv) {
@@ -694,7 +713,7 @@ void cmd_accel(int argc, char** argv) {
 	int y = accel_get_y();
 	int z = accel_get_z();
 	
-	bufferPrintf("x: %d, y: %d, z: %d\n", x, y, z);
+	bufferPrintf("x: %d, y: %d, z: %d\r\n", x, y, z);
 }
 
 void cmd_sdio_status(int argc, char** argv) {
@@ -704,7 +723,12 @@ void cmd_sdio_status(int argc, char** argv) {
 
 void cmd_wdt(int argc, char** argv)
 {
-	bufferPrintf("counter: %d\n", wdt_counter());
+	bufferPrintf("counter: %d\r\n", wdt_counter());
+}
+
+void cmd_audiohw_transfers_done(int argc, char** argv)
+{
+	bufferPrintf("transfers done: %d\r\n", audiohw_transfers_done());
 }
 
 void cmd_help(int argc, char** argv) {
@@ -751,6 +775,7 @@ OPIBCommand CommandList[] =
 		{"nor_write", "write RAM into NOR", cmd_nor_write},
 		{"nor_erase", "erase a block of NOR", cmd_nor_erase},
 		{"iic_read", "read a IIC register", cmd_iic_read},
+		{"iic_write", "write a IIC register", cmd_iic_write},
 		{"accel", "display accelerometer data", cmd_accel},
 		{"sdio_status", "display sdio registers", cmd_sdio_status},
 		{"images_list", "list the images available on NOR", cmd_images_list},
@@ -775,6 +800,7 @@ OPIBCommand CommandList[] =
 		{"version", "display the version string", cmd_version},
 		{"time", "display the current time according to the RTC", cmd_time},
 		{"wdt", "display the current wdt stats", cmd_wdt},
+		{"audiohw_transfers_done", "display how many times the audio buffer has been played", cmd_audiohw_transfers_done},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}
 	};

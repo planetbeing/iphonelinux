@@ -34,6 +34,7 @@
 #include "hfs/bdev.h"
 #include "hfs/fs.h"
 
+#include "wm8958.h"
 #include "wdt.h"
 
 int received_file_size;
@@ -97,6 +98,13 @@ void OpenIBootStart() {
 	bufferPrintf("-----------------------------------------------\r\n");
 	DebugPrintf("                    DEBUG MODE\r\n");
 
+	audiohw_postinit();
+	int volume = (audiohw_settings[SOUND_VOLUME].minval + audiohw_settings[SOUND_VOLUME].minval) / 2;
+	audiohw_set_headphone_vol(volume, volume);
+	audiohw_set_lineout_vol(volume, volume);
+	audiohw_set_aux_vol(volume, volume);
+
+	audiohw_play_pcm((void*)0x09000000, 0x14);
 	// Process command queue
 	while(TRUE) {
 		char* command = NULL;
@@ -391,6 +399,8 @@ static int setup_openiboot() {
 
 	lcd_setup();
 	framebuffer_setup();
+
+	audiohw_init();
 
 	return 0;
 }
