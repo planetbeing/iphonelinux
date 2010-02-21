@@ -126,13 +126,6 @@ ProcessCommand:
 int main(int argc, char* argv[]) {
 	usb_dev_handle* device;
 
-#ifdef HAVE_GETEUID
-	if(geteuid() != 0) {
-		fprintf(stderr, "Must run as root\n");
-		return 1;
-	}
-#endif
-
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();

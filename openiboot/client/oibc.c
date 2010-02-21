@@ -217,13 +217,6 @@ void* doInput(void* threadid) {
 
 int main(int argc, char* argv[]) {
 
-#ifdef HAVE_GETEUID
-	if(geteuid() != 0) {
-		fprintf(stderr, "Must be root\n");
-		return 1;
-	}
-#endif
-
 	read_history(".oibc-history");
 
 	usb_init();
