@@ -731,6 +731,40 @@ void cmd_audiohw_transfers_done(int argc, char** argv)
 	bufferPrintf("transfers done: %d\r\n", audiohw_transfers_done());
 }
 
+void cmd_audiohw_play_pcm(int argc, char** argv)
+{
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <address> <len>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t len = parseNumber(argv[2]);
+	bufferPrintf("playing PCM 0x%x - 0x%x\r\n", address, address + len);
+	audiohw_play_pcm((void*)address, len);
+}
+
+void cmd_audiohw_headphone_vol(int argc, char** argv)
+{
+	if(argc < 2)
+	{
+		bufferPrintf("%s <left> [right] (between 0:%d and 63:%d dB)\r\n", argv[0], audiohw_settings[SOUND_VOLUME].minval, audiohw_settings[SOUND_VOLUME].maxval);
+		return;
+	}
+
+	int left = parseNumber(argv[1]);
+	int right;
+
+	if(argc >= 3)
+		right = parseNumber(argv[2]);
+	else
+		right = left;
+
+	audiohw_set_headphone_vol(left, right);
+
+	bufferPrintf("Set headphone volumes to: %d / %d\r\n", left, right);
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -801,6 +835,8 @@ OPIBCommand CommandList[] =
 		{"time", "display the current time according to the RTC", cmd_time},
 		{"wdt", "display the current wdt stats", cmd_wdt},
 		{"audiohw_transfers_done", "display how many times the audio buffer has been played", cmd_audiohw_transfers_done},
+		{"audiohw_play_pcm", "queue some PCM data for playback", cmd_audiohw_play_pcm},
+		{"audiohw_headphone_vol", "set the headphone volume", cmd_audiohw_headphone_vol},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}
 	};

@@ -23,10 +23,6 @@ uint32_t TicksPerSec;
 int clock_setup() {
 	uint32_t config;
 
-	SET_REG(CLOCK1 + CLOCK1_PLLMODE, GET_REG(CLOCK1 + CLOCK1_PLLMODE) | 1 | 2 | 4 | 8);
-	SET_REG(CLOCK1 + CLOCK1_CL2_GATES, 0);
-	SET_REG(CLOCK1 + CLOCK1_CL3_GATES, 0);
-
 	config = GET_REG(CLOCK1 + CLOCK1_CONFIG0);
 	uint32_t clockPLL = CLOCK1_CLOCKPLL(config);
 	uint32_t clockDivisor;

@@ -31,6 +31,8 @@ uint32_t pcm_buffer_size;
 
 volatile static int transfersDone;
 
+volatile static int stopTransfers;
+
 void audiohw_preinit();
 
 void audiohw_init()
@@ -54,8 +56,8 @@ static void iis_transfer_done(int status, int controller, int channel)
 {
 	++transfersDone;
 	CleanCPUDataCache();
-	dma_perform((uint32_t)pcm_buffer, DMA_I2S0_TX, pcm_buffer_size, 0, &controller, &channel);
-	bufferPrintf("audio: dma successfully completed\r\n");
+	dma_perform((uint32_t)pcm_buffer, DMA_WM_I2S_TX, pcm_buffer_size, 0, &controller, &channel);
+	// FIXME: For some reason, if I put a printf under here, the DMA stalls.
 }
 
 int audiohw_transfers_done()
@@ -68,9 +70,7 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size)
 	pcm_buffer = addr_in;
 	pcm_buffer_size = size;
 
-	bufferPrintf("init: %08x\r\n", GET_REG(I2S0 + I2S_STATUS));
-
-	SET_REG(I2S0 + I2S_TXCON,
+	SET_REG(WM_I2S + I2S_TXCON,
 			(1 << 24) |  /* undocumented */
 			(1 << 20) |  /* undocumented */
 			(0 << 16) |  /* burst length */
@@ -83,29 +83,24 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size)
 			(0 << 3) |   /* bit clock per frame */
 			(1 << 0));    /* channel index */
 
-	bufferPrintf("after init: %08x\r\n", GET_REG(I2S0 + I2S_STATUS));
-
 	int controller = 0;
 	int channel = 0;
 
 	transfersDone = 0;
+	stopTransfers = 0;
 	
 	CleanCPUDataCache();
 
-	dma_request(DMA_MEMORY, 4, 1, DMA_I2S0_TX, 4, 1, &controller, &channel, iis_transfer_done);
+	dma_request(DMA_MEMORY, 4, 1, DMA_WM_I2S_TX, 4, 1, &controller, &channel, iis_transfer_done);
 
-	dma_perform((uint32_t)pcm_buffer, DMA_I2S0_TX, pcm_buffer_size, 0, &controller, &channel);
+	dma_perform((uint32_t)pcm_buffer, DMA_WM_I2S_TX, pcm_buffer_size, 0, &controller, &channel);
 
-	bufferPrintf("after dma: %08x\r\n", GET_REG(I2S0 + I2S_STATUS));
-
-	SET_REG(I2S0 + I2S_CLKCON, (1 << 0)); /* 1 = power on */
-	SET_REG(I2S0 + I2S_TXCOM, 
+	SET_REG(WM_I2S + I2S_CLKCON, (1 << 0)); /* 1 = power on */
+	SET_REG(WM_I2S + I2S_TXCOM, 
 			(1 << 3) |   /* 1 = transmit mode on */
 			(1 << 2) |   /* 1 = I2S interface enable */
 			(1 << 1) |   /* 1 = DMA request enable */
 			(0 << 0));    /* 0 = LRCK on */
-
-	bufferPrintf("after turn on: %08x\r\n", GET_REG(I2S0 + I2S_STATUS));
 
 	/*if(dma_finish(controller, channel, 2000) != 0) {
 		bufferPrintf("audio: dma timed out\r\n");
@@ -113,9 +108,7 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size)
 	
 	CleanAndInvalidateCPUDataCache();
 
-	//bufferPrintf("after dma finish: %08x\r\n", GET_REG(I2S0 + I2S_STATUS));
-
-	//SET_REG(I2S0 + I2S_TXCOM,
+	//SET_REG(WM_I2S + I2S_TXCOM,
 	//		(1 << 3) |   /* 1 = transmit mode on */
 	//		(0 << 2) |   /* 1 = I2S interface enable */
 	//		(1 << 1) |   /* 1 = DMA request enable */
@@ -144,7 +137,7 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size)
 #define ADCCTL      0x0e
 #define LADCVOL     0x0f
 #define RADCVOL     0x10
-
+#define WMREG_11    0x11
 #define EQ1         0x12
 #define EQ2         0x13
 #define EQ3         0x14
@@ -158,10 +151,12 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size)
 #define CLASSDCTL   0x17
 #define DACLIMIT1   0x18
 #define DACLIMIT2   0x19
+#define WMREG_1A    0x1a
 #define NOTCH1      0x1b
 #define NOTCH2      0x1c
 #define NOTCH3      0x1d
 #define NOTCH4      0x1e
+#define WMREG_1F    0x1f
 #define ALCCTL1     0x20
 #define ALCCTL2     0x21
 #define ALCCTL3     0x22
@@ -170,6 +165,7 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size)
 #define PLLK1       0x25
 #define PLLK2       0x26
 #define PLLK3       0x27
+#define WMREG_28    0x28
 #define THREEDCTL   0x29
 #define OUT4ADC     0x2a
 #define BEEPCTRL    0x2b
@@ -187,10 +183,14 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size)
 #define ROUT2VOL    0x37
 #define OUT3MIX     0x38
 #define OUT4MIX     0x39
+#define WMREG_3A    0x3a
+#define WMREG_3B    0x3b
+#define WMREG_3C    0x3c
 #define BIASCTL     0x3d
+#define WMREG_3E    0x3e
 
 const struct sound_settings_info audiohw_settings[] = {
-    [SOUND_VOLUME]        = {"dB", 0,  1, -58,   6, -25},
+    [SOUND_VOLUME]        = {"dB", 0,  1, -57,   6, -25},
     [SOUND_BASS]          = {"dB", 0,  1, -12,  12,   0},
     [SOUND_TREBLE]        = {"dB", 0,  1, -12,  12,   0},
     [SOUND_BALANCE]       = {"%",  0,  1,-100, 100,   0},
@@ -233,38 +233,86 @@ void audiohw_preinit(void)
     wmcodec_write(RESET,    0x1ff);    /* Reset */
 
     wmcodec_write(BIASCTL,  0x100); /* BIASCUT = 1 */
-    wmcodec_write(OUTCTRL,  0x6);   /* Thermal shutdown */
 
-    wmcodec_write(PWRMGMT1, 0x8);   /* BIASEN = 1 */
+    wmcodec_write(PWRMGMT1, 0x2d);   /* BIASEN = 1, PLLEN = 1, BUFIOEN = 1, VMIDSEL = 1 */
+    wmcodec_write(PWRMGMT2, 0x180);
+    wmcodec_write(PWRMGMT3, 0x6f);
+   
+    wmcodec_write(AINTFCE, 0x10);   /* 16-bit, I2S format */
 
-    /* Volume zero, mute all outputs */
-    wmcodec_write(LOUT1VOL, 0x140);
-    wmcodec_write(ROUT1VOL, 0x140);
-    wmcodec_write(LOUT2VOL, 0x140);
-    wmcodec_write(ROUT2VOL, 0x140);
+    wmcodec_write(COMPAND, 0x0);
+    wmcodec_write(CLKGEN, 0x14d);
+    wmcodec_write(SRATECTRL, 0x0);
+    wmcodec_write(GPIOCTL, 0x0);
+    wmcodec_write(JACKDETECT0, 0x0);
+
+    wmcodec_write(DACCTRL,  0x3);
+    wmcodec_write(LDACVOL,  0xff);
+    wmcodec_write(RDACVOL,  0x1ff);
+
+    wmcodec_write(JACKDETECT1, 0x0);
+
+    wmcodec_write(ADCCTL, 0x0);
+    wmcodec_write(LADCVOL, 0xff);
+    wmcodec_write(RADCVOL, 0xff);
+
+    wmcodec_write(WMREG_11, 0xffff);
+
+    wmcodec_write(EQ1, 0x12c);
+    wmcodec_write(EQ2, 0x2c);
+    wmcodec_write(EQ3, 0x2c);
+    wmcodec_write(EQ4, 0x2c);
+    wmcodec_write(EQ5, 0x2c);
+
+    wmcodec_write(CLASSDCTL, 0xffff);
+    wmcodec_write(DACLIMIT1, 0x32);
+    wmcodec_write(DACLIMIT2, 0x0);
+
+    wmcodec_write(WMREG_1A, 0xffff);
+
+    wmcodec_write(NOTCH1, 0x0);
+    wmcodec_write(NOTCH2, 0x0);
+    wmcodec_write(NOTCH3, 0x0);
+    wmcodec_write(NOTCH4, 0x0);
+
+    wmcodec_write(WMREG_1F, 0xffff);
+
+    wmcodec_write(PLLN, 0xa);
+    wmcodec_write(PLLK1, 0x1);
+    wmcodec_write(PLLK2, 0x1fd);
+    wmcodec_write(PLLK3, 0x1e8);
+
+    wmcodec_write(THREEDCTL, 0x0);
+    wmcodec_write(OUT4ADC, 0x0);
+    wmcodec_write(BEEPCTRL, 0x0);
+
+    wmcodec_write(INCTRL, 0x0);
+    wmcodec_write(LINPGAGAIN, 0x40);
+    wmcodec_write(RINPGAGAIN, 0x140);
+
+    wmcodec_write(LADCBOOST, 0x0);
+    wmcodec_write(RADCBOOST, 0x0);
+
+    wmcodec_write(OUTCTRL,  0x186);   /* Thermal shutdown, DACL2RMIX = 1, DACR2LMIX = 1, SPKBOOST = 1 */
+    wmcodec_write(LOUTMIX, 0x15);
+    wmcodec_write(ROUTMIX, 0x15);
+
+    wmcodec_write(LOUT1VOL, 0xc0);
+    wmcodec_write(ROUT1VOL, 0x1c0);
+    wmcodec_write(LOUT2VOL, 0xb9);
+    wmcodec_write(ROUT2VOL, 0x1b9);
+
     wmcodec_write(OUT3MIX,  0x40);
     wmcodec_write(OUT4MIX,  0x40);
 
-    /* DAC softmute, automute, 128OSR */
-    wmcodec_write(DACCTRL,  0x4c);
+    wmcodec_write(WMREG_3A, 0xffff);
+    wmcodec_write(WMREG_3B, 0xffff);
+    wmcodec_write(WMREG_3C, 0xffff);
+    
+    wmcodec_write(WMREG_3E, 0x8c90);
 
-    wmcodec_write(OUT4ADC,  0x2);   /* POBCTRL = 1 */
 
-    /* Enable output, DAC and mixer */
-    wmcodec_write(PWRMGMT3, 0x6f);
-    wmcodec_write(PWRMGMT2, 0x180);
-    wmcodec_write(PWRMGMT1, 0xd);
-    wmcodec_write(LOUTMIX,  0x1);
-    wmcodec_write(ROUTMIX,  0x1);
-
-    /* Disable clock since we're acting as slave to the SoC */
-    wmcodec_write(CLKGEN,  0x0);
-    wmcodec_write(AINTFCE, 0x10);   /* 16-bit, I2S format */
-
-    wmcodec_write(LDACVOL, 0x1ff);  /* Full DAC digital vol */
-    wmcodec_write(RDACVOL, 0x1ff);
-
-    wmcodec_write(OUT4ADC, 0x0);    /* POBCTRL = 0 */
+//    wmcodec_write(OUT4ADC, 0x0);    /* POBCTRL = 0 */
 }
 
 void audiohw_mute(int mute)
@@ -272,10 +320,10 @@ void audiohw_mute(int mute)
     if (mute)
     {
         /* Set DACMU = 1 to soft-mute the audio DACs. */
-        wmcodec_write(DACCTRL, 0x4c);
+    	wmcodec_write(DACCTRL, 0x43);
     } else {
         /* Set DACMU = 0 to soft-un-mute the audio DACs. */
-        wmcodec_write(DACCTRL, 0xc);
+    	wmcodec_write(DACCTRL, 0x3);
     }
 }
 

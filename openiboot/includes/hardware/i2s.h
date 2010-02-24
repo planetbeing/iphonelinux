@@ -14,4 +14,14 @@
 #define I2S_RXCOM 0x34
 #define I2S_STATUS 0x3C
 
+#ifdef CONFIG_IPOD
+#define WM_I2S I2S1
+#define DMA_WM_I2S_TX DMA_I2S1_TX
+#define DMA_WM_I2S_RX DMA_I2S1_RX
+#else
+#define WM_I2S I2S0
+#define DMA_WM_I2S_TX DMA_I2S0_TX
+#define DMA_WM_I2S_RX DMA_I2S0_RX
+#endif
+
 #endif
