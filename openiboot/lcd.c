@@ -1017,11 +1017,26 @@ static void togglePixelClock(OnOff swt) {
 	}
 }
 
+#ifdef CONFIG_3G
+static int detect_lcd_gpio_config() {
+	static int hasDetected = FALSE;
+	static int detectedConfig = 0;
+
+	if(hasDetected) {
+		return detectedConfig;
+	}
+
+	detectedConfig = (gpio_pin_state(LCD_GPIO_CONFIG3) ? 1 : 0) | ((gpio_pin_state(LCD_GPIO_CONFIG2) ? 1 : 0) << 1) | ((gpio_pin_state(LCD_GPIO_CONFIG1) ? 1 : 0) << 2);
+	hasDetected = TRUE;
+	return detectedConfig;
+}
+#endif
+
 static void resetLCD() {
 	int altResetDirection = FALSE;
 
 #ifdef CONFIG_3G
-	if(gpio_detect_configuration() < 3)
+	if(detect_lcd_gpio_config() < 3)
 		altResetDirection = TRUE;
 #endif
 
