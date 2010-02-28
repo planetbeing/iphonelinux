@@ -31,7 +31,7 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 	gpio_register_interrupt(MT_ATN_INTERRUPT, 0, 0, 0, multitouch_atn, 0);
 	gpio_interrupt_enable(MT_ATN_INTERRUPT);
 
-	spi_set_baud(MT_SPI, 83000, SPIOption13Setting0, 1, 1, 1);
+	spi_set_baud(MT_SPI, MT_NORMAL_SPEED, SPIOption13Setting0, 1, 1, 1);
 
 	gpio_pin_output(MT_GPIO_POWER, 0);
 	udelay(200000);
@@ -107,9 +107,11 @@ static int loadMainFirmware(const uint8_t* firmware, int len)
 	for(i = 0; i < 5; ++i)
 	{
 		bufferPrintf("multitouch: uploading main firmware\r\n");
-		spi_set_baud(MT_SPI, 9000000, SPIOption13Setting0, 1, 1, 1);
+		spi_set_baud(MT_SPI, MT_ASPEED, SPIOption13Setting0, 1, 1, 1);
+		gpio_pin_output(MT_SPI_CS, 0);
 		spi_tx(MT_SPI, firmware, len, TRUE, 0);
-		spi_set_baud(MT_SPI, 83000, SPIOption13Setting0, 1, 1, 1);
+		gpio_pin_output(MT_SPI_CS, 1);
+		spi_set_baud(MT_SPI, MT_NORMAL_SPEED, SPIOption13Setting0, 1, 1, 1);
 
 		if(verifyUpload(checksum))
 			break;
