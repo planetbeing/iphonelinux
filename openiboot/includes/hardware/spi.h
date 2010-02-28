@@ -40,6 +40,15 @@
 #define GPIO_SPI0_CS0_IPOD 0x700
 
 #ifdef CONFIG_IPOD
+#define GPIO_SPI2_CS0 0x1804
+#define GPIO_SPI2_CS1 0x705
+#endif
+
+#ifdef CONFIG_IPHONE
+#define GPIO_SPI2_CS0 0x705
+#endif
+
+#ifdef CONFIG_IPOD
 #define GPIO_SPI0_CS0 GPIO_SPI0_CS0_IPOD
 #else
 #define GPIO_SPI0_CS0 GPIO_SPI0_CS0_IPHONE

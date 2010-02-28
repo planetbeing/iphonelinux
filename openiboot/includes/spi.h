@@ -28,13 +28,13 @@ typedef enum SPIOption13 {
 
 typedef struct SPIInfo {
 	int option13;
-	int option2;
-	int option1;
+	int isActiveLow;
+	int lastClockEdgeMissing;
 	SPIClockSource clockSource;
 	int baud;
-	int option3;
+	int isMaster;
 	int option5;
-	volatile uint8_t* txBuffer;
+	const volatile uint8_t* txBuffer;
 	volatile int txCurrentLen;
 	volatile int txTotalLen;
 	volatile uint8_t* rxBuffer;
@@ -46,8 +46,9 @@ typedef struct SPIInfo {
 } SPIInfo;
 
 int spi_setup();
-int spi_tx(int port, uint8_t* buffer, int len, int block, int unknown);
-int spi_rx(int port, uint8_t* buffer, int len, int block, int unknown);
-void spi_set_baud(int port, int baud, SPIOption13 option13, int option3, int option2, int option1);
+int spi_tx(int port, const uint8_t* buffer, int len, int block, int unknown);
+int spi_rx(int port, uint8_t* buffer, int len, int block, int noTransmitJunk);
+int spi_txrx(int port, const uint8_t* outBuffer, int outLen, uint8_t* inBuffer, int inLen, int block);
+void spi_set_baud(int port, int baud, SPIOption13 option13, int isMaster, int isActiveLow, int lastClockEdgeMissing);
 
 #endif

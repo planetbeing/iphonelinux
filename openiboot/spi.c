@@ -39,8 +39,8 @@ int spi_setup() {
 	return 0;
 }
 
-int spi_tx(int port, uint8_t* buffer, int len, int block, int unknown) {
-	if(port >= (NUM_SPIPORTS - 1)) {
+int spi_tx(int port, const uint8_t* buffer, int len, int block, int unknown) {
+	if(port > (NUM_SPIPORTS - 1)) {
 		return -1;
 	}
 
@@ -78,8 +78,8 @@ int spi_tx(int port, uint8_t* buffer, int len, int block, int unknown) {
 	}
 }
 
-int spi_rx(int port, uint8_t* buffer, int len, int block, int unknown) {
-	if(port >= (NUM_SPIPORTS - 1)) {
+int spi_rx(int port, uint8_t* buffer, int len, int block, int noTransmitJunk) {
+	if(port > (NUM_SPIPORTS - 1)) {
 		return -1;
 	}
 
@@ -92,18 +92,18 @@ int spi_rx(int port, uint8_t* buffer, int len, int block, int unknown) {
 	spi_info[port].rxTotalLen = len;
 	spi_info[port].counter = 0;
 
-	SET_REG(SPIRegs[port].unkReg2, len);
-	SET_REG(SPIRegs[port].control, 1);
-
-	if(unknown == 0) {
+	if(noTransmitJunk == 0) {
 		SET_REG(SPIRegs[port].setup, GET_REG(SPIRegs[port].setup) | 1);
 	}
+
+	SET_REG(SPIRegs[port].unkReg2, len);
+	SET_REG(SPIRegs[port].control, 1);
 
 	if(block) {
 		while(!spi_info[port].rxDone) {
 			// yield
 		}
-		if(unknown == 0) {
+		if(noTransmitJunk == 0) {
 			SET_REG(SPIRegs[port].setup, GET_REG(SPIRegs[port].setup) & ~1);
 		}
 		return len;
@@ -112,9 +112,51 @@ int spi_rx(int port, uint8_t* buffer, int len, int block, int unknown) {
 	}
 }
 
+int spi_txrx(int port, const uint8_t* outBuffer, int outLen, uint8_t* inBuffer, int inLen, int block)
+{
+	if(port > (NUM_SPIPORTS - 1)) {
+		return -1;
+	}
 
-void spi_set_baud(int port, int baud, SPIOption13 option13, int option3, int option2, int option1) {
-	if(port >= (NUM_SPIPORTS - 1)) {
+	SET_REG(SPIRegs[port].control, GET_REG(SPIRegs[port].control) | (1 << 2));
+	SET_REG(SPIRegs[port].control, GET_REG(SPIRegs[port].control) | (1 << 3));
+
+	spi_info[port].txBuffer = outBuffer;
+
+	if(outLen > MAX_TX_BUFFER)
+		spi_info[port].txCurrentLen = MAX_TX_BUFFER;
+	else
+		spi_info[port].txCurrentLen = outLen;
+
+	spi_info[port].txTotalLen = outLen;
+	spi_info[port].txDone = FALSE;
+
+	spi_info[port].rxBuffer = inBuffer;
+	spi_info[port].rxDone = FALSE;
+	spi_info[port].rxCurrentLen = 0;
+	spi_info[port].rxTotalLen = inLen;
+	spi_info[port].counter = 0;
+
+	int i;
+	for(i = 0; i < spi_info[port].txCurrentLen; i++) {
+		SET_REG(SPIRegs[port].txData, outBuffer[i]);
+	}
+
+	SET_REG(SPIRegs[port].unkReg2, inLen);
+	SET_REG(SPIRegs[port].control, 1);
+
+	if(block) {
+		while(!spi_info[port].txDone || !spi_info[port].rxDone || GET_BITS(GET_REG(SPIRegs[port].status), 4, 4) != 0) {
+			// yield
+		}
+		return inLen;
+	} else {
+		return 0;
+	}
+}
+
+void spi_set_baud(int port, int baud, SPIOption13 option13, int isMaster, int isActiveLow, int lastClockEdgeMissing) {
+	if(port > (NUM_SPIPORTS - 1)) {
 		return;
 	}
 
@@ -134,8 +176,8 @@ void spi_set_baud(int port, int baud, SPIOption13 option13, int option3, int opt
 			break;
 	}
 
-	spi_info[port].option2 = option2;
-	spi_info[port].option1 = option1;
+	spi_info[port].isActiveLow = isActiveLow;
+	spi_info[port].lastClockEdgeMissing = lastClockEdgeMissing;
 
 	uint32_t clockFrequency;
 
@@ -161,11 +203,11 @@ void spi_set_baud(int port, int baud, SPIOption13 option13, int option3, int opt
 	
 	SET_REG(SPIRegs[port].clkDivider, divider);
 	spi_info[port].baud = baud;
-	spi_info[port].option3 = option3;
+	spi_info[port].isMaster = isMaster;
 
-	uint32_t options = (option1 << 1)
-			| (option2 << 2)
-			| ((option3 ? 0x3 : 0) << 3)
+	uint32_t options = (lastClockEdgeMissing << 1)
+			| (isActiveLow << 2)
+			| ((isMaster ? 0x3 : 0) << 3)
 			| ((spi_info[port].option5 ? 0x2 : 0x3D) << 5)
 			| (spi_info[port].clockSource << CLOCK_SHIFT)
 			| spi_info[port].option13 << 13;
@@ -177,7 +219,7 @@ void spi_set_baud(int port, int baud, SPIOption13 option13, int option3, int opt
 }
 
 static void spiIRQHandler(uint32_t port) {
-	if(port >= (NUM_SPIPORTS - 1)) {
+	if(port > (NUM_SPIPORTS - 1)) {
 		return;
 	}
 

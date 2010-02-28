@@ -37,10 +37,10 @@ int gpio_setup() {
 
 	for(i = 0; i < GPIO_NUMINTGROUPS; i++) {
 		// writes to all the interrupt status register to acknowledge and discard any pending
-		SET_REG(GPIOIC + GPIO_INTSTAT, GPIO_INTSTAT_RESET);
+		SET_REG(GPIOIC + GPIO_INTSTAT + (i * 0x4), GPIO_INTSTAT_RESET);
 
 		// disable all interrupts
-		SET_REG(GPIOIC + GPIO_INTEN, GPIO_INTEN_RESET);
+		SET_REG(GPIOIC + GPIO_INTEN + (i * 0x4), GPIO_INTEN_RESET);
 	}
 
 	memset(InterruptGroups, 0, sizeof(InterruptGroups));

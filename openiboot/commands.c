@@ -23,6 +23,7 @@
 #include "sdio.h"
 #include "wdt.h"
 #include "wm8958.h"
+#include "multitouch.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -765,6 +766,22 @@ void cmd_audiohw_headphone_vol(int argc, char** argv)
 	bufferPrintf("Set headphone volumes to: %d / %d\r\n", left, right);
 }
 
+void cmd_multitouch_setup(int argc, char** argv)
+{
+	if(argc < 5)
+	{
+		bufferPrintf("%s <a-speed fw> <a-speed fw len> <main fw> <main fw len>\r\n");
+		return;
+	}
+
+	uint8_t* aspeedFW = (uint8_t*) parseNumber(argv[1]);
+	uint32_t aspeedFWLen = parseNumber(argv[2]);
+	uint8_t* mainFW = (uint8_t*) parseNumber(argv[3]);
+	uint32_t mainFWLen = parseNumber(argv[4]);
+
+	multitouch_setup(aspeedFW, aspeedFWLen, mainFW, mainFWLen);
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -837,6 +854,7 @@ OPIBCommand CommandList[] =
 		{"audiohw_transfers_done", "display how many times the audio buffer has been played", cmd_audiohw_transfers_done},
 		{"audiohw_play_pcm", "queue some PCM data for playback", cmd_audiohw_play_pcm},
 		{"audiohw_headphone_vol", "set the headphone volume", cmd_audiohw_headphone_vol},
+		{"multitouch_setup", "setup the multitouch chip", cmd_multitouch_setup},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}
 	};
