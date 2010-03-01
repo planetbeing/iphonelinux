@@ -1,0 +1,99 @@
+Here's a list of things we need
+===============================
+
+This is just my personal WISHLIST. You might have different priorities. If you
+want to help, just submit patches that you think are helpful. If you need ideas,
+just refer to this list. Take it off the list in your patch when you finish
+something off the list. I'll try to give as much help and guidance as I have
+time to (which may not be much). 
+
+This is not an exhaustive list, but just stuff I think people can actually
+deliver on reasonable timescales. For example, notice the conspicuous absence of
+"figure out how to make phone calls". It's roughly divided based on skillset.
+
+Jobs for C coders that may not have much RE or driver experience
+----------------------------------------------------------------
+
+1. Simplify driver code: An early goal of this project is to remain faithful to
+how the iPhone firmware operates the hardware. Some of it does not actually make
+sense or is otherwise not very efficient. We have a better understanding of the
+hardware now and can afford to write better drivers with that understanding.
+This is essentially refactoring.
+
+2. Refactor openiboot: I'm not sure I like the way openiboot is laid out right
+now. There's got to be a neater way to organize this. I'd like something that
+has less messy defines and a more consistent style so it's easier to read,
+perhaps individual folders for each module, and the ability to easily include or
+not include any individual module. An emphasis should be put on ease of porting.
+
+3. Add multitasking: A great project for students in or just out of OS classes.
+I've been too lazy to add true multithreading primitives: mutexes, semaphores,
+condition variables, and also multitasking in general. A lot of stuff is run in
+interrupt contexes or interrupt-disabled contexes. Writing drivers requiring
+blocking I/O is a pain. It's time for a true multitasking kernel. Should be done
+in coordination with #2.
+
+4. Write a gdb stub for openiboot: Those things are tiny and it shouldn't be
+that bad. Just have it communicate over the existing USB driver now. We wouldn't
+be able to debug interrupt contexts for now, but it's better than nothing.
+
+5. Someone needs to MAINTAIN the build script for the toolchain. Or else figure
+out if/how we can just build everything using Apple's or the community's iPhone
+OS toolchain. I'm pretty sure we can. It's not like we use the elf wrapper
+currently.
+
+6. It might be cool to be able to parse the iPhone's own device tree for some
+of base addresses. Might make porting less of a pain.
+
+Jobs for people who want to get their hands dirty with drivers
+--------------------------------------------------------------
+
+1. Look at TheSeven's NAND FTL code in Rockbox and CPICH's reverse engineering
+efforts to figure out the FTL write code and get it working.
+
+2. Write a new USB driver: I hate the current one. TheSeven might have some
+better code.
+
+3. Can we steal some code from that userland bluetooth stack and put it on top
+of our UART code? It might be even cleaner than USB, ironically, since we can
+probably do it all without interrupts.
+
+Jobs for reverse engineers
+--------------------------
+
+1. Port openiboot to unsupported platforms like ipt2g, ipt3g and iPhone 3GS. 
+
+2. For some reason, the NAND chips stop working after the iPhone is on for a
+long time. They're fine after a reboot. Figure out why that's happening.
+
+3. Get multitouch working for Zephyr2. It's a subclass of the Zephyr1 that I
+investigated, and at least some functions are shared, so it shouldn't be
+terrible.
+
+4. We need a SDIO driver and then a wi-fi driver. I'm guessing no one will be
+touching this with a ten-foot pole so I'll probably be doing this myself.
+
+5. Find out where the vibrator is hiding. I don't see it explicitly in the
+device tree, so someone will have to trace calls from userland. cmw once traced
+it to some audio call. I'm pretty sure it won't be conencted to the Wolfson, but
+it might have to do with the baseband audio. See below.
+
+6. Figure out how to get the internal speaker to work: The PLL on the Wolfson is
+disabled when the speaker is being used. Also, changing the volume does not
+change any of the registers on the Wolfson (as they are changed to adjust
+headphone volume). The only other i2s line leads through AppleBasebandAudio so I
+guess that's where it's going. Someone's going to have a lot of fun with this
+one, I can tell.
+
+7. Figure out how to talk to the light sensor. It's a TSL2561 according to the
+ioreg. The slave address is 0x92/0x93 according to the ioreg "reg" setting and
+is one of the slave addresses allowed on the TSL2561. It's on i2c0 according to
+ioreg. It all looks good except for the fact I cannot get a response out of this
+part. I even bruteforced all the slave addresses on i2c0 and only got responses
+from the PMU, the accelerometer and the Wolfson, stuff we already know how to
+talk to. What's going on? Is it just my 2G is broken?
+
+8. Figure out the new FTL they're using on the newer devices. That's going to be
+a pain.
+
+Thanks for reading all this. I'm impressed.
