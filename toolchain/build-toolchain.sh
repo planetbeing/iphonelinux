@@ -3,7 +3,7 @@
 #
 # iPhoneLinux.org Toolchain builder
 #
-#
+# on ubuntu install the following packages : build-essential texinfo
 
 # Package URL
 PKG_MIRROR="http://www.gnuarm.com"
@@ -14,7 +14,6 @@ PKG_GCC411="gcc-4.1.1.tar.bz2"
 PKG_NEWLIB="newlib-1.14.0.tar.gz"
 
 # Package Patches
-PATCH_MIRROR="http://www.iphonelinux.org"
 PATCH_GCC411_ARMELF="t-arm-elf.patch"
 PATCH_NEWLIB_MAKEINFO="newlib-1.14.0-missing-makeinfo.patch"
 
@@ -115,6 +114,9 @@ mkdir -p $TOOLCHAIN_PATH/src/
 checkRet $? "failed to create $TOOLCHAIN_PATH/src" $EXIT_TRUE
 echo "- $TOOLCHAIN_PATH/src"
 
+# Copy patch files
+cp ./*.patch $TOOLCHAIN_PATH
+
 # Create log file
 echo "" > $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 echo -en "Downloading packages\n"
@@ -172,20 +174,17 @@ echo -en "- Extracting GCC\n"
 cd $TOOLCHAIN_PATH
 tar -jxvf $TOOLCHAIN_PATH/src/$PKG_GCC411 >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to extract package $PKG_GCC411" $EXIT_TRUE
-echo -en "- Extracting Newlib depednacy for gcc\n"
+echo -en "- Extracting Newlib dependency for gcc\n"
 
 tar -zxvf $TOOLCHAIN_PATH/src/$PKG_NEWLIB >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to extract package $PKG_NEWLIB" $EXIT_TRUE
 
-echo -en "- Downloading t-arm-elf patch\n" 
-wget -c $PATCH_MIRROR/$PATCH_GCC411_ARMELF -O $TOOLCHAIN_PATH/t-arm-elf.patch >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to download patch $PATCH_GCC411_ARMELF" $EXIT_TRUE
 patch -p0 < $PATCH_GCC411_ARMELF >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to apply patch for t-arm-elf" $EXIT_TRUE
 echo -en "- Doing GCC configure\n"
 cd gcc-build
 ../gcc-4.1.1/configure --target=arm-elf --prefix=$PREFIX \
-    --enable-interwork --enable-multilib \
+    --enable-interwork --enable-multilib --with-fpu=vfp \
     --enable-languages="c,c++" --with-newlib \
     --with-headers=../newlib-1.14.0/newlib/libc/include --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to configure gcc" $EXIT_TRUE
@@ -200,9 +199,6 @@ checkRet $? "Failed to install GCC" $EXIT_TRUE
 cd ../
 echo -en "- GCC Part 1 Completed\n"
 
-echo -en "- Downloading newlib makeinfo patch\n" 
-wget -c $PATCH_MIRROR/$PATCH_NEWLIB_MAKEINFO -O $TOOLCHAIN_PATH/$PATCH_NEWLIB_MAKEINFO >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to download patch $PATCH_NEWLIB_MAKEINFO" $EXIT_TRUE
 patch -p0 < $PATCH_NEWLIB_MAKEINFO >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
 checkRet $? "Failed to apply patch for newlib makeinfo" $EXIT_TRUE
 echo -en "- Doing NewLib configure\n"

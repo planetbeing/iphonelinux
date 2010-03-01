@@ -5,6 +5,7 @@
 
 #define FTL_ID_V1 0x43303033
 #define FTL_ID_V2 0x43303034
+#define FTL_ID_V3 0x43303035
 
 int HasFTLInit = FALSE;
 
@@ -973,7 +974,7 @@ int ftl_setup() {
 		int ret;
 		if((ret = nand_read_alternate_ecc(0, i, buffer)) == 0) {
 			uint32_t id = *((uint32_t*) buffer);
-			if(id == FTL_ID_V1 || id == FTL_ID_V2) {
+			if(id == FTL_ID_V1 || id == FTL_ID_V2 || id == FTL_ID_V3) {
 				bufferPrintf("ftl: Found production format: %x\r\n", id);
 				foundSignature = TRUE;
 				break;

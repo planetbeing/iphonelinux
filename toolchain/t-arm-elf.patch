@@ -1,0 +1,12 @@
+--- gcc-4.1.1/gcc/config/arm/t-arm-elf.old	2010-02-27 13:02:07.785435756 +0100
++++ gcc-4.1.1/gcc/config/arm/t-arm-elf	2010-02-27 16:22:30.085894247 +0100
+@@ -6,7 +6,7 @@
+ 	_truncdfsf2 _negsf2 _addsubsf3 _muldivsf3 _cmpsf2 _unordsf2 \
+ 	_fixsfsi _fixunssfsi _floatdidf _floatdisf
+ 
+-MULTILIB_OPTIONS     = marm/mthumb
++MULTILIB_OPTIONS     = marm/mthumb mthumb-interwork
+-MULTILIB_DIRNAMES    = arm thumb
++MULTILIB_DIRNAMES    = arm thumb interwork
+ MULTILIB_EXCEPTIONS  = 
+ MULTILIB_MATCHES     =
