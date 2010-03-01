@@ -1,4 +1,5 @@
 #include "openiboot.h"
+#include "openiboot-asmhelpers.h"
 #include "multitouch.h"
 #include "hardware/multitouch.h"
 #include "gpio.h"
@@ -13,6 +14,7 @@ volatile int GotATN;
 static uint8_t* OutputPacket;
 static uint8_t* InputPacket;
 static uint8_t* GetInfoPacket;
+static uint8_t* GetResultPacket;
 
 static int InterfaceVersion;
 static int MaxPacketSize;
@@ -27,6 +29,9 @@ static uint8_t* SensorRegionDescriptor;
 static int SensorRegionDescriptorLen;
 static uint8_t* SensorRegionParam;
 static int SensorRegionParamLen;
+
+// This is flipped between 0x64 and 0x65 for every transaction
+static int CurNOP;
 
 typedef struct MTSPISetting
 {
@@ -56,6 +61,12 @@ static int determineInterfaceVersion();
 static int getReportInfo(int id, uint8_t* err, uint16_t* len);
 static int getReport(int id, uint8_t* buffer, int* outLen);
 
+static int readFrameLength(int* len);
+static int readFrame();
+static int readResultData(int len);
+
+static void newPacket(const uint8_t* data, int len);
+
 int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const uint8_t* mainFirmware, int mainFirmwareLen)
 {
 	bufferPrintf("multitouch: A-Speed firmware at 0x%08x - 0x%08x, Main firmware at 0x%08x - 0x%08x\r\n",
@@ -65,8 +76,10 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 	OutputPacket = (uint8_t*) malloc(0x400);
 	InputPacket = (uint8_t*) malloc(0x400);
 	GetInfoPacket = (uint8_t*) malloc(0x400);
+	GetResultPacket = (uint8_t*) malloc(0x400);
 
 	memset(GetInfoPacket, 0x82, 0x400);
+	memset(GetResultPacket, 0x68, 0x400);
 
 	gpio_register_interrupt(MT_ATN_INTERRUPT, 0, 0, 0, multitouch_atn, 0);
 	gpio_interrupt_enable(MT_ATN_INTERRUPT);
@@ -83,6 +96,7 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 		free(InputPacket);
 		free(OutputPacket);
 		free(GetInfoPacket);
+		free(GetResultPacket);
 		return -1;
 	}
 
@@ -94,6 +108,7 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 		free(InputPacket);
 		free(OutputPacket);
 		free(GetInfoPacket);
+		free(GetResultPacket);
 		return -1;
 	}
 
@@ -105,6 +120,7 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 		free(InputPacket);
 		free(OutputPacket);
 		free(GetInfoPacket);
+		free(GetResultPacket);
 		return -1;
 	}
 
@@ -117,6 +133,7 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 		free(InputPacket);
 		free(OutputPacket);
 		free(GetInfoPacket);
+		free(GetResultPacket);
 		return -1;
 	}
 
@@ -128,6 +145,7 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 		free(InputPacket);
 		free(OutputPacket);
 		free(GetInfoPacket);
+		free(GetResultPacket);
 		return -1;
 	}
 
@@ -142,6 +160,7 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 		free(InputPacket);
 		free(OutputPacket);
 		free(GetInfoPacket);
+		free(GetResultPacket);
 		return -1;
 	}
 
@@ -155,6 +174,7 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 		free(InputPacket);
 		free(OutputPacket);
 		free(GetInfoPacket);
+		free(GetResultPacket);
 		free(SensorRegionDescriptor);
 		return -1;
 	}
@@ -169,6 +189,7 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 		free(InputPacket);
 		free(OutputPacket);
 		free(GetInfoPacket);
+		free(GetResultPacket);
 		free(SensorRegionDescriptor);
 		free(SensorRegionParam);
 		return -1;
@@ -196,7 +217,146 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 		bufferPrintf(" %02x", SensorRegionParam[i]);
 	bufferPrintf("\r\n");
 
+	CurNOP = 0x64;
+
+	GotATN = 0;
+
+	while(TRUE)
+	{
+		EnterCriticalSection();
+		if(!GotATN)
+		{
+			LeaveCriticalSection();
+			continue;
+		}
+		--GotATN;
+		LeaveCriticalSection();
+
+		while(readFrame() == 1);
+	}
+
 	return 0;
+}
+
+static void newPacket(const uint8_t* data, int len)
+{
+	bufferPrintf("------START------\r\n");
+	hexdump((uint32_t) data, len);
+	bufferPrintf("-------END-------\r\n");
+}
+
+static int readFrame()
+{
+	int try = 0;
+
+	for(try = 0; try < 4; ++try)
+	{
+		int len = 0;
+		if(!readFrameLength(&len))
+		{
+			bufferPrintf("multitouch: error getting frame length\r\n");
+			udelay(1000);
+			continue;
+		}
+
+		if(len)
+		{
+			if(!readResultData(len + 1))
+			{
+				bufferPrintf("multitouch: error getting frame data\r\n");
+				udelay(1000);
+				continue;
+			}
+
+			if(CurNOP == 0x64)
+				CurNOP = 0x65;
+			else
+				CurNOP = 0x64;
+
+			return 1;
+		}
+
+		return 0;
+	}
+
+	return -1;
+}
+
+static int readResultData(int len)
+{
+	int try = 0;
+	for(try = 0; try < 4; ++try)
+	{
+		mt_spi_txrx(NORMAL_SPEED, GetResultPacket, len, InputPacket, len);
+		
+		if(InputPacket[0] != 0xAA)
+		{
+			udelay(1000);
+			continue;
+		}
+
+		int checksum = ((InputPacket[len - 2] & 0xFF) << 8) | (InputPacket[len - 1] & 0xFF);
+		int myChecksum = 0;
+
+		int i;
+		for(i = 1; i < (len - 2); ++i)
+			myChecksum += InputPacket[i];
+
+		myChecksum &= 0xFFFF;
+
+		if(myChecksum != checksum)
+		{
+			udelay(1000);
+			continue;
+		}
+
+		newPacket(InputPacket + 1, len - 3);
+		return TRUE;
+	}
+
+	return FALSE;
+
+}
+
+static int readFrameLength(int* len)
+{
+	uint8_t tx[8];
+	uint8_t rx[8];
+	memset(tx, CurNOP, sizeof(tx));
+
+	int try = 0;
+	for(try = 0; try < 4; ++try)
+	{
+		mt_spi_txrx(NORMAL_SPEED, tx, sizeof(tx), rx, sizeof(rx));
+
+		if(rx[0] != 0xAA)
+		{
+			udelay(1000);
+			continue;
+		}
+		
+		int tLen = ((rx[4] & 0xFF) << 8) | (rx[5] & 0xFF);
+		int tLenCkSum = (rx[4] + rx[5]) & 0xFFFF;
+		int checksum = ((rx[6] & 0xFF) << 8) | (rx[7] & 0xFF);
+		if(tLenCkSum != checksum)
+		{
+			udelay(1000);
+			continue;
+		}
+
+		if(tLen > MaxPacketSize)
+		{
+			bufferPrintf("multitouch: device unexpectedly requested to transfer a %d byte packet. Max size = %d\r\n", tLen, MaxPacketSize);
+			udelay(1000);
+			continue;
+		}
+
+		*len = tLen;
+
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 static int getReport(int id, uint8_t* buffer, int* outLen)
@@ -483,8 +643,7 @@ static int makeBootloaderDataPacket(uint8_t* output, uint32_t destAddress, const
 
 static void multitouch_atn(uint32_t token)
 {
-	bufferPrintf("Actual ATN!\r\n");
-	GotATN = 1;
+	++GotATN;
 }
 
 
