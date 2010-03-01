@@ -240,8 +240,30 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 
 static void newPacket(const uint8_t* data, int len)
 {
+	MTFrameHeader* header = (MTFrameHeader*) data;
+	if(header->type != 0x44 && header->type != 0x43)
+		bufferPrintf("multitouch: unknown frame type 0x%x\r\n", header->type);
+
+	FingerData* finger = (FingerData*)(data + (header->headerLen));
+
+	if(header->headerLen < 12)
+		bufferPrintf("multitouch: no finger data in frame\r\n");
+
 	bufferPrintf("------START------\r\n");
-	hexdump((uint32_t) data, len);
+
+	int i;
+	for(i = 0; i < header->numFingers; ++i)
+	{
+		bufferPrintf("multitouch: finger %d -- X(%d/%d, vel: %d), Y(%d/%d, vel: %d), radii(%d, %d, %d, angle: %d), contactDensity: %d\r\n",
+				i,
+				finger->x, SensorWidth, finger->velX,
+				finger->y, SensorHeight, finger->velY,
+				finger->radius1, finger->radius2, finger->radius3, finger->angle,
+				finger->contactDensity);
+
+		finger = (FingerData*) (((uint8_t*) finger) + header->fingerDataLen);
+	}
+
 	bufferPrintf("-------END-------\r\n");
 }
 
