@@ -721,6 +721,10 @@ void cmd_sdio_status(int argc, char** argv) {
 	sdio_status();
 }
 
+void cmd_sdio_setup(int argc, char** argv) {
+	sdio_setup();
+}
+
 
 void cmd_wdt(int argc, char** argv)
 {
@@ -829,6 +833,7 @@ OPIBCommand CommandList[] =
 		{"iic_write", "write a IIC register", cmd_iic_write},
 		{"accel", "display accelerometer data", cmd_accel},
 		{"sdio_status", "display sdio registers", cmd_sdio_status},
+		{"sdio_setup", "restart SDIO stuff", cmd_sdio_setup},
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
 		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},
