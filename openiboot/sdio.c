@@ -4,11 +4,13 @@
 #include "clock.h"
 #include "gpio.h"
 #include "timer.h"
+#include "interrupt.h"
 #include "hardware/sdio.h"
 
 #define SDIO_CARD_BUSY   0x80000000      /* Card Power up status bit */
 
 #define ERROR_TIMEOUT (-2)
+#define ERROR_ALIGN (-3)
 #define SUCCESS_NO_DATA 0
 #define SUCCESS_DATA (2 << 4)
 
@@ -21,21 +23,42 @@ int sdio_select_card(uint32_t rca);
 int sdio_send_io_op_cond(uint32_t ocr, uint32_t* rocr);
 int sdio_get_rca(uint32_t* rca);
 int sdio_io_rw_direct(int isWrite, int function, uint32_t address, uint8_t in, uint8_t* out);
+int sdio_set_block_size(int function, int blocksize);
+int sdio_io_rw_extended(int isWrite, int function, uint32_t address, int incr_addr, void* buffer, int blocks, int count);
+int sdio_io_rw_ext_helper(int isWrite, int function, uint32_t address, int incr_addr, void* buffer, int count);
+int sdio_read_cis(int function);
+static void sdio_handle_interrupt(uint32_t token);
+
+typedef struct SDIOFunction
+{
+	int blocksize;
+	int maxBlockSize;
+	int enableTimeout;
+} SDIOFunction;
 
 uint32_t RCA;
 int NumberOfFunctions;
 
+SDIOFunction* SDIOFunctions;
+
 int sdio_setup()
 {
+	interrupt_install(0x2a, sdio_handle_interrupt, 0);
+	interrupt_enable(0x2a);
+
 	clock_gate_switch(SDIO_CLOCKGATE, ON);
 
 	// SDCLK = PCLK/128 ~= 400 KHz
 	SET_REG(SDIO + SDIO_CLKDIV, 1 << 7);
 
-	// Enable, 1-bit card bus, little endian
-	SET_REG(SDIO + SDIO_CTRL, (1 << 0) | (1 << 5));
-
-	//SET_REG(SDIO + SDIO_CTRL, (1 << 0) | (1 << 2) | (1 << 5));
+	// Enable, 1-bit card bus, little endian, DMA
+	//SET_REG(SDIO + SDIO_CTRL, (1 << 0) | (1 << 5) | (1 << 4));
+	
+	SET_REG(SDIO + SDIO_DCTRL, 0x3);
+	SET_REG(SDIO + SDIO_DCTRL, 0x0);
+	SET_REG(SDIO + SDIO_CTRL, 0x41);
+	SET_REG(SDIO + SDIO_STAC, 0xFFFFFFFF);
+	SET_REG(SDIO + SDIO_IRQ, 0xFFFFFFFF);
 
 	if(sdio_reset() != 0)
 	{
@@ -43,11 +66,13 @@ int sdio_setup()
 		return -1;
 	}
 
+	SET_REG(SDIO + SDIO_IRQMASK, 3);
+	SET_REG(SDIO + SDIO_CSR, 1);
+
 	uint32_t ocr = 0;
 	if(sdio_send_io_op_cond(0, &ocr) != 0)
 	{
 		bufferPrintf("sdio: error querying card operating conditions\r\n");
-		sdio_status();
 		return -1;
 	}
 
@@ -171,7 +196,7 @@ int sdio_setup()
 		// set wide bus on the card
 		data = (data & 0x3) | 2;
 
-		if(sdio_io_rw_direct(FALSE, 0, 0x7, data, 0) != 0)
+		if(sdio_io_rw_direct(TRUE, 0, 0x7, data, 0) != 0)
 		{
 			bufferPrintf("sdio: could not set bus interface control\r\n");
 			return -1;
@@ -181,7 +206,113 @@ int sdio_setup()
 		SET_REG(SDIO + SDIO_CTRL, GET_REG(SDIO + SDIO_CTRL) | (1 << 2));
 	}
 
+	SDIOFunctions = (SDIOFunction*) malloc(NumberOfFunctions + 1);
+
+	int i;
+	for(i = 0; i <= NumberOfFunctions; ++i)
+	{
+		if(sdio_read_cis(i) != 0)
+		{
+			bufferPrintf("sdio: could not read CIS for function %d\r\n", i);
+			free(SDIOFunctions);
+			return -1;
+		}
+
+		// initialize the maximum block size
+		if(sdio_set_block_size(i, SDIOFunctions[i].maxBlockSize) != 0)
+		{
+			bufferPrintf("sdio: could not set function block size\r\n");
+			free(SDIOFunctions);
+			return -1;
+		}
+	}
+
+	bufferPrintf("extended read: %d\r\n", sdio_io_rw_extended(FALSE, 0, 0, FALSE, (void*)0x09000000, 1, 1));
 	bufferPrintf("sdio: Ready!\r\n");
+
+	return 0;
+}
+
+int sdio_read_cis(int function)
+{
+	int i;
+	uint8_t data;
+
+	uint32_t ptr = 0;
+	for(i = 0; i < 3; ++i)
+	{
+		if(sdio_io_rw_direct(FALSE, 0, (function * 0x100) + 0x9 + i, 0, &data) != 0)
+			return -1;
+
+		ptr += data << (8 * i);
+	}
+
+	while(TRUE)
+	{
+		uint8_t type;
+		uint8_t len;
+
+		if(sdio_io_rw_direct(FALSE, 0, ptr++, 0, &type) != 0)
+			return -1;
+
+		if(type == 0xFF)
+			break;
+
+		if(sdio_io_rw_direct(FALSE, 0, ptr++, 0, &len) != 0)
+			return -1;
+
+		if(type != 0x22 && type != 0x20)
+		{
+			ptr += len;
+			continue;
+		}
+
+		uint8_t buf[len];
+		for(i = 0; i < len; ++i)
+		{
+			if(sdio_io_rw_direct(FALSE, 0, ptr++, 0, &buf[i]) != 0)
+				return -1;
+		}
+
+		if(type == 0x22)
+		{
+			if(function == 0)
+			{
+				SDIOFunctions[function].maxBlockSize = buf[1] | (buf[2] << 8);
+				SDIOFunctions[function].enableTimeout = 0;
+				bufferPrintf("Function: %d, max block size: %d\r\n",
+						function, SDIOFunctions[function].maxBlockSize);
+			}
+			else
+			{
+				SDIOFunctions[function].maxBlockSize = buf[12] | (buf[13] << 8);
+				if(len > 29)
+					SDIOFunctions[function].enableTimeout = (buf[28] | (buf[29] << 8)) * 10;
+				else
+					SDIOFunctions[function].enableTimeout = 0;
+				bufferPrintf("Function: %d, max block size: %d, enable timeout: %d ms\r\n",
+					function, SDIOFunctions[function].maxBlockSize, SDIOFunctions[function].enableTimeout);
+			}
+		} else if(type == 0x20)
+		{
+			int manf = buf[0] | (buf[1] << 8);
+			int prod = buf[2] | (buf[3] << 8);
+			bufferPrintf("Manufacturer ID: 0x%x, product ID: 0x%x\r\n", manf, prod);
+		}
+	}
+
+	return 0;
+}
+
+int sdio_set_block_size(int function, int blocksize)
+{
+	if(sdio_io_rw_direct(TRUE, 0, (function * 0x100) + 0x10, blocksize & 0xFF, NULL) != 0)
+		return -1;
+
+	if(sdio_io_rw_direct(TRUE, 0, (function * 0x100) + 0x11, (blocksize >> 8) & 0xFF, NULL) != 0)
+		return -1;
+	
+	SDIOFunctions[function].blocksize = blocksize;
 
 	return 0;
 }
@@ -456,6 +587,176 @@ int sdio_io_rw_direct(int isWrite, int function, uint32_t address, uint8_t in, u
 		return 0;
 	} else
 		return -1;
+}
+
+int sdio_io_rw_extended(int isWrite, int function, uint32_t address, int incr_addr, void* buffer, int blocks, int count)
+{
+	int ret;
+
+	uint32_t buf = (uint32_t) buffer;
+
+	if((buf & ~0x3) != buf)
+		return ERROR_ALIGN;
+
+	ret = sdio_wait_for_ready(100);
+	if(ret)
+		return ret;
+
+	sdio_clear_state();
+
+	SET_REG(SDIO + SDIO_BADDR, buf);
+
+	uint32_t arg = 0;
+	arg |= isWrite ? 0x80000000 : 0; // write bit
+	arg |= function << 28;
+	arg |= address << 9;
+	arg |= count;
+
+	if(incr_addr)
+		arg |= 0x04000000;
+
+	if(blocks)
+	{
+		// set block bit if we have a large number of bytes
+		arg |= 0x08000000;
+
+		SET_REG(SDIO + SDIO_BLKLEN, SDIOFunctions[function].blocksize);
+		SET_REG(SDIO + SDIO_NUMBLK, count);
+
+		// unknown register set in block mode
+		SET_REG(SDIO + SDIO_CTRL, GET_REG(SDIO + SDIO_CTRL) | 0x8000);
+	} else
+	{
+		SET_REG(SDIO + SDIO_BLKLEN, count);
+		SET_REG(SDIO + SDIO_NUMBLK, 1);
+	}
+
+	SET_REG(SDIO + SDIO_DCTRL, 3);
+	SET_REG(SDIO + SDIO_DCTRL, 0);
+
+	// enable block transfer done IRQ
+	SET_REG(SDIO + SDIO_IRQMASK, GET_REG(SDIO + SDIO_IRQMASK) & ~3);
+
+	// set the argument
+	SET_REG(SDIO + SDIO_ARGU, arg);
+
+	// Command 53 = 0x35, addressed with data, response type 5 (IO_RW_DIRECT)
+	SET_REG(SDIO + SDIO_CMD, 0x35 | (3 << 6) | (5 << 16));
+
+	ret = sdio_wait_for_cmd_ready(100);
+	if(ret)
+		return ret;
+
+	// set the execute bit
+	SET_REG(SDIO + SDIO_CMD, GET_REG(SDIO + SDIO_CMD) | (1 << 31));
+
+	// wait for the response
+	uint64_t startTime = timer_get_system_microtime();
+	while(((GET_REG(SDIO + SDIO_DSTA) >> 4) & 1) == 0)
+	{
+		// FIXME: yield
+		if(has_elapsed(startTime, 100 * 1000)) {
+			return ERROR_TIMEOUT;
+		}
+	}
+	
+	int status = GET_REG(SDIO + SDIO_DSTA);
+
+	ret = (status >> 15) & 0xF;
+	if(ret == 0)
+	{
+		int resp = GET_REG(SDIO + SDIO_RESP0);
+		int flags = resp >> 8;
+
+		bufferPrintf("Response: 0x%x\r\n", resp);
+
+		// see if everything except IO_CURRENT_STATE is in a no error state
+		if((flags & (~0x30)) != 0)
+			return -1;
+
+		// clear the bits we acknlowedged
+		SET_REG(SDIO + SDIO_STAC, (status & 0x1F) | (ret << 15));
+
+		SET_REG(SDIO + SDIO_DCTRL, 0x10);
+
+		// wait until all data transfer is done
+		startTime = timer_get_system_microtime();
+		while((GET_REG(SDIO + SDIO_IRQ) & 1) == 0)
+		{
+			// FIXME: yield
+			if(has_elapsed(startTime, 100 * 1000)) {
+				return ERROR_TIMEOUT;
+			}
+		}
+
+		// clear the interrupt bit
+		SET_REG(SDIO + SDIO_IRQ, 1);
+		SET_REG(SDIO + SDIO_IRQMASK, GET_REG(SDIO + SDIO_IRQMASK) | 1);
+
+		status = GET_REG(SDIO + SDIO_DSTA);
+
+		return (status >> 15);
+	} else
+		return -1;
+}
+
+int sdio_io_rw_ext_helper(int isWrite, int function, uint32_t address, int incr_addr, void* buffer, int count)
+{
+	int ret;
+
+	if(count >= SDIOFunctions[function].blocksize)
+	{
+		int blocks = count / SDIOFunctions[function].blocksize ;
+		ret = sdio_io_rw_extended(isWrite, function, address, incr_addr, buffer, 1, blocks);
+		if(ret < 0)
+			return ret;
+
+		if(ret != SUCCESS_DATA)
+			return -1;
+
+		int done = blocks * SDIOFunctions[function].blocksize;
+
+		address += done;
+		buffer = (void*)(((uint32_t)buffer) + done);
+		count -= done;
+	}
+
+	ret = sdio_io_rw_extended(isWrite, function, address, incr_addr, buffer, 0, count);
+	if(ret < 0)
+		return ret;
+
+	if(ret != SUCCESS_DATA)
+		return -1;
+
+	return 0;
+}
+
+uint8_t sdio_readb(int function, uint32_t address, int* err_ret)
+{
+	uint8_t val;
+
+	int ret = sdio_io_rw_direct(FALSE, function, address, 0, &val);
+	if(ret)
+	{
+		if(err_ret)
+			*err_ret = ret;
+
+		return 0xFF;
+	}
+
+	return val;
+}
+
+void sdio_writeb(int function, uint8_t val, uint32_t address, int* err_ret)
+{
+	int ret = sdio_io_rw_direct(TRUE, function, address, val, NULL);
+	if(err_ret)
+		*err_ret = ret;
+}
+
+static void sdio_handle_interrupt(uint32_t token)
+{
+	bufferPrintf("SDIO interrupt!\r\n");
 }
 
 void sdio_status()
