@@ -127,9 +127,6 @@ int wlan_prog_helper(const uint8_t * firmware, int size)
 
 		//bufferPrintf("wlan: sending %d bytes chunk\r\n", chunk_size);
 		
-		// FIXME: This delay is not in the Linux kernel but appears to be necessary. :(
-		udelay(40000);
-
 		ret = sdio_writesb(1, ioport,
 				chunk_buffer, 64);
 		if (ret)
@@ -254,9 +251,6 @@ int wlan_prog_real(const uint8_t* firmware, size_t size)
 				chunk_size = req_size;
 
 			memcpy(chunk_buffer, firmware, chunk_size);
-
-			// FIXME: This delay is not in the Linux kernel but appears to be necessary. :(
-			udelay(40000);
 
 			//bufferPrintf("wlan: sending %d bytes (%d bytes) chunk\r\n",
 			//   chunk_size, (chunk_size + 31) / 32 * 32);

@@ -1,4 +1,5 @@
 #include "openiboot.h"
+#include "openiboot-asmhelpers.h"
 #include "util.h"
 #include "sdio.h"
 #include "clock.h"
@@ -54,13 +55,17 @@ int sdio_setup()
 	// SDCLK = PCLK/128 ~= 400 KHz
 	SET_REG(SDIO + SDIO_CLKDIV, 1 << 7);
 
-	// Enable, 1-bit card bus, little endian, DMA
-	//SET_REG(SDIO + SDIO_CTRL, (1 << 0) | (1 << 5) | (1 << 4));
-	
+	// Reset FIFO
 	SET_REG(SDIO + SDIO_DCTRL, 0x3);
 	SET_REG(SDIO + SDIO_DCTRL, 0x0);
+	
+	// Enable SDIO, with 1-bit card bus.
 	SET_REG(SDIO + SDIO_CTRL, 0x1);
+
+	// Clear status
 	SET_REG(SDIO + SDIO_STAC, 0xFFFFFFFF);
+
+	// Clear IRQ
 	SET_REG(SDIO + SDIO_IRQ, 0xFFFFFFFF);
 
 	if(sdio_reset() != 0)
@@ -69,7 +74,10 @@ int sdio_setup()
 		return -1;
 	}
 
+	// Enable all IRQs
 	SET_REG(SDIO + SDIO_IRQMASK, 3);
+
+	// Enable SDIO IRQs
 	SET_REG(SDIO + SDIO_CSR, 2);
 
 	uint32_t ocr = 0;
@@ -184,8 +192,8 @@ int sdio_setup()
 
 	if(!lowspeed)
 	{
-		// Crank us up to PCLK/2 ~= 25 MHz
-		SET_REG(SDIO + SDIO_CLKDIV, 1 << 2);
+		// Crank us up to PCLK/4 ~= 25 MHz
+		SET_REG(SDIO + SDIO_CLKDIV, 1 << 1);
 	}
 
 	if(highspeed)
@@ -341,9 +349,9 @@ int sdio_set_block_size(int function, int blocksize)
 
 int sdio_wait_for_ready(int timeout)
 {
-	// wait for CMD_STATE to be CMD_IDLE
+	// wait for CMD_STATE to be CMD_IDLE, and DAT_STATE to be DAT_IDLE
 	uint64_t startTime = timer_get_system_microtime();
-	while(((GET_REG(SDIO + SDIO_STATE) >> 4) & 3) != 0)
+	while(GET_REG(SDIO + SDIO_STATE) != 0)
 	{
 		// FIXME: yield
 		if(has_elapsed(startTime, timeout * 1000)) {
@@ -633,6 +641,8 @@ int sdio_io_rw_extended(int isWrite, int function, uint32_t address, int incr_ad
 
 	sdio_clear_state();
 
+	CleanAndInvalidateCPUDataCache();
+
 	SET_REG(SDIO + SDIO_BADDR, buf);
 
 	uint32_t arg = 0;
@@ -716,6 +726,7 @@ int sdio_io_rw_extended(int isWrite, int function, uint32_t address, int incr_ad
 		// clear the bits we acknlowedged
 		SET_REG(SDIO + SDIO_STAC, (status & 0x1F) | (ret << 15));
 
+		// start data transfer
 		SET_REG(SDIO + SDIO_DCTRL, 0x10);
 
 		// wait until all data transfer is done
@@ -736,6 +747,8 @@ int sdio_io_rw_extended(int isWrite, int function, uint32_t address, int incr_ad
 		SET_REG(SDIO + SDIO_IRQMASK, GET_REG(SDIO + SDIO_IRQMASK) | 1);
 
 		status = GET_REG(SDIO + SDIO_DSTA);
+
+		CleanAndInvalidateCPUDataCache();
 
 		return (status >> 15);
 	} else
