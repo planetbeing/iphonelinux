@@ -45,6 +45,19 @@ currently.
 6. It might be cool to be able to parse the iPhone's own device tree for some
 of base addresses. Might make porting less of a pain.
 
+7. With help from CPICH, we've determined the vibrator and speaker controls
+are in the baseband, both controlled through the at+xdrv command. Knowing
+this, the next step is to make sure we can talk to the baseband through the
+UARTs. This shouldn't be that bad since iBoot used to do it, and we already
+have UART code.
+
+8. I've implemented the firmware upload part of Libertas WLAN driver for
+Marvell 8686 to test out the SDIO functionality. It appears to work.
+Therefore, we have validated readb, writeb and writesb. More of it should be
+implemented to validate SDIO device interrupt handling and also readsb. After
+that, we will definitely have enough to support working wi-fi in the Linux
+kernel!
+
 Jobs for people who want to get their hands dirty with drivers
 --------------------------------------------------------------
 
@@ -70,22 +83,7 @@ long time. They're fine after a reboot. Figure out why that's happening.
 investigated, and at least some functions are shared, so it shouldn't be
 terrible.
 
-4. We need a SDIO driver and then a wi-fi driver. I'm guessing no one will be
-touching this with a ten-foot pole so I'll probably be doing this myself.
-
-5. Find out where the vibrator is hiding. I don't see it explicitly in the
-device tree, so someone will have to trace calls from userland. cmw once traced
-it to some audio call. I'm pretty sure it won't be conencted to the Wolfson, but
-it might have to do with the baseband audio. See below.
-
-6. Figure out how to get the internal speaker to work: The PLL on the Wolfson is
-disabled when the speaker is being used. Also, changing the volume does not
-change any of the registers on the Wolfson (as they are changed to adjust
-headphone volume). The only other i2s line leads through AppleBasebandAudio so I
-guess that's where it's going. Someone's going to have a lot of fun with this
-one, I can tell.
-
-7. Figure out how to talk to the light sensor. It's a TSL2561 according to the
+4. Figure out how to talk to the light sensor. It's a TSL2561 according to the
 ioreg. The slave address is 0x92/0x93 according to the ioreg "reg" setting and
 is one of the slave addresses allowed on the TSL2561. It's on i2c0 according to
 ioreg. It all looks good except for the fact I cannot get a response out of this
@@ -93,7 +91,7 @@ part. I even bruteforced all the slave addresses on i2c0 and only got responses
 from the PMU, the accelerometer and the Wolfson, stuff we already know how to
 talk to. What's going on? Is it just my 2G is broken?
 
-8. Figure out the new FTL they're using on the newer devices. That's going to be
+5. Figure out the new FTL they're using on the newer devices. That's going to be
 a pain.
 
 Thanks for reading all this. I'm impressed.
