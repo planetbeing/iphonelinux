@@ -23,6 +23,7 @@
 #include "nvram.h"
 #include "accel.h"
 #include "sdio.h"
+#include "wlan.h"
 
 #include "util.h"
 #include "commands.h"
@@ -84,6 +85,7 @@ void OpenIBootStart() {
 	startUSB();
 
 	sdio_setup();
+	wlan_setup();
 	accel_setup();
 
 	nand_setup();

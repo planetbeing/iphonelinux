@@ -24,6 +24,7 @@
 #include "wdt.h"
 #include "wm8958.h"
 #include "multitouch.h"
+#include "wlan.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -786,6 +787,30 @@ void cmd_multitouch_setup(int argc, char** argv)
 	multitouch_setup(aspeedFW, aspeedFWLen, mainFW, mainFWLen);
 }
 
+void cmd_wlan_prog_helper(int argc, char** argv) {
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <address> <len>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t len = parseNumber(argv[2]);
+
+	wlan_prog_helper((void*) address, len);
+}
+
+void cmd_wlan_prog_real(int argc, char** argv) {
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <address> <len>\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[1]);
+	uint32_t len = parseNumber(argv[2]);
+
+	wlan_prog_real((void*) address, len);
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -834,6 +859,8 @@ OPIBCommand CommandList[] =
 		{"accel", "display accelerometer data", cmd_accel},
 		{"sdio_status", "display sdio registers", cmd_sdio_status},
 		{"sdio_setup", "restart SDIO stuff", cmd_sdio_setup},
+		{"wlan_prog_helper", "program wlan fw helper", cmd_wlan_prog_helper},
+		{"wlan_prog_real", "program wlan fw", cmd_wlan_prog_real},
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
 		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},
