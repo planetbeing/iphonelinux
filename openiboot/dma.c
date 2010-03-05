@@ -293,7 +293,7 @@ int dma_perform(uint32_t Source, uint32_t Destination, int size, int continueLis
 }
 
 int dma_finish(int controller, int channel, int timeout) {
-	uint32_t startTime = timer_get_system_microtime();
+	uint64_t startTime = timer_get_system_microtime();
 	while(!requests[controller - 1][channel].done) {
 		if(has_elapsed(startTime, timeout * 1000)) {
 			return -1;
