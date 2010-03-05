@@ -81,6 +81,8 @@ Jobs for reverse engineers
 2. For some reason, the NAND chips stop working after the iPhone is on for a
 long time. They're fine after a reboot. Figure out why that's happening.
 
+   *** patch for this is in this fork (ftl.c/dma_finish()) ***
+
 3. Get multitouch working for Zephyr2. It's a subclass of the Zephyr1 that I
 investigated, and at least some functions are shared, so it shouldn't be
 terrible.
