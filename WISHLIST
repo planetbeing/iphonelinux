@@ -1,3 +1,24 @@
+Other Stuff
+===========
+
+There's a bug in ftl_read() which only manifests when you do transfers which do
+*NOT* start at page offset 0x0.  This is *ONE* cause of the intermittent failures
+when accessing the HFS filesystem - ftl_read() returns bad data to readCatalog()
+which makes the HFS parser die.
+
+There's also another bug in the HFS parsing code which has a similar effect.
+
+I'll merge in the fixes for both of these after the weekend (I don't have access
+to my fixed codebase from here)
+
+Implementing a simple page cache in ftl_read() can dramatically improve the speed
+of HFS directory lookups - I'll find the code for this as well and try to merge it in.
+
+The good news is that once you merge this stuff in, the HFS read code is rock-solid
+and works flawlessly.
+
+------------------------- END HARMN1 COMMENTS -----------------------
+
 Here's a list of things we need
 ===============================
 
@@ -78,7 +99,9 @@ Jobs for reverse engineers
 
 1. Port openiboot to unsupported platforms like ipt2g, ipt3g and iPhone 3GS. 
 
-2. * FIXED IN THIS FORK * ftl.c/dma_perform()  [For some reason, the NAND chips stop working after the iPhone is on for a long time. They're fine after a reboot. Figure out why that's happening.]
+2. * FIXED IN THIS FORK * ftl.c/dma_perform()  [For some reason, the NAND
+chips stop working after the iPhone is on for a long time. They're fine after a
+reboot. Figure out why that's happening.]
 
 3. Get multitouch working for Zephyr2. It's a subclass of the Zephyr1 that I
 investigated, and at least some functions are shared, so it shouldn't be
