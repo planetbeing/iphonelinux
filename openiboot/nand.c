@@ -20,7 +20,7 @@ static uint8_t NANDSetting4;
 static uint32_t TotalECCDataSize;
 static uint32_t ECCType2;
 static int NumValidBanks = 0;
-static const int NANDBankResetSetting = 1;
+static const int NoMultibankCmdStatus = 1;
 static int LargePages;
 
 static NANDData Data;
@@ -48,12 +48,12 @@ static const NANDDeviceType SupportedDevices[] = {
 };
 
 static int wait_for_ready(int timeout) {
-	if((GET_REG(NAND + NAND_STATUS) & NAND_STATUS_READY) != 0) {
+	if((GET_REG(NAND + FMCSTAT) & FMCSTAT_READY) != 0) {
 		return 0;
 	}
 
 	uint64_t startTime = timer_get_system_microtime();
-	while((GET_REG(NAND + NAND_STATUS) & NAND_STATUS_READY) == 0) {
+	while((GET_REG(NAND + FMCSTAT) & FMCSTAT_READY) == 0) {
 		if(has_elapsed(startTime, timeout * 1000)) {
 			return ERROR_TIMEOUT;
 		}
@@ -62,38 +62,38 @@ static int wait_for_ready(int timeout) {
 	return 0;
 }
 
-static int wait_for_address_complete(int timeout) {
-	if((GET_REG(NAND + NAND_STATUS) & (1 << 2)) != 0) {
-		SET_REG(NAND + NAND_STATUS, 1 << 2);
+static int wait_for_address_done(int timeout) {
+	if((GET_REG(NAND + FMCSTAT) & (1 << 2)) != 0) {
+		SET_REG(NAND + FMCSTAT, 1 << 2);
 		return 0;
 	}
 
 	uint64_t startTime = timer_get_system_microtime();
-	while((GET_REG(NAND + NAND_STATUS) & (1 << 2)) == 0) {
+	while((GET_REG(NAND + FMCSTAT) & (1 << 2)) == 0) {
 		if(has_elapsed(startTime, timeout * 1000)) {
 			return ERROR_TIMEOUT;
 		}
 	}
 
-	SET_REG(NAND + NAND_STATUS, 1 << 2);
+	SET_REG(NAND + FMCSTAT, 1 << 2);
 
 	return 0;
 }
 
-static int wait_for_status_bit_3(int timeout) {
-	if((GET_REG(NAND + NAND_STATUS) & (1 << 3)) != 0) {
-		SET_REG(NAND + NAND_STATUS, 1 << 3);
+static int wait_for_transfer_done(int timeout) {
+	if((GET_REG(NAND + FMCSTAT) & (1 << 3)) != 0) {
+		SET_REG(NAND + FMCSTAT, 1 << 3);
 		return 0;
 	}
 
 	uint64_t startTime = timer_get_system_microtime();
-	while((GET_REG(NAND + NAND_STATUS) & (1 << 3)) == 0) {
+	while((GET_REG(NAND + FMCSTAT) & (1 << 3)) == 0) {
 		if(has_elapsed(startTime, timeout * 1000)) {
 			return ERROR_TIMEOUT;
 		}
 	}
 
-	SET_REG(NAND + NAND_STATUS, 1 << 3);
+	SET_REG(NAND + FMCSTAT, 1 << 3);
 
 	return 0;
 }
@@ -102,52 +102,52 @@ int nand_read_status()
 {
 	int status;
 
-	SET_REG(NAND + NAND_CONFIG6, GET_REG(NAND + NAND_CONFIG6) & ~(1 << 4));
-	SET_REG(NAND + NAND_CON, 0x7E0);
+	SET_REG(NAND + NAND_REG_44, GET_REG(NAND + NAND_REG_44) & ~(1 << 4));
+	SET_REG(NAND + FMCTRL1, FMCTRL1_CLEARALL);
 	SET_REG(NAND + NAND_CMD, NAND_CMD_READSTATUS);
-	SET_REG(NAND + NAND_TRANSFERSIZE, 0);
-	SET_REG(NAND + NAND_CON, 0x7E2);
+	SET_REG(NAND + FMDNUM, 0);
+	SET_REG(NAND + FMCTRL1, FMCTRL1_CLEARALL | FMCTRL1_DOREADDATA);
 
-	wait_for_status_bit_3(500);
+	wait_for_transfer_done(500);
 
-	status = GET_REG(NAND + NAND_DMA_SOURCE);
-	SET_REG(NAND + NAND_CON, 0x7E0);
-	SET_REG(NAND + NAND_STATUS, 1 << 3);
-	SET_REG(NAND + NAND_CONFIG6, GET_REG(NAND + NAND_CONFIG6) | (1 << 2));
+	status = GET_REG(NAND + FMFIFO);
+	SET_REG(NAND + FMCTRL1, FMCTRL1_CLEARALL);
+	SET_REG(NAND + FMCSTAT, 1 << 3);
+	SET_REG(NAND + NAND_REG_44, GET_REG(NAND + NAND_REG_44) | (1 << 2));
 
 	return status;
 }
 
-static int nand_bank_reset_helper(int bank, int timeout) {
+static int wait_for_command_done(int bank, int timeout) {
 	uint64_t startTime = timer_get_system_microtime();
-	if(NANDBankResetSetting)
+	if(NoMultibankCmdStatus)
 		bank = 0;
 	else
 		bank &= 0xffff;
 
 	uint32_t toTest = 1 << (bank + 4);
 
-	while((GET_REG(NAND + NAND_STATUS) & toTest) == 0) {
+	while((GET_REG(NAND + FMCSTAT) & toTest) == 0) {
 		if(has_elapsed(startTime, timeout * 1000)) {
 			return ERROR_TIMEOUT;
 		}
 	}
 
-	SET_REG(NAND + NAND_STATUS, toTest);
+	SET_REG(NAND + FMCSTAT, toTest);
 
 	return 0;
 }
 
 int nand_bank_reset(int bank, int timeout) {
-	SET_REG(NAND + NAND_CONFIG,
-			((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
-			| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
+	SET_REG(NAND + FMCTRL0,
+			((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+			| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 	SET_REG(NAND + NAND_CMD, NAND_CMD_RESET);
 
 	int ret = wait_for_ready(timeout);
 	if(ret == 0) {
-		ret = nand_bank_reset_helper(bank, timeout);
+		ret = wait_for_command_done(bank, timeout);
 		udelay(1000);
 		return ret;
 	} else {
@@ -156,36 +156,37 @@ int nand_bank_reset(int bank, int timeout) {
 	}
 }
 
-static int bank_setup(int bank) {
-	SET_REG(NAND + NAND_CONFIG,
-			((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
-			| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
+
+static int wait_for_nand_bank_ready(int bank) {
+	SET_REG(NAND + FMCTRL0,
+			((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+			| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 	uint32_t toTest = 1 << (bank + 4);
-	if((GET_REG(NAND + NAND_STATUS) & toTest) != 0) {
-		SET_REG(NAND + NAND_STATUS, toTest);
+	if((GET_REG(NAND + FMCSTAT) & toTest) != 0) {
+		SET_REG(NAND + FMCSTAT, toTest);
 	}
 
-	SET_REG(NAND + NAND_CON, NAND_CON_SETTING1); 
+	SET_REG(NAND + FMCTRL1, FMCTRL1_FLUSHFIFOS); 
 	SET_REG(NAND + NAND_CMD, NAND_CMD_READSTATUS);
 	wait_for_ready(500);
 
 	uint64_t startTime = timer_get_system_microtime();
 	while(TRUE) {
-		SET_REG(NAND + NAND_TRANSFERSIZE, 0);
-		SET_REG(NAND + NAND_CON, NAND_CON_BEGINTRANSFER);
+		SET_REG(NAND + FMDNUM, 0);
+		SET_REG(NAND + FMCTRL1, FMCTRL1_DOREADDATA);
 
-		if(wait_for_status_bit_3(500) != 0) {
-			bufferPrintf("nand: bank_setup: wait for status bit 3 timed out\r\n");
+		if(wait_for_transfer_done(500) != 0) {
+			bufferPrintf("nand: wait_for_nand_bank_ready: wait for transfer done timed out\r\n");
 			return ERROR_TIMEOUT;
 		}
 
 
-		uint32_t data = GET_REG(NAND + NAND_DMA_SOURCE);
-		SET_REG(NAND + NAND_CON, NAND_CON_SETTING2);
+		uint32_t data = GET_REG(NAND + FMFIFO);
+		SET_REG(NAND + FMCTRL1, FMCTRL1_FLUSHRXFIFO);
 		if((data & (1 << 6)) == 0) {
 			if(has_elapsed(startTime, 500 * 1000)) {
-				bufferPrintf("nand: bank_setup: wait for bit 6 of DMA timed out\r\n");
+				bufferPrintf("nand: wait_for_nand_bank_ready: wait for bit 6 of DMA timed out\r\n");
 				return ERROR_TIMEOUT;
 			}
 		} else {
@@ -220,33 +221,33 @@ int nand_setup() {
 	NumValidBanks = 0;
 	const NANDDeviceType* nandType = NULL;
 
-	SET_REG(NAND + NAND_SETUP, 0);
-	SET_REG(NAND + NAND_SETUP, GET_REG(NAND + NAND_SETUP) | (ECCType << 4));
+	SET_REG(NAND + RSCTRL, 0);
+	SET_REG(NAND + RSCTRL, GET_REG(NAND + RSCTRL) | (ECCType << 4));
 
 	for(bank = 0; bank < NAND_NUM_BANKS; bank++) {
 		nand_bank_reset(bank, 100);
 
-		SET_REG(NAND + NAND_CON, NAND_CON_SETTING1);
-		SET_REG(NAND + NAND_CONFIG,
-			((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
-			| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
+		SET_REG(NAND + FMCTRL1, FMCTRL1_FLUSHFIFOS);
+		SET_REG(NAND + FMCTRL0,
+			((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+			| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 		SET_REG(NAND + NAND_CMD, NAND_CMD_ID);
 
 		wait_for_ready(500);
 
-		SET_REG(NAND + NAND_CONFIG4, 0);
-		SET_REG(NAND + NAND_CONFIG3, 0);
-		SET_REG(NAND + NAND_CON, NAND_CON_ADDRESSDONE);
+		SET_REG(NAND + FMANUM, 0);
+		SET_REG(NAND + FMADDR0, 0);
+		SET_REG(NAND + FMCTRL1, FMCTRL1_DOTRANSADDR);
 
-		wait_for_address_complete(500);
-		nand_bank_reset_helper(bank, 100);
+		wait_for_address_done(500);
+		wait_for_command_done(bank, 100);
 
-		SET_REG(NAND + NAND_TRANSFERSIZE, 8);
-		SET_REG(NAND + NAND_CON, NAND_CON_BEGINTRANSFER);
+		SET_REG(NAND + FMDNUM, 8);
+		SET_REG(NAND + FMCTRL1, FMCTRL1_DOREADDATA);
 
-		wait_for_status_bit_3(500);
-		uint32_t id = GET_REG(NAND + NAND_DMA_SOURCE);
+		wait_for_transfer_done(500);
+		uint32_t id = GET_REG(NAND + FMFIFO);
 		const NANDDeviceType* candidate = SupportedDevices;
 		while(candidate->id != 0) {
 			if(candidate->id == id) {
@@ -261,7 +262,7 @@ int nand_setup() {
 			candidate++;
 		}
 
-		SET_REG(NAND + NAND_CON, NAND_CON_SETTING1);
+		SET_REG(NAND + FMCTRL1, FMCTRL1_FLUSHFIFOS);
 	}
 
 	if(nandType == NULL) {
@@ -378,9 +379,9 @@ static int transferFromFlash(void* buffer, int size) {
 		return ERROR_ALIGN;
 	}
 
-	SET_REG(NAND + NAND_CONFIG, GET_REG(NAND + NAND_CONFIG) | (1 << NAND_CONFIG_DMASETTINGSHIFT));
-	SET_REG(NAND + NAND_TRANSFERSIZE, size - 1);
-	SET_REG(NAND + NAND_CON, NAND_CON_BEGINTRANSFER);
+	SET_REG(NAND + FMCTRL0, GET_REG(NAND + FMCTRL0) | (1 << FMCTRL0_DMASETTINGSHIFT));
+	SET_REG(NAND + FMDNUM, size - 1);
+	SET_REG(NAND + FMCTRL1, FMCTRL1_DOREADDATA);
 
 	CleanCPUDataCache();
 
@@ -392,12 +393,12 @@ static int transferFromFlash(void* buffer, int size) {
 		return ERROR_TIMEOUT;
 	}
 
-	if(wait_for_status_bit_3(500) != 0) {
-		bufferPrintf("nand: waiting for status bit 3 timed out\r\n");
+	if(wait_for_transfer_done(500) != 0) {
+		bufferPrintf("nand: waiting for transfer done timed out\r\n");
 		return ERROR_TIMEOUT;
 	}
 
-	SET_REG(NAND + NAND_CON, NAND_CON_SETTING1);
+	SET_REG(NAND + FMCTRL1, FMCTRL1_FLUSHFIFOS);
 
 	CleanAndInvalidateCPUDataCache();
 
@@ -413,9 +414,9 @@ static int transferToFlash(void* buffer, int size) {
 		return ERROR_ALIGN;
 	}
 
-	SET_REG(NAND + NAND_CONFIG, GET_REG(NAND + NAND_CONFIG) | (1 << NAND_CONFIG_DMASETTINGSHIFT));
-	SET_REG(NAND + NAND_TRANSFERSIZE, size - 1);
-	SET_REG(NAND + NAND_CON, 0x7F4);
+	SET_REG(NAND + FMCTRL0, GET_REG(NAND + FMCTRL0) | (1 << FMCTRL0_DMASETTINGSHIFT));
+	SET_REG(NAND + FMDNUM, size - 1);
+	SET_REG(NAND + FMCTRL1, 0x7F4);
 
 	CleanCPUDataCache();
 
@@ -427,12 +428,12 @@ static int transferToFlash(void* buffer, int size) {
 		return ERROR_TIMEOUT;
 	}
 
-	if(wait_for_status_bit_3(500) != 0) {
-		bufferPrintf("nand: waiting for status bit 3 timed out\r\n");
+	if(wait_for_transfer_done(500) != 0) {
+		bufferPrintf("nand: waiting for transfer done timed out\r\n");
 		return ERROR_TIMEOUT;
 	}
 
-	SET_REG(NAND + NAND_CON, NAND_CON_SETTING1);
+	SET_REG(NAND + FMCTRL1, FMCTRL1_FLUSHFIFOS);
 
 	CleanAndInvalidateCPUDataCache();
 
@@ -623,18 +624,18 @@ int nand_erase(int bank, int block) {
 
 	pageAddr = block * Data.pagesPerBlock;
 
-	SET_REG(NAND + NAND_CONFIG,
-		((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
-		| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
+	SET_REG(NAND + FMCTRL0,
+		((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+		| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
-	SET_REG(NAND + NAND_CON, 0x7E0);
+	SET_REG(NAND + FMCTRL1, FMCTRL1_CLEARALL);
 	SET_REG(NAND + NAND_CMD, 0x60);
 
-	SET_REG(NAND + NAND_CONFIG4, 2);
-	SET_REG(NAND + NAND_CONFIG3, pageAddr);
-	SET_REG(NAND + NAND_CON, NAND_CON_ADDRESSDONE);
+	SET_REG(NAND + FMANUM, 2);
+	SET_REG(NAND + FMADDR0, pageAddr);
+	SET_REG(NAND + FMCTRL1, FMCTRL1_DOTRANSADDR);
 
-	if(wait_for_address_complete(500) != 0) {
+	if(wait_for_address_done(500) != 0) {
 		bufferPrintf("nand (nand_erase): wait for address complete failed\r\n");
 		goto FIL_erase_error;
 	}
@@ -668,9 +669,9 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 	if(buffer == NULL && spare == NULL)
 		return ERROR_ARG;
 
-	SET_REG(NAND + NAND_CONFIG,
-		((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
-		| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
+	SET_REG(NAND + FMCTRL0,
+		((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+		| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 	SET_REG(NAND + NAND_CMD, 0);
 	if(wait_for_ready(500) != 0) {
@@ -678,31 +679,31 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 		goto FIL_read_error;
 	}
 
-	SET_REG(NAND + NAND_CONFIG4, NAND_CONFIG4_TRANSFERSETTING);
+	SET_REG(NAND + FMANUM, FMANUM_TRANSFERSETTING);
 
 	if(buffer) {
-		SET_REG(NAND + NAND_CONFIG3, page << 16); // lower bits of the page number to the upper bits of CONFIG3
-		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number
+		SET_REG(NAND + FMADDR0, page << 16); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + FMADDR1, (page >> 16) & 0xFF); // upper bits of the page number
 
 	} else {
-		SET_REG(NAND + NAND_CONFIG3, (page << 16) | Data.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
-		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number	
+		SET_REG(NAND + FMADDR0, (page << 16) | Data.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + FMADDR1, (page >> 16) & 0xFF); // upper bits of the page number	
 	}
 
-	SET_REG(NAND + NAND_CON, NAND_CON_ADDRESSDONE);
-	if(wait_for_address_complete(500) != 0) {
-		bufferPrintf("nand: setup transfer failed\r\n");
+	SET_REG(NAND + FMCTRL1, FMCTRL1_DOTRANSADDR);
+	if(wait_for_address_done(500) != 0) {
+		bufferPrintf("nand: sending address failed\r\n");
 		goto FIL_read_error;
 	}
 	
 	SET_REG(NAND + NAND_CMD, NAND_CMD_READ);
 	if(wait_for_ready(500) != 0) {
-		bufferPrintf("nand: setting config2 failed\r\n");
+		bufferPrintf("nand: sending read command failed\r\n");
 		goto FIL_read_error;
 	}
 
-	if(bank_setup(bank) != 0) {
-		bufferPrintf("nand: bank setup failed\r\n");
+	if(wait_for_nand_bank_ready(bank) != 0) {
+		bufferPrintf("nand: nand bank not ready after a long time\r\n");
 		goto FIL_read_error;
 	}
 
@@ -780,9 +781,9 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC) {
 		ecc_finish();
 	}
 
-	SET_REG(NAND + NAND_CONFIG,
-		((NANDSetting1 & NAND_CONFIG_SETTING1MASK) << NAND_CONFIG_SETTING1SHIFT) | ((NANDSetting2 & NAND_CONFIG_SETTING2MASK) << NAND_CONFIG_SETTING2SHIFT)
-		| (1 << (banksTable[bank] + 1)) | NAND_CONFIG_DEFAULTS);
+	SET_REG(NAND + FMCTRL0,
+		((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+		| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 	SET_REG(NAND + NAND_CMD, 0x80);
 	if(wait_for_ready(500) != 0) {
@@ -790,18 +791,18 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC) {
 		goto FIL_write_error;
 	}
 
-	SET_REG(NAND + NAND_CONFIG4, NAND_CONFIG4_TRANSFERSETTING);
+	SET_REG(NAND + FMANUM, FMANUM_TRANSFERSETTING);
 
 	if(buffer) {
-		SET_REG(NAND + NAND_CONFIG3, page << 16); // lower bits of the page number to the upper bits of CONFIG3
-		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number
+		SET_REG(NAND + FMADDR0, page << 16); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + FMADDR1, (page >> 16) & 0xFF); // upper bits of the page number
 	} else {
-		SET_REG(NAND + NAND_CONFIG3, (page << 16) | Data.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
-		SET_REG(NAND + NAND_CONFIG5, (page >> 16) & 0xFF); // upper bits of the page number	
+		SET_REG(NAND + FMADDR0, (page << 16) | Data.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + FMADDR1, (page >> 16) & 0xFF); // upper bits of the page number	
 	}
 
-	SET_REG(NAND + NAND_CON, NAND_CON_ADDRESSDONE);
-	if(wait_for_address_complete(500) != 0) {
+	SET_REG(NAND + FMCTRL1, FMCTRL1_DOTRANSADDR);
+	if(wait_for_address_done(500) != 0) {
 		bufferPrintf("nand: setup transfer failed\r\n");
 		goto FIL_write_error;
 	}
