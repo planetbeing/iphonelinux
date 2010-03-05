@@ -78,10 +78,7 @@ Jobs for reverse engineers
 
 1. Port openiboot to unsupported platforms like ipt2g, ipt3g and iPhone 3GS. 
 
-2. For some reason, the NAND chips stop working after the iPhone is on for a
-long time. They're fine after a reboot. Figure out why that's happening.
-
-   *** patch for this is in this fork (ftl.c/dma_finish()) ***
+2. * FIXED IN THIS FORK * ftl.c/dma_perform()  [For some reason, the NAND chips stop working after the iPhone is on for a long time. They're fine after a reboot. Figure out why that's happening.]
 
 3. Get multitouch working for Zephyr2. It's a subclass of the Zephyr1 that I
 investigated, and at least some functions are shared, so it shouldn't be
