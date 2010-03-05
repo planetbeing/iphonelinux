@@ -58,6 +58,8 @@ implemented to validate SDIO device interrupt handling and also readsb. After
 that, we will definitely have enough to support working wi-fi in the Linux
 kernel!
 
+9. Fix loadibec for newer firmware versions.
+
 Jobs for people who want to get their hands dirty with drivers
 --------------------------------------------------------------
 
