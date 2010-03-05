@@ -6,6 +6,7 @@
 #include "util.h"
 #include "hfs/fs.h"
 #include "nand.h"
+#include "wdt.h"
 
 #define MACH_APPLE_IPHONE 1506
 
@@ -119,6 +120,7 @@ struct atag {
 
 void chainload(uint32_t address) {
 	EnterCriticalSection();
+	wdt_disable();
 	arm_disable_caches();
 	mmu_disable();
 	CallArm(address);
@@ -287,6 +289,7 @@ void boot_linux(const char* args) {
 	uint32_t mach_type = MACH_APPLE_IPHONE;
 
 	EnterCriticalSection();
+	wdt_disable();
 	arm_disable_caches();
 	mmu_disable();
 
