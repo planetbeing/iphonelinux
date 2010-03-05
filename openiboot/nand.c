@@ -13,8 +13,8 @@ int HasNANDInit = FALSE;
 static int banksTable[NAND_NUM_BANKS];
 
 static int ECCType = 0;
-static uint8_t NANDSetting1;
-static uint8_t NANDSetting2;
+static uint8_t WEHighHoldTime;
+static uint8_t WPPulseTime;
 static uint8_t NANDSetting3;
 static uint8_t NANDSetting4;
 static uint32_t TotalECCDataSize;
@@ -140,7 +140,7 @@ static int wait_for_command_done(int bank, int timeout) {
 
 int nand_bank_reset(int bank, int timeout) {
 	SET_REG(NAND + FMCTRL0,
-			((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+			((WEHighHoldTime & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((WPPulseTime & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
 			| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 	SET_REG(NAND + NAND_CMD, NAND_CMD_RESET);
@@ -159,7 +159,7 @@ int nand_bank_reset(int bank, int timeout) {
 
 static int wait_for_nand_bank_ready(int bank) {
 	SET_REG(NAND + FMCTRL0,
-			((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+			((WEHighHoldTime & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((WPPulseTime & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
 			| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 	uint32_t toTest = 1 << (bank + 4);
@@ -203,8 +203,8 @@ int nand_setup() {
 	if(HasNANDInit)
 		return 0;
 
-	NANDSetting1 = 7;
-	NANDSetting2 = 7;
+	WEHighHoldTime = 7;
+	WPPulseTime = 7;
 	NANDSetting3 = 7;
 	NANDSetting4 = 7;
 
@@ -229,7 +229,7 @@ int nand_setup() {
 
 		SET_REG(NAND + FMCTRL1, FMCTRL1_FLUSHFIFOS);
 		SET_REG(NAND + FMCTRL0,
-			((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+			((WEHighHoldTime & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((WPPulseTime & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
 			| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 		SET_REG(NAND + NAND_CMD, NAND_CMD_ID);
@@ -273,16 +273,16 @@ int nand_setup() {
 	Data.DeviceID = nandType->id;
 	Data.banksTable = banksTable;
 
-	NANDSetting2 = (((clock_get_frequency(FrequencyBaseBus) * (nandType->NANDSetting2 + 1)) + 99999999)/100000000) - 1;
-	NANDSetting1 = (((clock_get_frequency(FrequencyBaseBus) * (nandType->NANDSetting1 + 1)) + 99999999)/100000000) - 1;
+	WPPulseTime = (((clock_get_frequency(FrequencyBaseBus) * (nandType->WPPulseTime + 1)) + 99999999)/100000000) - 1;
+	WEHighHoldTime = (((clock_get_frequency(FrequencyBaseBus) * (nandType->WEHighHoldTime + 1)) + 99999999)/100000000) - 1;
 	NANDSetting3 = (((clock_get_frequency(FrequencyBaseBus) * (nandType->NANDSetting3 + 1)) + 99999999)/100000000) - 1;
 	NANDSetting4 = (((clock_get_frequency(FrequencyBaseBus) * (nandType->NANDSetting4 + 1)) + 99999999)/100000000) - 1;
 
-	if(NANDSetting2 > 7)
-		NANDSetting2 = 7;
+	if(WPPulseTime > 7)
+		WPPulseTime = 7;
 
-	if(NANDSetting1 > 7)
-		NANDSetting1 = 7;
+	if(WEHighHoldTime > 7)
+		WEHighHoldTime = 7;
 
 	if(NANDSetting3 > 7)
 		NANDSetting3 = 7;
@@ -625,7 +625,7 @@ int nand_erase(int bank, int block) {
 	pageAddr = block * Data.pagesPerBlock;
 
 	SET_REG(NAND + FMCTRL0,
-		((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+		((WEHighHoldTime & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((WPPulseTime & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
 		| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 	SET_REG(NAND + FMCTRL1, FMCTRL1_CLEARALL);
@@ -670,7 +670,7 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 		return ERROR_ARG;
 
 	SET_REG(NAND + FMCTRL0,
-		((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+		((WEHighHoldTime & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((WPPulseTime & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
 		| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 	SET_REG(NAND + NAND_CMD, 0);
@@ -782,7 +782,7 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC) {
 	}
 
 	SET_REG(NAND + FMCTRL0,
-		((NANDSetting1 & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((NANDSetting2 & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
+		((WEHighHoldTime & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((WPPulseTime & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
 		| (1 << (banksTable[bank] + 1)) | FMCTRL0_ON | FMCTRL0_WPB);
 
 	SET_REG(NAND + NAND_CMD, 0x80);

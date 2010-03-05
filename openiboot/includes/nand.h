@@ -15,8 +15,8 @@ typedef struct NANDDeviceType {
 	uint16_t pagesPerBlock;
 	uint16_t sectorsPerPage;
 	uint16_t bytesPerSpare;
-	uint8_t NANDSetting2;
-	uint8_t NANDSetting1;
+	uint8_t WPPulseTime;
+	uint8_t WEHighHoldTime;
 	uint8_t NANDSetting3;
 	uint8_t NANDSetting4;
 	uint32_t userSubBlksTotal;
