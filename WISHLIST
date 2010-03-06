@@ -66,20 +66,14 @@ currently.
 6. It might be cool to be able to parse the iPhone's own device tree for some
 of base addresses. Might make porting less of a pain.
 
-7. With help from CPICH, we've determined the vibrator and speaker controls
-are in the baseband, both controlled through the at+xdrv command. Knowing
-this, the next step is to make sure we can talk to the baseband through the
-UARTs. This shouldn't be that bad since iBoot used to do it, and we already
-have UART code.
-
-8. I've implemented the firmware upload part of Libertas WLAN driver for
+7. I've implemented the firmware upload part of Libertas WLAN driver for
 Marvell 8686 to test out the SDIO functionality. It appears to work.
 Therefore, we have validated readb, writeb and writesb. More of it should be
 implemented to validate SDIO device interrupt handling and also readsb. After
 that, we will definitely have enough to support working wi-fi in the Linux
 kernel!
 
-9. Fix loadibec for newer firmware versions.
+8. Fix loadibec for newer firmware versions.
 
 Jobs for people who want to get their hands dirty with drivers
 --------------------------------------------------------------
@@ -117,5 +111,18 @@ talk to. What's going on? Is it just my 2G is broken?
 
 5. Figure out the new FTL they're using on the newer devices. That's going to be
 a pain.
+
+6. With help from CPICH, we've determined the vibrator and speaker controls
+are in the baseband, both controlled through the at+xdrv command. Knowing
+this, the next step is to make sure we can talk to the baseband through the
+UARTs. This shouldn't be that bad since iBoot used to do it, and we already
+have UART code. This will require at least turning on the comm board, which
+we don't know how to do yet.
+
+7. I get no response from the WLAN chip before I run Apple's iBoot (if I boot
+openiboot directly from LLB). I also get no response from uart1 (baseband)
+before I run iBoot (though after that, uart1 merely echos, no actual
+responses). Coincidence? Maybe it's because the comm board must be turned on.
+See #6.
 
 Thanks for reading all this. I'm impressed.
