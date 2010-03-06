@@ -416,7 +416,7 @@ int sdio_reset()
 	int ret;
 
 	gpio_pin_output(SDIO_GPIO_DEVICE_RESET, 1);
-	udelay(10000);
+	udelay(5000);
 	gpio_pin_output(SDIO_GPIO_DEVICE_RESET, 0);
 	udelay(10000);
 
@@ -475,7 +475,10 @@ int sdio_send_io_op_cond(uint32_t ocr, uint32_t* rocr)
 
 		// CMD5 has a special format with reserved bits 1-7, so we ignore the CRC bit
 		if((ret & (~8)) != SUCCESS_NO_DATA)
-			return ret;
+		{
+			bufferPrintf("sdio: sdio_send_io_op_cond error, sdio status flags =  %x\r\n", ret);
+			return -1;
+		}
 
 		response = GET_REG(SDIO + SDIO_RESP0);
 
@@ -623,7 +626,10 @@ int sdio_io_rw_direct(int isWrite, int function, uint32_t address, uint8_t in, u
 
 		return 0;
 	} else
+	{
+		bufferPrintf("sdio: sdio_io_rw_direct error, sdio status flags = %x\r\n", ret);
 		return -1;
+	}
 }
 
 int sdio_io_rw_extended(int isWrite, int function, uint32_t address, int incr_addr, void* buffer, int blocks, int count)
