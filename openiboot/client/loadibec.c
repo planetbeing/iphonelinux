@@ -11,8 +11,6 @@
 #define USB_APPLE_ID		0x05AC
 #define USB_RECOVERY		0x1281
 #define USB_DFU_MODE		0x1227
-#define BUFFER_SIZE         0x10000
-#define COMMAND_SIZE		0x100
 
 struct libusb_device_handle* open_device(int devid) {
 	int configuration = 0;
@@ -148,7 +146,7 @@ int send_file(struct libusb_device_handle *handle, const char* filename) {
 int main(int argc, char* argv[]) {
 	struct libusb_device_handle* handle = NULL;
 	if (argc != 2) {
-		printf("usage: loadoib <img3>\n");
+		printf("usage: loadibec <img3>\n");
 		return -1;
 	}
 
