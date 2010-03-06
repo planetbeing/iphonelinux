@@ -1,173 +1,166 @@
 // Reverse engineering courtesty of c1de0x, et al. of the iPhone Dev Team
 
-#include <stdint.h>
-#include <usb.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <libusb-1.0/libusb.h>
 #include <readline/readline.h>
 
-#define APPLE_VENDOR_ID			0x05AC
-#define IPHONE_1_2_RECOVERY_PRODUCT_ID	0x1281
+#define USB_APPLE_ID		0x05AC
+#define USB_RECOVERY		0x1281
+#define USB_DFU_MODE		0x1227
 
-#define MSG_DUMP_BUFFER			0x802
-#define MSG_SEND_COMMAND		0x803
-#define MSG_SEND_FILE			0x805
-#define MSG_ACK				0x808
-#define MSG_REJ				0x809
+struct libusb_device_handle* open_device(int devid) {
+	int configuration = 0;
+	struct libusb_device_handle* handle = NULL;
 
-#define PROTOCOL_1_2_EP_CONTROL_W	0x00
+	libusb_init(NULL);
+	handle = libusb_open_device_with_vid_pid(NULL, USB_APPLE_ID, devid);
+	if (handle == NULL) {
+		printf("open_device: unable to connect to device.\n");
+		return NULL;
+	}
 
-char response_buffer[0x1000];
+	libusb_get_configuration(handle, &configuration);
+	if(configuration != 1) {
+		if (libusb_set_configuration(handle, 1) < 0) {
+			printf("open_device: error setting configuration.\n");
+			return NULL;
+		}
+	}
+	if (libusb_claim_interface(handle, 0) < 0) {
+		printf("open_device: error claiming interface.");
+		return NULL;
+	}
 
-int send_command(usb_dev_handle* device, char* command) {
-	return usb_bulk_write(device, 0x02, command, strlen(command), 1000);
+	return handle;
 }
 
-int send_file(usb_dev_handle* device, const char* fileName) {
-	static char file_buffer[0x1000];
-
-	FILE* file = fopen(fileName, "rb");
-
-	if(file == NULL) {
-		fprintf(stderr, "file not found: %s\n", fileName);
+int close_device(struct libusb_device_handle* handle) {
+	if (handle == NULL) {
+		printf("close_device: device has not been initialized yet.\n");
 		return -1;
 	}
 
-	// request file buffer pointer
-	usb_control_msg(device, 0x21, 6, 1, 0, "", 0, 1000);
-
-	int value = 0;
-	while(1) {
-		int len = fread(file_buffer, 1, 0x1000, file);
-		usb_control_msg(device, 0x21, 1, value, 0, file_buffer, len, 1000);
-		value++;
-
-		if(len < 0x1000)
-			break;
-	}
-
-	fclose(file);
-
-	usb_control_msg(device, 0x21, 1, 1, 0, "", 0, 1000);
-
-	uint32_t retval;
-	uint8_t statusPkt[6];
-	retval = usb_control_msg(device, 0xa1, 3, 1, 0, statusPkt, 6, 1000);
-	if(statusPkt[4] != 0x6) {
-		fprintf(stderr, "Uploaded failed: 0x%x\n", retval);
-		return -1;
-	}
-	fprintf(stderr, "Uploaded ended\n");
-
-	retval = usb_control_msg(device, 0xa1, 3, 1, 0, statusPkt, 6, 1000);
-	if(statusPkt[4] != 0x7) {
-		fprintf(stderr, "Upload confirmation failed: 0x%x\n", retval);
-		return -1;
-	}
-	fprintf(stderr, "Upload confirmed\n");
-
-	retval = usb_control_msg(device, 0xa1, 3, 1, 0, statusPkt, 6, 1000);
-	if(statusPkt[4] != 0x8) {
-		fprintf(stderr, "Filesize set failed: 0x%x\n", retval);
-		return -1;
-	}
-	fprintf(stderr, "Filesize set\n");
-
+	libusb_release_interface(handle, 0);
+	libusb_release_interface(handle, 1);
+	libusb_close(handle);
+	libusb_exit(NULL);
 	return 0;
 }
 
-int get_response(usb_dev_handle* device) {
-	return usb_bulk_read(device, 0x81, response_buffer, sizeof(response_buffer), 1000);
+int send_command(struct libusb_device_handle* handle, char* command) {
+	size_t length = strlen(command);
+	if (length >= 0x200) {
+		printf("send_command: command is too long.\n");
+		return -1;
+	}
+
+	if (!libusb_control_transfer(handle, 0x40, 0, 0, 0, command, length + 1, 1000)) {
+		printf("send_command: unable to send command.\n");
+		return -1;
+	}
+ 
+	return 0;
 }
 
-int interactive(usb_dev_handle* device) {
-	int len;
-	char* commandBuffer = NULL;
+int send_file(struct libusb_device_handle *handle, const char* filename) {
+	if(handle == NULL) {
+		printf("send_file: device has not been initialized yet.\n");
+		return -1;
+	}
+	
+	FILE* file = fopen(filename, "rb");
+	if(file == NULL) {
+		printf("send_file: unable to find file.\n");
+		return 1;
+	}
 
-	do {
-		do {
-			usleep(100000);
-			len = get_response(device);
-			response_buffer[len] = '\0';
+	fseek(file, 0, SEEK_END);
+	long len = ftell(file);
+	fseek(file, 0, SEEK_SET);
 
-			if(len > 0) {
-				fwrite(response_buffer, 1, len, stdout);
-				fflush(stdout);
-			}
-		} while(len > 0 && strstr(response_buffer, "] ") == NULL);
+	char* buffer = malloc(len);
+	if (buffer == NULL) {
+		printf("send_file: error allocating memory.\n");
+		fclose(file);
+		return 1;
+	}
 
-		if(len < 0)
-			break;
+	fread(buffer, 1, len, file);
+	fclose(file);
 
-ProcessCommand:
-		if(commandBuffer != NULL)
-			free(commandBuffer);
+	int packets = len / 0x800;
+	if(len % 0x800) {
+		packets++;
+	}
 
-		commandBuffer = readline(NULL);
-		if(commandBuffer && *commandBuffer) {
-			add_history(commandBuffer);
+	int last = len % 0x800;
+	if(!last) {
+		last = 0x800;
+	}
+
+	int i = 0;
+	char response[6];
+	for(i = 0; i < packets; i++) {
+		int size = i + 1 < packets ? 0x800 : last;
+
+		if(!libusb_control_transfer(handle, 0x21, 1, i, 0, &buffer[i * 0x800], size, 1000)) {
+			printf("send_file: error sending packet.\n");
+			return -1;
 		}
 
-		if(strncmp(commandBuffer, "sendfile ", sizeof("sendfile ") - 1) == 0) {
-			char* file = commandBuffer + sizeof("sendfile ") - 1;
-			send_file(device, file);
-			goto ProcessCommand;
+		if(libusb_control_transfer(handle, 0xA1, 3, 0, 0, response, 6, 1000) != 6) {
+			printf("send_file: error receiving status.\n");
+			return -1;
+
 		} else {
-			send_command(device, commandBuffer);
-			send_command(device, "\n");
+			if(response[4] != 5) {
+				printf("send_file: invalid status.\n");
+				return -1;
+			}
 		}
 
-	} while(1);
+	}
 
+	libusb_control_transfer(handle, 0x21, 1, i, 0, buffer, 0, 1000);
+	for(i = 6; i <= 8; i++) {
+		if(libusb_control_transfer(handle, 0xA1, 3, 0, 0, response, 6, 1000) != 6) {
+			printf("send_file: error receiving status.\n");
+			return -1;
+
+		} else {
+			if(response[4] != i) {
+				printf("send_file: invalid status.\n");
+				return -1;
+			}
+		}
+	}
+
+	free(buffer);
 	return 0;
 }
 
 int main(int argc, char* argv[]) {
-	usb_dev_handle* device;
-
-	usb_init();
-	usb_find_busses();
-	usb_find_devices();
-
-	struct usb_bus *busses;
-	struct usb_bus *bus;
-	struct usb_device *dev;
-
-	busses = usb_get_busses();
-
-	int found = 0;
-	int c, i, a;
-	for(bus = busses; bus; bus = bus->next) {
-    		for (dev = bus->devices; dev; dev = dev->next) {
-    			/* Check if this device is a printer */
-    			if (dev->descriptor.idVendor != APPLE_VENDOR_ID || dev->descriptor.idProduct != IPHONE_1_2_RECOVERY_PRODUCT_ID) {
-    				continue;
-    			}
-
-			goto done;	
-    		}
+	struct libusb_device_handle* handle = NULL;
+	if (argc != 2) {
+		printf("usage: loadibec <img3>\n");
+		return -1;
 	}
 
-	return 1;
-
-done:
-
-	device = usb_open(dev);
-	usb_claim_interface(device, 1);
-	usb_set_altinterface(device, 1);
-
-	if(argc >= 2) {
-		if(strcmp(argv[1], "-i") == 0) {
-			interactive(device);
-		} else {
-			send_file(device, argv[1]);
-			send_command(device, "go\n");
-		}
-	} else {
-		printf("loadibec - Loads an iBEC img3 (such as openiboot.img3) into a phone in recovery mode. Use '-i' for interactive mode (buggy).\n");
-		printf("Usage: %s <-i|ibec.img3>", argv[0]);
+	handle = open_device(USB_RECOVERY);
+	if (handle == NULL) {
+		printf("your device must be in recovery mode.\n");
+		return -1;
+	}
+	
+	// TODO: add interactive mode
+	if(send_file(handle, argv[1]) >= 0) {
+	    send_command(handle, "go");
 	}
 
+    close_device(handle);
 	return 0;
 }
