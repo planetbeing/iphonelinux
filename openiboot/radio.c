@@ -8,6 +8,8 @@
 
 int radio_setup()
 {
+	gpio_pin_output(RADIO_GPIO_BB_MUX_SEL, OFF);
+
 	gpio_pulldown_configure(RADIO_BB_PULLDOWN, GPIOPDDown);
 
 	gpio_pin_output(RADIO_GPIO_BB_ON, OFF);
@@ -28,6 +30,41 @@ int radio_setup()
 
 	bufferPrintf("radio: comm board detected.\r\n");
 	return 0;
+}
+
+void vibrator_loop(int frequency, int period, int timeOn)
+{
+	char buf[100];
+	sprintf(buf, "at+xdrv=4,0,2,%d,%d,%d\r\n", frequency, period, timeOn);
+
+	// write the command
+	radio_write(buf);
+
+	// clear the response
+	radio_read(buf, sizeof(buf));
+}
+
+void vibrator_once(int frequency, int time)
+{
+	char buf[100];
+	sprintf(buf, "at+xdrv=4,0,1,%d,%d,%d\r\n", frequency, time + 1, time);
+
+	// write the command
+	radio_write(buf);
+
+	// clear the response
+	radio_read(buf, sizeof(buf));
+}
+
+void vibrator_off()
+{
+	char buf[100];
+
+	// write the command
+	radio_write("at+xdrv=4,0,0,0,0,0\r\n");
+
+	// clear the response
+	radio_read(buf, sizeof(buf));
 }
 
 int radio_write(const char* str)

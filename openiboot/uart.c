@@ -201,32 +201,23 @@ int uart_write(int ureg, const char *buffer, uint32_t length) {
 
 	int written = 0;
 	while(written < length) {
-		int i;
-		for(i = 0; i < 2; i++) {
-			if(settings->fifo) {
-				// spin until the tx fifo buffer is no longer full
-				while((GET_REG(uart->UFSTAT) & UART_UFSTAT_TXFIFO_FULL) != 0);
-			} else {
-				// spin while not Transmitter Empty
-				while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) == 0);
-			}
-
-			if(settings->flow_control) {		// only need to do this when there is flow control
-				// spin while not Transmitter Empty
-				while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) == 0);
-
-				// spin while not Clear To Send
-				while((GET_REG(uart->UMSTAT) & UART_UMSTAT_CTS) == 0);
-			}
-
-			if(i == 1) {
-				// flush buffer
-				SET_REG(uart->UTXH, 0);
-				break;
-			} else {
-				SET_REG(uart->UTXH, *buffer); 
-			}
+		if(settings->fifo) {
+			// spin until the tx fifo buffer is no longer full
+			while((GET_REG(uart->UFSTAT) & UART_UFSTAT_TXFIFO_FULL) != 0);
+		} else {
+			// spin while not Transmitter Empty
+			while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) == 0);
 		}
+
+		if(settings->flow_control) {		// only need to do this when there is flow control
+			// spin while not Transmitter Empty
+			while((GET_REG(uart->UTRSTAT) & UART_UTRSTAT_TRANSMITTEREMPTY) == 0);
+
+			// spin while not Clear To Send
+			while((GET_REG(uart->UMSTAT) & UART_UMSTAT_CTS) == 0);
+		}
+
+		SET_REG(uart->UTXH, *buffer); 
 
 		buffer++;
 		written++;

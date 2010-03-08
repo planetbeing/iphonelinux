@@ -836,6 +836,44 @@ void cmd_radio_send(int argc, char** argv) {
 	printf("\n");
 }
 
+void cmd_vibrator_loop(int argc, char** argv)
+{
+	if(argc < 4) {
+		bufferPrintf("Usage: %s <frequency 1-12> <period in ms> <time vibrator on during cycle in ms>\r\n", argv[0]);
+		return;
+	}
+
+	int frequency = parseNumber(argv[1]);
+	int period = parseNumber(argv[2]);
+	int timeOn = parseNumber(argv[3]);
+
+	bufferPrintf("Turning on vibrator at frequency %d in a %d ms cycle with %d duty time.\r\n", frequency, period, timeOn);
+
+	vibrator_loop(frequency, period, timeOn);
+}
+
+void cmd_vibrator_once(int argc, char** argv)
+{
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <frequency 1-12> <duration in ms>\r\n", argv[0]);
+		return;
+	}
+
+	int frequency = parseNumber(argv[1]);
+	int time = parseNumber(argv[2]);
+
+	bufferPrintf("Turning on vibrator at frequency %d for %d ms.\r\n", frequency, time);
+
+	vibrator_once(frequency, time);
+}
+
+void cmd_vibrator_off(int argc, char** argv)
+{
+	bufferPrintf("Turning off vibrator.\r\n");
+
+	vibrator_off();
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -887,6 +925,9 @@ OPIBCommand CommandList[] =
 		{"wlan_prog_helper", "program wlan fw helper", cmd_wlan_prog_helper},
 		{"wlan_prog_real", "program wlan fw", cmd_wlan_prog_real},
 		{"radio_send", "send a command to the baseband", cmd_radio_send},
+		{"vibrator_loop", "turn the vibrator on in a loop", cmd_vibrator_loop},
+		{"vibrator_once", "vibrate once", cmd_vibrator_once},
+		{"vibrator_off", "turn the vibrator off", cmd_vibrator_off},
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
 		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},

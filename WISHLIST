@@ -75,6 +75,20 @@ kernel!
 
 8. Implement interactive mode for new loadibec.
 
+9. Figure out how to crank the baseband UART bitrate to the 1500000 baud the
+ioreg advertises it's capable of. Some negotiation with the modem may have to
+be done first. Google for "TM3 module AT Command Manual" for hints on how to
+do that.
+
+	"serial data width" = 0x10
+	"serial parity" = 0x1
+	"serial flow control" = 0x24
+	"serial baud rate" = 0x16e360
+	"serial stop bits" = 0x2
+
+10. Figure out the serial mux protocol so we can have multiple DLCs. This
+ought to be documented in GSM.
+
 Jobs for people who want to get their hands dirty with drivers
 --------------------------------------------------------------
 
@@ -93,15 +107,11 @@ Jobs for reverse engineers
 
 1. Port openiboot to unsupported platforms like ipt2g, ipt3g and iPhone 3GS. 
 
-2. * FIXED IN THIS FORK * ftl.c/dma_perform()  [For some reason, the NAND
-chips stop working after the iPhone is on for a long time. They're fine after a
-reboot. Figure out why that's happening.]
-
-3. Get multitouch working for Zephyr2. It's a subclass of the Zephyr1 that I
+2. Get multitouch working for Zephyr2. It's a subclass of the Zephyr1 that I
 investigated, and at least some functions are shared, so it shouldn't be
 terrible.
 
-4. Figure out how to talk to the light sensor. It's a TSL2561 according to the
+3. Figure out how to talk to the light sensor. It's a TSL2561 according to the
 ioreg. The slave address is 0x92/0x93 according to the ioreg "reg" setting and
 is one of the slave addresses allowed on the TSL2561. It's on i2c0 according to
 ioreg. It all looks good except for the fact I cannot get a response out of this
@@ -109,20 +119,7 @@ part. I even bruteforced all the slave addresses on i2c0 and only got responses
 from the PMU, the accelerometer and the Wolfson, stuff we already know how to
 talk to. What's going on? Is it just my 2G is broken?
 
-5. Figure out the new FTL they're using on the newer devices. That's going to be
+4. Figure out the new FTL they're using on the newer devices. That's going to be
 a pain.
-
-6. With help from CPICH, we've determined the vibrator and speaker controls
-are in the baseband, both controlled through the at+xdrv command. Knowing
-this, the next step is to make sure we can talk to the baseband through the
-UARTs. This shouldn't be that bad since iBoot used to do it, and we already
-have UART code. This will require at least turning on the comm board, which
-we don't know how to do yet.
-
-7. I get no response from the WLAN chip before I run Apple's iBoot (if I boot
-openiboot directly from LLB). I also get no response from uart1 (baseband)
-before I run iBoot (though after that, uart1 merely echos, no actual
-responses). Coincidence? Maybe it's because the comm board must be turned on.
-See #6.
 
 Thanks for reading all this. I'm impressed.
