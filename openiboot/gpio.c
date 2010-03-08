@@ -170,3 +170,26 @@ void gpio_pin_output(int port, int bit) {
 	gpio_custom_io(port, 0xE | bit); // 0b111U, where U is the argument
 }
 
+void gpio_pulldown_configure(int port, GPIOPDSetting setting)
+{
+	uint32_t bit = 1 << GET_BITS(port, 0, 3);
+
+	switch(setting)
+	{
+		case GPIOPDDisabled:
+			GPIORegs[GET_BITS(port, 8, 5)].PUD1 &= ~bit;
+			GPIORegs[GET_BITS(port, 8, 5)].PUD2 &= ~bit;
+			break;
+
+		case GPIOPDUp:
+			GPIORegs[GET_BITS(port, 8, 5)].PUD1 |= bit;
+			GPIORegs[GET_BITS(port, 8, 5)].PUD2 &= ~bit;
+			break;
+
+		case GPIOPDDown:
+			GPIORegs[GET_BITS(port, 8, 5)].PUD1 &= ~bit;
+			GPIORegs[GET_BITS(port, 8, 5)].PUD2 |= bit;
+			break;
+	}
+}
+

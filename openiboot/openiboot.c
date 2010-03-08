@@ -35,6 +35,7 @@
 #include "hfs/bdev.h"
 #include "hfs/fs.h"
 
+#include "radio.h"
 #include "wm8958.h"
 #include "wdt.h"
 
@@ -84,6 +85,7 @@ void OpenIBootStart() {
 
 	startUSB();
 
+	radio_setup();
 	sdio_setup();
 	wlan_setup();
 	accel_setup();

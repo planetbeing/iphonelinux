@@ -25,6 +25,7 @@
 #include "wm8958.h"
 #include "multitouch.h"
 #include "wlan.h"
+#include "radio.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -811,6 +812,30 @@ void cmd_wlan_prog_real(int argc, char** argv) {
 	wlan_prog_real((void*) address, len);
 }
 
+void cmd_radio_send(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <command>\r\n", argv[0]);
+		return;
+	}
+
+	radio_write(argv[1]);
+	radio_write("\r\n");
+	
+	char buf[100];
+	int c = radio_read(buf, sizeof(buf) - 1);
+	buf[c] = '\0';
+	printf("radio reply: %s", buf);
+
+	while(c == (sizeof(buf) - 1))
+	{
+		c = radio_read(buf, sizeof(buf) - 1);
+		buf[c] = '\0';
+		printf("%s", buf);
+	}
+
+	printf("\n");
+}
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -861,6 +886,7 @@ OPIBCommand CommandList[] =
 		{"sdio_setup", "restart SDIO stuff", cmd_sdio_setup},
 		{"wlan_prog_helper", "program wlan fw helper", cmd_wlan_prog_helper},
 		{"wlan_prog_real", "program wlan fw", cmd_wlan_prog_real},
+		{"radio_send", "send a command to the baseband", cmd_radio_send},
 		{"images_list", "list the images available on NOR", cmd_images_list},
 		{"images_read", "read an image on NOR", cmd_images_read},
 		{"pmu_voltage", "get the battery voltage", cmd_pmu_voltage},

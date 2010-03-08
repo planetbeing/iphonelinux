@@ -1,0 +1,13 @@
+#ifndef HW_RADIO_H
+#define HW_RADIO_H
+
+#define RADIO_GPIO_BB_ON 0x1807
+#define RADIO_GPIO_RADIO_ON 0x1507
+#define RADIO_GPIO_BB_RESET 0x700
+#define RADIO_GPIO_BB_DETECT 0x701
+
+#define RADIO_UART 1
+
+#define RADIO_BB_PULLDOWN 0x1703
+
+#endif
