@@ -34,6 +34,7 @@ static uint8_t* aTemporarySBuf;
 static const NANDDeviceType SupportedDevices[] = {
 	{0x2555D5EC, 8192, 0x80, 4, 64, 4, 2, 4, 2, 7744, 4, 6},
 	{0xB614D5EC, 4096, 0x80, 8, 128, 4, 2, 4, 2, 3872, 4, 6},
+        {0xB614D5AD, 4096, 0x80, 8, 128, 4, 2, 4, 2, 3872, 4, 6}, /* FOUND IN A LATE-MODEL iPHONE 3G */
 	{0xB655D7EC, 8192, 0x80, 8, 128, 4, 2, 4, 2, 7744, 4, 6},
 	{0xA514D3AD, 4096, 0x80, 4, 64, 4, 2, 4, 2, 3872, 4, 6},
 	{0xA555D5AD, 8192, 0x80, 4, 64, 4, 2, 4, 2, 7744, 4, 6},
