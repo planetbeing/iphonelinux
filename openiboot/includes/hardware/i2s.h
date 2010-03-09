@@ -22,6 +22,9 @@
 #define WM_I2S I2S0
 #define DMA_WM_I2S_TX DMA_I2S0_TX
 #define DMA_WM_I2S_RX DMA_I2S0_RX
+#define BB_I2S I2S1
+#define DMA_BB_I2S_TX DMA_I2S1_TX
+#define DMA_BB_I2S_RX DMA_I2S1_RX
 #endif
 
 #endif

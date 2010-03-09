@@ -6,6 +6,9 @@
 #include "hardware/radio.h"
 #include "uart.h"
 
+// For the +XDRV stuff, it's usually device,function,arg1,arg2,arg3,...
+// device 4 seems to be the vibrator, device 0 seems to be the speakers
+
 int radio_setup()
 {
 	gpio_pin_output(RADIO_GPIO_BB_MUX_SEL, OFF);
@@ -53,6 +56,8 @@ int radio_setup()
 	}
 
 	bufferPrintf("radio: ready.\r\n");
+
+	speaker_setup();
 
 	return 0;
 }
@@ -102,8 +107,9 @@ int radio_read(char* buf, int len)
 {
 	char b;
 	int i = 0;
+	char* curLine = buf;
 
-	while(i < len)
+	while(i < (len - 1))
 	{
 		uint64_t startTime = timer_get_system_microtime();
 	       	while(uart_read(RADIO_UART, &b, 1, 0) == 0)
@@ -116,7 +122,23 @@ int radio_read(char* buf, int len)
 		if(b == 0)
 			continue;
 
-		buf[i++] = b;
+		buf[i] = b;
+		buf[i + 1] = '\0';
+
+		if(strstr(curLine, "OK\r") != NULL)
+		{
+			++i;
+			break;
+		} else if(strstr(curLine, "ERROR\r") != NULL)
+		{
+			++i;
+			break;
+		} else if(b == '\r')
+			curLine = &buf[i + 1];
+		else if(b == '\n')
+			curLine = &buf[i + 1];
+
+		++i;
 	}
 
 	return i;
@@ -124,31 +146,80 @@ int radio_read(char* buf, int len)
 
 int radio_wait_for_ok(int tries)
 {
+	return radio_cmd("at\r\n", tries);
+}
+
+int radio_cmd(const char* cmd, int tries)
+{
 	int i;
 	for(i = 0; i < tries; ++i)
 	{
 		char buf[100];
 		int n;
 
-		radio_write("at\r\n");
+		radio_write(cmd);
 
 		n = radio_read(buf, sizeof(buf) - 1);
 
 		if(n == 0)
 			continue;
 
-		buf[n] = '\0';
-
 		if(strstr(buf, "\nOK\r") != NULL)
 			break;
 		else if(strstr(buf, "\rOK\r") != NULL)
 			break;
-		else
-			bufferPrintf("%s\n", buf);
 	}
 
 	if(i == tries)
 		return FALSE;
 	else
 		return TRUE;
+}
+
+int speaker_setup()
+{
+	bufferPrintf("radio: enabling internal speaker\r\n");
+
+	// something set at the very beginning
+	radio_cmd("at+xdrv=0,41,25\r\n", 10);
+
+	// mute everything?
+	radio_cmd("at+xdrv=0,1,0,0\r\n", 10);
+	radio_cmd("at+xdrv=0,1,0,1\r\n", 10);
+	radio_cmd("at+xdrv=0,1,0,2\r\n", 10);
+	radio_cmd("at+xdrv=0,1,0,6\r\n", 10);
+
+	// I really don't know
+	radio_cmd("at+xdrv=0,24,1,1\r\n", 10);
+	radio_cmd("at+xdrv=0,0,2,2\r\n", 10);
+
+	// raise certain volumes?
+	radio_cmd("at+xdrv=0,1,100,2\r\n", 10);
+
+	speaker_vol(68);
+
+	// clock
+	// FIXME: iPhone sets: at+xdrv=0,2,2,10. In general, lower is slower and higher is faster,
+	// but at some point it loops around. This may mean the value is a bitset. The value used
+	// below is the result of trial and error
+	radio_cmd("at+xdrv=0,2,2,29\r\n", 10);
+
+	// channels?
+	radio_cmd("at+xdrv=0,9,2\r\n", 10);
+
+	// enable i2s?
+	radio_cmd("at+xdrv=0,20,1\r\n", 10);
+
+	// unmute?
+	radio_cmd("at+xdrv=0,3,0\r\n", 10);
+
+	bufferPrintf("radio: internal speaker enabled\r\n");
+	return 0;
+}
+
+void speaker_vol(int vol)
+{
+	char buf[100];
+	sprintf(buf, "at+xdrv=0,1,%d,0\r\n", vol);
+	radio_cmd(buf, 10);
 }

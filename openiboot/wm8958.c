@@ -57,9 +57,9 @@ static void iis_transfer_done(int status, int controller, int channel)
 	++transfersDone;
 	CleanCPUDataCache();
 	dma_finish(controller, channel, 0);
+	bufferPrintf("audio: playback complete\r\n");
 	// replace the above line with this bottom one for repeat
 	// dma_perform((uint32_t)pcm_buffer, DMA_WM_I2S_TX, pcm_buffer_size, 0, &controller, &channel);
-	// FIXME: For some reason, if I put a printf under here, the DMA stalls.
 }
 
 int audiohw_transfers_done()
@@ -67,12 +67,26 @@ int audiohw_transfers_done()
 	return transfersDone;
 }
 
-void audiohw_play_pcm(const void* addr_in, uint32_t size)
+void audiohw_play_pcm(const void* addr_in, uint32_t size, int use_speaker)
 {
 	pcm_buffer = addr_in;
 	pcm_buffer_size = size;
 
-	SET_REG(WM_I2S + I2S_TXCON,
+	uint32_t i2sController;
+	uint32_t dma;
+
+	if(use_speaker)
+	{
+		i2sController = BB_I2S;
+		dma = DMA_BB_I2S_TX;
+	}
+	else
+	{
+		i2sController = WM_I2S;
+		dma = DMA_WM_I2S_TX;
+	}
+
+	SET_REG(i2sController + I2S_TXCON,
 			(1 << 24) |  /* undocumented */
 			(1 << 20) |  /* undocumented */
 			(0 << 16) |  /* burst length */
@@ -93,12 +107,12 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size)
 	
 	CleanCPUDataCache();
 
-	dma_request(DMA_MEMORY, 4, 1, DMA_WM_I2S_TX, 4, 1, &controller, &channel, iis_transfer_done);
+	dma_request(DMA_MEMORY, 4, 1, dma, 4, 1, &controller, &channel, iis_transfer_done);
 
-	dma_perform((uint32_t)pcm_buffer, DMA_WM_I2S_TX, pcm_buffer_size, 0, &controller, &channel);
+	dma_perform((uint32_t)pcm_buffer, dma, pcm_buffer_size, 0, &controller, &channel);
 
-	SET_REG(WM_I2S + I2S_CLKCON, (1 << 0)); /* 1 = power on */
-	SET_REG(WM_I2S + I2S_TXCOM, 
+	SET_REG(i2sController + I2S_CLKCON, (1 << 0)); /* 1 = power on */
+	SET_REG(i2sController + I2S_TXCOM, 
 			(0 << 3) |   /* 1 = transmit mode on */
 			(1 << 2) |   /* 1 = I2S interface enable */
 			(1 << 1) |   /* 1 = DMA request enable */
@@ -264,7 +278,7 @@ void audiohw_preinit(void)
     wmcodec_write(NOTCH3, 0x0);
     wmcodec_write(NOTCH4, 0x0);
 
-    // iPod sets pre-divider to 0, but for some reason the input MCLK is twice as high as expected (18 MHz instead of 9 MHz)
+    // FIXME: iPod/iPhone sets pre-divider to 0, but for some reason the input MCLK is twice as high as expected (18 MHz instead of 9 MHz)
     wmcodec_write(PLLN, 0x1a);
    
     wmcodec_write(PLLK1, 0x1);

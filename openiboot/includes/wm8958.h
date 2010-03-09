@@ -26,7 +26,7 @@ enum {
 
 void audiohw_init();
 void audiohw_postinit();
-void audiohw_play_pcm(const void* addr_in, uint32_t size);
+void audiohw_play_pcm(const void* addr_in, uint32_t size, int use_speaker);
 void audiohw_set_headphone_vol(int vol_l, int vol_r);
 void audiohw_set_lineout_vol(int vol_l, int vol_r);
 void audiohw_set_aux_vol(int vol_l, int vol_r);

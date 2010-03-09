@@ -741,14 +741,26 @@ void cmd_audiohw_transfers_done(int argc, char** argv)
 void cmd_audiohw_play_pcm(int argc, char** argv)
 {
 	if(argc < 3) {
-		bufferPrintf("Usage: %s <address> <len>\r\n", argv[0]);
+		bufferPrintf("Usage: %s <address> <len> [use-headphones]\r\n", argv[0]);
 		return;
 	}
 
 	uint32_t address = parseNumber(argv[1]);
 	uint32_t len = parseNumber(argv[2]);
-	bufferPrintf("playing PCM 0x%x - 0x%x\r\n", address, address + len);
-	audiohw_play_pcm((void*)address, len);
+	uint32_t useHeadphones = 0;
+
+	if(argc > 3)
+		useHeadphones = parseNumber(argv[3]);
+
+	if(useHeadphones)
+	{
+		bufferPrintf("playing PCM 0x%x - 0x%x using headphones\r\n", address, address + len);
+		audiohw_play_pcm((void*)address, len, FALSE);
+	} else
+	{
+		bufferPrintf("playing PCM 0x%x - 0x%x using speakers\r\n", address, address + len);
+		audiohw_play_pcm((void*)address, len, TRUE);
+	}
 }
 
 void cmd_audiohw_headphone_vol(int argc, char** argv)
@@ -770,6 +782,21 @@ void cmd_audiohw_headphone_vol(int argc, char** argv)
 	audiohw_set_headphone_vol(left, right);
 
 	bufferPrintf("Set headphone volumes to: %d / %d\r\n", left, right);
+}
+
+void cmd_audiohw_speaker_vol(int argc, char** argv)
+{
+	if(argc < 2)
+	{
+		bufferPrintf("%s <volume> (between 0 and 100, safe maximum is 68)\r\n", argv[0]);
+		return;
+	}
+
+	int vol = parseNumber(argv[1]);
+	
+	speaker_vol(vol);
+
+	bufferPrintf("Set speaker volume to: %d\r\n", vol);
 }
 
 void cmd_multitouch_setup(int argc, char** argv)
@@ -822,14 +849,12 @@ void cmd_radio_send(int argc, char** argv) {
 	radio_write("\r\n");
 	
 	char buf[100];
-	int c = radio_read(buf, sizeof(buf) - 1);
-	buf[c] = '\0';
+	int c = radio_read(buf, sizeof(buf));
 	printf("radio reply: %s", buf);
 
 	while(c == (sizeof(buf) - 1))
 	{
-		c = radio_read(buf, sizeof(buf) - 1);
-		buf[c] = '\0';
+		c = radio_read(buf, sizeof(buf));
 		printf("%s", buf);
 	}
 
@@ -953,6 +978,7 @@ OPIBCommand CommandList[] =
 		{"audiohw_transfers_done", "display how many times the audio buffer has been played", cmd_audiohw_transfers_done},
 		{"audiohw_play_pcm", "queue some PCM data for playback", cmd_audiohw_play_pcm},
 		{"audiohw_headphone_vol", "set the headphone volume", cmd_audiohw_headphone_vol},
+		{"audiohw_speaker_vol", "set the speaker volume", cmd_audiohw_speaker_vol},
 		{"multitouch_setup", "setup the multitouch chip", cmd_multitouch_setup},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}
