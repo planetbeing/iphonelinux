@@ -1021,7 +1021,7 @@ int ftl_read(void* buffer, uint64_t offset, int size) {
 			return FALSE;
 		}
 
-		int read = ((Data->bytesPerPage > toRead) ? toRead : Data->bytesPerPage);
+		int read = (((Data->bytesPerPage-pageOffset) > toRead) ? toRead : Data->bytesPerPage-pageOffset);
 		memcpy(curLoc, tBuffer + pageOffset, read);
 		curLoc += read;
 		toRead -= read;

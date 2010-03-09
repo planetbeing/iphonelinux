@@ -86,7 +86,7 @@ int allocate(RawFile* rawFile, off_t size) {
 				}
 
 				/* zero out allocated block */
-				ASSERT(WRITE(volume->image, curBlock * volume->volumeHeader->blockSize, volume->volumeHeader->blockSize, zeros), "WRITE");
+				ASSERT(WRITE(volume->image, ((uint64_t)curBlock) * volume->volumeHeader->blockSize, volume->volumeHeader->blockSize, zeros), "WRITE");
 
 				setBlockUsed(volume, curBlock, TRUE);
 				volume->volumeHeader->freeBlocks--;
@@ -195,12 +195,12 @@ static int rawFileRead(io_func* io,off_t location, size_t size, void *buffer) {
 		possible = extent->blockCount * blockSize - locationInBlock;
 
 		if(size > possible) {
-			ASSERT(READ(volume->image, extent->startBlock * blockSize + locationInBlock, possible, buffer), "READ");
+			ASSERT(READ(volume->image, ((uint64_t)extent->startBlock) * blockSize + locationInBlock, possible, buffer), "READ");
 			size -= possible;
 			buffer = (void*)(((size_t)buffer) + possible);
 			extent = extent->next;
 		} else {
-			ASSERT(READ(volume->image, extent->startBlock * blockSize + locationInBlock, size, buffer), "READ");
+			ASSERT(READ(volume->image, ((uint64_t)extent->startBlock) * blockSize + locationInBlock, size, buffer), "READ");
 			break;
 		}
 
@@ -251,12 +251,12 @@ static int rawFileWrite(io_func* io,off_t location, size_t size, void *buffer) {
 		possible = extent->blockCount * blockSize - locationInBlock;
 
 		if(size > possible) {
-			ASSERT(WRITE(volume->image, extent->startBlock * blockSize + locationInBlock, possible, buffer), "WRITE");
+			ASSERT(WRITE(volume->image, ((uint64_t)extent->startBlock) * blockSize + locationInBlock, possible, buffer), "WRITE");
 			size -= possible;
 			buffer = (void*)(((size_t)buffer) + possible);
 			extent = extent->next;
 		} else {
-			ASSERT(WRITE(volume->image, extent->startBlock * blockSize + locationInBlock, size, buffer), "WRITE");
+			ASSERT(WRITE(volume->image, ((uint64_t)extent->startBlock) * blockSize + locationInBlock, size, buffer), "WRITE");
 			break;
 		}
 
