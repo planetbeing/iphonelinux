@@ -11,6 +11,7 @@ void vibrator_once(int frequency, int time);
 void vibrator_off();
 
 int speaker_setup();
+void loudspeaker_vol(int vol);
 void speaker_vol(int vol);
 
 #endif

@@ -788,15 +788,23 @@ void cmd_audiohw_speaker_vol(int argc, char** argv)
 {
 	if(argc < 2)
 	{
-		bufferPrintf("%s <volume> (between 0 and 100, safe maximum is 68)\r\n", argv[0]);
+		bufferPrintf("%s <loudspeaker volume> [speaker volume] (between 0 and 100... 'speaker' is the one next to your ear)\r\n", argv[0]);
 		return;
 	}
 
 	int vol = parseNumber(argv[1]);
 	
-	speaker_vol(vol);
+	loudspeaker_vol(vol);
 
-	bufferPrintf("Set speaker volume to: %d\r\n", vol);
+	bufferPrintf("Set loudspeaker volume to: %d\r\n", vol);
+
+	if(argc > 2)
+	{
+		vol = parseNumber(argv[2]);
+		speaker_vol(vol);
+
+		bufferPrintf("Set speaker volume to: %d\r\n", vol);
+	}
 }
 
 void cmd_multitouch_setup(int argc, char** argv)

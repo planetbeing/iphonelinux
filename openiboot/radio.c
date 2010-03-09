@@ -193,9 +193,7 @@ int speaker_setup()
 	radio_cmd("at+xdrv=0,24,1,1\r\n", 10);
 	radio_cmd("at+xdrv=0,0,2,2\r\n", 10);
 
-	// raise certain volumes?
-	radio_cmd("at+xdrv=0,1,100,2\r\n", 10);
-
+	loudspeaker_vol(100);
 	speaker_vol(68);
 
 	// clock
@@ -214,6 +212,13 @@ int speaker_setup()
 
 	bufferPrintf("radio: internal speaker enabled\r\n");
 	return 0;
+}
+
+void loudspeaker_vol(int vol)
+{
+	char buf[100];
+	sprintf(buf, "at+xdrv=0,1,%d,2\r\n", vol);
+	radio_cmd(buf, 10);
 }
 
 void speaker_vol(int vol)
