@@ -107,7 +107,7 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size, int use_speaker)
 	
 	CleanCPUDataCache();
 
-	dma_request(DMA_MEMORY, 4, 1, dma, 4, 1, &controller, &channel, iis_transfer_done);
+	dma_request(DMA_MEMORY, 2, 1, dma, 2, 1, &controller, &channel, iis_transfer_done);
 
 	dma_perform((uint32_t)pcm_buffer, dma, pcm_buffer_size, 0, &controller, &channel);
 
@@ -278,8 +278,7 @@ void audiohw_preinit(void)
     wmcodec_write(NOTCH3, 0x0);
     wmcodec_write(NOTCH4, 0x0);
 
-    // FIXME: iPod/iPhone sets pre-divider to 0, but for some reason the input MCLK is twice as high as expected (18 MHz instead of 9 MHz)
-    wmcodec_write(PLLN, 0x1a);
+    wmcodec_write(PLLN, 0xa);
    
     wmcodec_write(PLLK1, 0x1);
     wmcodec_write(PLLK2, 0x1fd);

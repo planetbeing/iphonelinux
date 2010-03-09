@@ -199,10 +199,9 @@ int speaker_setup()
 	speaker_vol(68);
 
 	// clock
-	// FIXME: iPhone sets: at+xdrv=0,2,2,10. In general, lower is slower and higher is faster,
-	// but at some point it loops around. This may mean the value is a bitset. The value used
-	// below is the result of trial and error
-	radio_cmd("at+xdrv=0,2,2,29\r\n", 10);
+	// In general, lower is slower and higher is faster, but at some point it loops around.
+	// This may mean the value is a bitset, e.g., at+xdrv=0,2,2,29 will set it to half speed
+	radio_cmd("at+xdrv=0,2,2,10\r\n", 10);
 
 	// channels?
 	radio_cmd("at+xdrv=0,9,2\r\n", 10);
