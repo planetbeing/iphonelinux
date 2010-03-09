@@ -29,6 +29,31 @@ int radio_setup()
 	}
 
 	bufferPrintf("radio: comm board detected.\r\n");
+
+	if(!radio_wait_for_ok(10))
+	{
+		bufferPrintf("radio: no response from baseband!\r\n");
+		return -1;
+	}
+
+	bufferPrintf("radio: setting speed to 750000 baud.\r\n");
+
+	radio_write("at+ipr=750000\r\n");
+
+	// wait a millisecond for the command to totally clear uart
+	// I wasn't able to detect this condition with uart registers (looking at FIFO count, transmitter empty)
+	udelay(1000);
+
+	uart_set_baud_rate(RADIO_UART, 750000);
+
+	if(!radio_wait_for_ok(10))
+	{
+		bufferPrintf("radio: no response from baseband!\r\n");
+		return -1;
+	}
+
+	bufferPrintf("radio: ready.\r\n");
+
 	return 0;
 }
 
@@ -95,4 +120,35 @@ int radio_read(char* buf, int len)
 	}
 
 	return i;
+}
+
+int radio_wait_for_ok(int tries)
+{
+	int i;
+	for(i = 0; i < tries; ++i)
+	{
+		char buf[100];
+		int n;
+
+		radio_write("at\r\n");
+
+		n = radio_read(buf, sizeof(buf) - 1);
+
+		if(n == 0)
+			continue;
+
+		buf[n] = '\0';
+
+		if(strstr(buf, "\nOK\r") != NULL)
+			break;
+		else if(strstr(buf, "\rOK\r") != NULL)
+			break;
+		else
+			bufferPrintf("%s\n", buf);
+	}
+
+	if(i == tries)
+		return FALSE;
+	else
+		return TRUE;
 }

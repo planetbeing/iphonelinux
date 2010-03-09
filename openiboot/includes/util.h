@@ -16,6 +16,7 @@ void panic();
 void* memset(void* x, int fill, uint32_t size);
 void* memcpy(void* dest, const void* src, uint32_t size);
 int strcmp(const char* s1, const char* s2);
+char* strstr(const char* s1, const char* s2);
 char* strdup(const char* str);
 char* strcpy(char* dst, const char* src);
 int memcmp(const void* s1, const void* s2, uint32_t size);

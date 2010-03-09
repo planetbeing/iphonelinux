@@ -1,24 +1,3 @@
-Other Stuff
-===========
-
-There's a bug in ftl_read() which only manifests when you do transfers which do
-*NOT* start at page offset 0x0.  This is *ONE* cause of the intermittent failures
-when accessing the HFS filesystem - ftl_read() returns bad data to readCatalog()
-which makes the HFS parser die.
-
-There's also another bug in the HFS parsing code which has a similar effect.
-
-I'll merge in the fixes for both of these after the weekend (I don't have access
-to my fixed codebase from here)
-
-Implementing a simple page cache in ftl_read() can dramatically improve the speed
-of HFS directory lookups - I'll find the code for this as well and try to merge it in.
-
-The good news is that once you merge this stuff in, the HFS read code is rock-solid
-and works flawlessly.
-
-------------------------- END HARMN1 COMMENTS -----------------------
-
 Here's a list of things we need
 ===============================
 
@@ -75,18 +54,7 @@ kernel!
 
 8. Implement interactive mode for new loadibec.
 
-9. Figure out how to crank the baseband UART bitrate to the 1500000 baud the
-ioreg advertises it's capable of. Some negotiation with the modem may have to
-be done first. Google for "TM3 module AT Command Manual" for hints on how to
-do that.
-
-	"serial data width" = 0x10
-	"serial parity" = 0x1
-	"serial flow control" = 0x24
-	"serial baud rate" = 0x16e360
-	"serial stop bits" = 0x2
-
-10. Figure out the serial mux protocol so we can have multiple DLCs. This
+9. Figure out the serial mux protocol so we can have multiple DLCs. This
 ought to be documented in GSM.
 
 Jobs for people who want to get their hands dirty with drivers
@@ -121,5 +89,19 @@ talk to. What's going on? Is it just my 2G is broken?
 
 4. Figure out the new FTL they're using on the newer devices. That's going to be
 a pain.
+
+5. I managed to boost the uart1 baud rate to 750000, which is half of what
+ioreg advertised (though it also advertised a data width of 16). 750000 IS the
+baud that CommCenter sets though, and I don't see it ever changing that, so I
+don't know what's going on. at+ipr advertises as the maximum speed. Someone
+check if the 16-bit data width and 1500000 baud rate is real or not or maybe
+some sort of software compression?
+
+	"serial data width" = 0x10
+	"serial parity" = 0x1
+	"serial flow control" = 0x24
+	"serial baud rate" = 0x16e360
+	"serial stop bits" = 0x2
+
 
 Thanks for reading all this. I'm impressed.

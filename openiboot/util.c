@@ -45,6 +45,30 @@ int strcmp(const char* s1, const char* s2) {
 	return (*(const unsigned char *)s1 - *(const unsigned char *)(s2 - 1));
 }
 
+char* strstr(const char* s1, const char* s2)
+{
+	while(*s1)
+	{
+		const char* c = s1;
+		const char* p = s2;
+
+		while(*c && *p && (*c == *p))
+		{
+			++c;
+			++p;
+		}
+
+		if(*p == '\0')
+		{
+			return ((char*) s1);
+		}
+
+		++s1;
+	}
+
+	return NULL;
+}
+
 char* strdup(const char* str) {
 	size_t len = strlen(str);
 	char* toRet = (char*) malloc(len + 1);
