@@ -21,6 +21,8 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 FILE* outputFile = NULL;
 volatile size_t readIntoOutput = 0;
 
+volatile int InterestWrite = 0;
+
 #define USB_BYTES_AT_A_TIME 512
 
 void* doOutput(void* threadid) {
@@ -29,8 +31,13 @@ void* doOutput(void* threadid) {
 	int totalLen = 0;
 
 	while(1) {
-		pthread_mutex_lock(&lock);
+		if(InterestWrite)
+		{
+			sched_yield();
+			continue;
+		}
 
+		pthread_mutex_lock(&lock);
 		cmd.command = OPENIBOOTCMD_DUMPBUFFER;
 		cmd.dataLen = 0;
 		usb_interrupt_write(device, 4, (char*) (&cmd), sizeof(OpenIBootCmd), 1000);
@@ -162,10 +169,12 @@ void* doInput(void* threadid) {
 				sprintf(toSendBuffer, "sendfile 0x09000000");
 			}
 
+			InterestWrite = 1;
 			pthread_mutex_lock(&lock);
 			sendBuffer(toSendBuffer, strlen(toSendBuffer));
 			sendBuffer(fileBuffer, len);
 			pthread_mutex_unlock(&lock);
+			InterestWrite = 0;
 			free(fileBuffer);
 		} else if(commandBuffer[0] == '~') {
 			char* sizeLoc = strchr(&commandBuffer[1], ':');
@@ -198,16 +207,20 @@ void* doInput(void* threadid) {
 				sprintf(toSendBuffer, "getfile 0x09000000 %d", toRead);
 			}
 
+			InterestWrite = 1;
 			pthread_mutex_lock(&lock);
 			sendBuffer(toSendBuffer, strlen(toSendBuffer));
 			outputFile = file;
 			readIntoOutput = toRead;
 			pthread_mutex_unlock(&lock);
+			InterestWrite = 0;
 		} else {
+			InterestWrite = 1;
 			commandBuffer[len] = '\n';
 			pthread_mutex_lock(&lock);
 			sendBuffer(commandBuffer, len + 1);
 			pthread_mutex_unlock(&lock);
+			InterestWrite = 0;
 		}
 
 		sched_yield();

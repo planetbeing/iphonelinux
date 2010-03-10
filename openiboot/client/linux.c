@@ -21,6 +21,8 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 FILE* outputFile = NULL;
 volatile size_t readIntoOutput = 0;
 
+volatile int InterestWrite = 0;
+
 #define USB_BYTES_AT_A_TIME 512
 
 void* doOutput(void* threadid) {
@@ -29,6 +31,12 @@ void* doOutput(void* threadid) {
 	int totalLen = 0;
 
 	while(1) {
+		if(InterestWrite)
+		{
+			sched_yield();
+			continue;
+		}
+
 		pthread_mutex_lock(&lock);
 
 		cmd.command = OPENIBOOTCMD_DUMPBUFFER;
@@ -123,9 +131,11 @@ void* doInput(void* threadid) {
 		int ch = getch();
 
 		char theChar = ch;
+		InterestWrite = 1;
 		pthread_mutex_lock(&lock);
 		sendBuffer(&theChar, 1);
 		pthread_mutex_unlock(&lock);
+		InterestWrite = 0;
 
 		sched_yield();
 	}
