@@ -19,29 +19,42 @@ typedef struct NANDDeviceType {
 	uint8_t WEHighHoldTime;
 	uint8_t NANDSetting3;
 	uint8_t NANDSetting4;
-	uint32_t userSubBlksTotal;
+	uint32_t userSuBlksTotal;
 	uint32_t ecc1;
 	uint32_t ecc2;
 } NANDDeviceType;
 
-typedef struct UnknownNANDType {
-	uint16_t field_0;
+typedef struct NANDFTLData {
+	uint16_t sysSuBlks;
 	uint16_t field_2;
 	uint16_t field_4;		// reservoir blocks?
 	uint16_t field_6;
 	uint16_t field_8;
-} UnknownNANDType;
+} NANDFTLData;
 
 typedef struct SpareData {
-	uint32_t logicalPageNumber;
-	uint8_t field_4;
-	uint8_t field_5;
-	uint8_t field_6;
-	uint8_t field_7;
-	uint8_t field_8;
-	uint8_t field_9;
+	union {
+		struct {
+			uint32_t logicalPageNumber;
+			uint8_t field_4;
+			uint8_t field_5;
+			uint8_t field_6;
+			uint8_t field_7;
+		} __attribute__ ((packed)) user;
+
+		struct {
+			uint32_t usnDec;
+			uint16_t idx;
+			uint8_t field_6;
+			uint8_t field_7;
+		} __attribute__ ((packed)) meta;
+	};
+
+	uint8_t type2;
+	uint8_t type1;
 	uint8_t eccMark;
 	uint8_t field_B;
+
 } __attribute__ ((packed)) SpareData;
 
 typedef struct NANDData {
@@ -49,11 +62,11 @@ typedef struct NANDData {
 	uint16_t field_4;
 	uint16_t sectorsPerPage;
 	uint16_t pagesPerBlock;
-	uint16_t pagesPerSubBlk;
+	uint16_t pagesPerSuBlk;
 	uint32_t pagesPerBank;
 	uint32_t pagesTotal;
-	uint16_t subBlksTotal;
-	uint16_t userSubBlksTotal;
+	uint16_t suBlksTotal;
+	uint16_t userSuBlksTotal;
 	uint32_t userPagesTotal;
 	uint16_t blocksPerBank;
 	uint16_t bytesPerPage;
@@ -79,6 +92,6 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC);
 int nand_read_status();
 int nand_calculate_ecc(uint8_t* data, uint8_t* ecc);
 NANDData* nand_get_geometry();
-UnknownNANDType* nand_get_data();
+NANDFTLData* nand_get_ftl_data();
 
 #endif

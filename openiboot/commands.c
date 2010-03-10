@@ -613,6 +613,14 @@ void cmd_ftl_read(int argc, char** argv) {
 	bufferPrintf("FTL_read: %x\r\n", FTL_Read(page, pages, (uint8_t*) address));
 }
 
+void cmd_ftl_commit_cxt(int argc, char** argv) {
+	bufferPrintf("Committing FTL context...\r\n");
+	if(ftl_commit_cxt())
+		bufferPrintf("Success!\r\n");
+	else
+		bufferPrintf("Error.\r\n");
+}
+
 void cmd_bdev_read(int argc, char** argv) {
 	if(argc < 4) {
 		bufferPrintf("Usage: %s <address> <offset> <bytes>\r\n", argv[0]);
@@ -941,6 +949,7 @@ OPIBCommand CommandList[] =
 		{"vfl_erase", "erase a block of VFL", cmd_vfl_erase},
 		{"ftl_read", "read a page of FTL into RAM", cmd_ftl_read},
 		{"ftl_mapping", "print FTL mapping information", cmd_ftl_mapping},
+		{"ftl_commit_cxt", "commit the current FTL context (DANGEROUS?)", cmd_ftl_commit_cxt},
 		{"bdev_read", "read bytes from a NAND block device", cmd_bdev_read},
 #ifndef NO_HFS
 		{"fs_ls", "list files and folders", fs_cmd_ls},

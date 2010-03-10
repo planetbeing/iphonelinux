@@ -23,8 +23,8 @@ static int NumValidBanks = 0;
 static const int NoMultibankCmdStatus = 1;
 static int LargePages;
 
-static NANDData Data;
-static UnknownNANDType Data2;
+static NANDData Geometry;
+static NANDFTLData FTLData;
 
 static uint8_t* aTemporaryReadEccBuf;
 static uint8_t* aTemporarySBuf;
@@ -272,8 +272,8 @@ int nand_setup() {
 		return ERROR_ARG;
 	}
 
-	Data.DeviceID = nandType->id;
-	Data.banksTable = banksTable;
+	Geometry.DeviceID = nandType->id;
+	Geometry.banksTable = banksTable;
 
 	WPPulseTime = (((clock_get_frequency(FrequencyBaseBus) * (nandType->WPPulseTime + 1)) + 99999999)/100000000) - 1;
 	WEHighHoldTime = (((clock_get_frequency(FrequencyBaseBus) * (nandType->WEHighHoldTime + 1)) + 99999999)/100000000) - 1;
@@ -292,16 +292,16 @@ int nand_setup() {
 	if(NANDSetting4 > 7)
 		NANDSetting4 = 7;
 
-	Data.blocksPerBank = nandType->blocksPerBank;
-	Data.banksTotal = NumValidBanks;
-	Data.sectorsPerPage = nandType->sectorsPerPage;
-	Data.userSubBlksTotal = nandType->userSubBlksTotal;
-	Data.bytesPerSpare = nandType->bytesPerSpare;
-	Data.field_2E = 4;
-	Data.field_2F = 3;
-	Data.pagesPerBlock = nandType->pagesPerBlock;
+	Geometry.blocksPerBank = nandType->blocksPerBank;
+	Geometry.banksTotal = NumValidBanks;
+	Geometry.sectorsPerPage = nandType->sectorsPerPage;
+	Geometry.userSuBlksTotal = nandType->userSuBlksTotal;
+	Geometry.bytesPerSpare = nandType->bytesPerSpare;
+	Geometry.field_2E = 4;
+	Geometry.field_2F = 3;
+	Geometry.pagesPerBlock = nandType->pagesPerBlock;
 
-	if(Data.sectorsPerPage > 4) {
+	if(Geometry.sectorsPerPage > 4) {
 		LargePages = TRUE;
 	} else {
 		LargePages = FALSE;
@@ -309,13 +309,13 @@ int nand_setup() {
 
 	if(nandType->ecc1 == 6) {
 		ECCType = 4;
-		TotalECCDataSize = Data.sectorsPerPage * 15;
+		TotalECCDataSize = Geometry.sectorsPerPage * 15;
 	} else if(nandType->ecc1 == 8) {
 		ECCType = 8;
-		TotalECCDataSize = Data.sectorsPerPage * 20;
+		TotalECCDataSize = Geometry.sectorsPerPage * 20;
 	} else if(nandType->ecc1 == 4) {
 		ECCType = 0;
-		TotalECCDataSize = Data.sectorsPerPage * 10;
+		TotalECCDataSize = Geometry.sectorsPerPage * 10;
 	}
 
 	if(nandType->ecc2 == 6) {
@@ -326,46 +326,46 @@ int nand_setup() {
 		ECCType2 = 0;
 	}
 
-	Data.field_4 = 5;
-	Data.bytesPerPage = SECTOR_SIZE * Data.sectorsPerPage;
-	Data.pagesPerBank = Data.pagesPerBlock * Data.blocksPerBank;
-	Data.pagesTotal = Data.pagesPerBank * Data.banksTotal;
-	Data.pagesPerSubBlk = Data.pagesPerBlock * Data.banksTotal;
-	Data.userPagesTotal = Data.userSubBlksTotal * Data.pagesPerSubBlk;
-	Data.subBlksTotal = (Data.banksTotal * Data.blocksPerBank) / Data.banksTotal;
+	Geometry.field_4 = 5;
+	Geometry.bytesPerPage = SECTOR_SIZE * Geometry.sectorsPerPage;
+	Geometry.pagesPerBank = Geometry.pagesPerBlock * Geometry.blocksPerBank;
+	Geometry.pagesTotal = Geometry.pagesPerBank * Geometry.banksTotal;
+	Geometry.pagesPerSuBlk = Geometry.pagesPerBlock * Geometry.banksTotal;
+	Geometry.userPagesTotal = Geometry.userSuBlksTotal * Geometry.pagesPerSuBlk;
+	Geometry.suBlksTotal = (Geometry.banksTotal * Geometry.blocksPerBank) / Geometry.banksTotal;
 
-	Data2.field_2 = Data.subBlksTotal - Data.userSubBlksTotal - 28;
-	Data2.field_0 = Data2.field_2 + 4;
-	Data2.field_4 = Data2.field_2 + 5;
-	Data2.field_6 = 3;
-	Data2.field_8 = 23;
-	if(Data2.field_8 == 0)
-		Data.field_22 = 0;
+	FTLData.field_2 = Geometry.suBlksTotal - Geometry.userSuBlksTotal - 28;
+	FTLData.sysSuBlks = FTLData.field_2 + 4;
+	FTLData.field_4 = FTLData.field_2 + 5;
+	FTLData.field_6 = 3;
+	FTLData.field_8 = 23;
+	if(FTLData.field_8 == 0)
+		Geometry.field_22 = 0;
 
 	int bits = 0;
-	int i = Data2.field_8;
+	int i = FTLData.field_8;
 	while((i <<= 1) != 0) {
 		bits++;
 	}
 
-	Data.field_22 = bits;
+	Geometry.field_22 = bits;
 
-	bufferPrintf("nand: DEVICE: %08x\r\n", Data.DeviceID);
-	bufferPrintf("nand: BANKS_TOTAL: %d\r\n", Data.banksTotal);
-	bufferPrintf("nand: BLOCKS_PER_BANK: %d\r\n", Data.blocksPerBank);
-	bufferPrintf("nand: SUBLKS_TOTAL: %d\r\n", Data.subBlksTotal);
-	bufferPrintf("nand: USER_SUBLKS_TOTAL: %d\r\n", Data.userSubBlksTotal);
-	bufferPrintf("nand: PAGES_PER_SUBLK: %d\r\n", Data.pagesPerSubBlk);
-	bufferPrintf("nand: PAGES_PER_BANK: %d\r\n", Data.pagesPerBank);
-	bufferPrintf("nand: SECTORS_PER_PAGE: %d\r\n", Data.sectorsPerPage);
-	bufferPrintf("nand: BYTES_PER_SPARE: %d\r\n", Data.bytesPerSpare);
-	bufferPrintf("nand: BYTES_PER_PAGE: %d\r\n", Data.bytesPerPage);
-	bufferPrintf("nand: PAGES_PER_BLOCK: %d\r\n", Data.pagesPerBlock);
+	bufferPrintf("nand: DEVICE: %08x\r\n", Geometry.DeviceID);
+	bufferPrintf("nand: BANKS_TOTAL: %d\r\n", Geometry.banksTotal);
+	bufferPrintf("nand: BLOCKS_PER_BANK: %d\r\n", Geometry.blocksPerBank);
+	bufferPrintf("nand: SUBLKS_TOTAL: %d\r\n", Geometry.suBlksTotal);
+	bufferPrintf("nand: USER_SUBLKS_TOTAL: %d\r\n", Geometry.userSuBlksTotal);
+	bufferPrintf("nand: PAGES_PER_SUBLK: %d\r\n", Geometry.pagesPerSuBlk);
+	bufferPrintf("nand: PAGES_PER_BANK: %d\r\n", Geometry.pagesPerBank);
+	bufferPrintf("nand: SECTORS_PER_PAGE: %d\r\n", Geometry.sectorsPerPage);
+	bufferPrintf("nand: BYTES_PER_SPARE: %d\r\n", Geometry.bytesPerSpare);
+	bufferPrintf("nand: BYTES_PER_PAGE: %d\r\n", Geometry.bytesPerPage);
+	bufferPrintf("nand: PAGES_PER_BLOCK: %d\r\n", Geometry.pagesPerBlock);
 
-	aTemporaryReadEccBuf = (uint8_t*) malloc(Data.bytesPerPage);
+	aTemporaryReadEccBuf = (uint8_t*) malloc(Geometry.bytesPerPage);
 	memset(aTemporaryReadEccBuf, 0xFF, SECTOR_SIZE);
 
-	aTemporarySBuf = (uint8_t*) malloc(Data.bytesPerSpare);
+	aTemporarySBuf = (uint8_t*) malloc(Geometry.bytesPerSpare);
 
 	HasNANDInit = TRUE;
 
@@ -508,7 +508,7 @@ static int generateECC(int setting, uint8_t* data, uint8_t* ecc) {
 
 	uint8_t* dataPtr = data;
 	uint8_t* eccPtr = ecc;
-	int sectorsLeft = Data.sectorsPerPage;
+	int sectorsLeft = Geometry.sectorsPerPage;
 
 	while(sectorsLeft > 0) {
 		int toCheck;
@@ -561,7 +561,7 @@ static int checkECC(int setting, uint8_t* data, uint8_t* ecc) {
 
 	uint8_t* dataPtr = data;
 	uint8_t* eccPtr = ecc;
-	int sectorsLeft = Data.sectorsPerPage;
+	int sectorsLeft = Geometry.sectorsPerPage;
 
 	while(sectorsLeft > 0) {
 		int toCheck;
@@ -618,13 +618,13 @@ static int isEmptyBlock(uint8_t* buffer, int size) {
 int nand_erase(int bank, int block) {
 	int pageAddr;
 
-	if(bank >= Data.banksTotal)
+	if(bank >= Geometry.banksTotal)
 		return ERROR_ARG;
 
-	if(block >= Data.blocksPerBank)
+	if(block >= Geometry.blocksPerBank)
 		return ERROR_ARG;
 
-	pageAddr = block * Data.pagesPerBlock;
+	pageAddr = block * Geometry.pagesPerBlock;
 
 	SET_REG(NAND + FMCTRL0,
 		((WEHighHoldTime & FMCTRL_TWH_MASK) << FMCTRL_TWH_SHIFT) | ((WPPulseTime & FMCTRL_TWP_MASK) << FMCTRL_TWP_SHIFT)
@@ -662,10 +662,10 @@ int nand_calculate_ecc(uint8_t* data, uint8_t* ecc) {
 }
 
 int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, int checkBlank) {
-	if(bank >= Data.banksTotal)
+	if(bank >= Geometry.banksTotal)
 		return ERROR_ARG;
 
-	if(page >= Data.pagesPerBank)
+	if(page >= Geometry.pagesPerBank)
 		return ERROR_ARG;
 
 	if(buffer == NULL && spare == NULL)
@@ -688,7 +688,7 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 		SET_REG(NAND + FMADDR1, (page >> 16) & 0xFF); // upper bits of the page number
 
 	} else {
-		SET_REG(NAND + FMADDR0, (page << 16) | Data.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + FMADDR0, (page << 16) | Geometry.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
 		SET_REG(NAND + FMADDR1, (page >> 16) & 0xFF); // upper bits of the page number	
 	}
 
@@ -710,13 +710,13 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 	}
 
 	if(buffer) {
-		if(transferFromFlash(buffer, Data.bytesPerPage) != 0) {
+		if(transferFromFlash(buffer, Geometry.bytesPerPage) != 0) {
 			bufferPrintf("nand: transferFromFlash failed\r\n");
 			goto FIL_read_error;
 		}
 	}
 
-	if(transferFromFlash(aTemporarySBuf, Data.bytesPerSpare) != 0) {
+	if(transferFromFlash(aTemporarySBuf, Geometry.bytesPerSpare) != 0) {
 		bufferPrintf("nand: transferFromFlash for spare failed\r\n");
 		goto FIL_read_error;
 	}
@@ -740,12 +740,12 @@ int nand_read(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC, in
 			// We can only copy the first 12 bytes because the rest is probably changed by the ECC check routine
 			memcpy(spare, aTemporaryReadEccBuf, sizeof(SpareData));
 		} else {
-			memcpy(spare, aTemporarySBuf, Data.bytesPerSpare);
+			memcpy(spare, aTemporarySBuf, Geometry.bytesPerSpare);
 		}
 	}
 
 	if(eccFailed || checkBlank) {
-		if(isEmptyBlock(aTemporarySBuf, Data.bytesPerSpare) != 0) {
+		if(isEmptyBlock(aTemporarySBuf, Geometry.bytesPerSpare) != 0) {
 			return ERROR_EMPTYBLOCK;
 		} else if(eccFailed) {
 			return ERROR_NAND;
@@ -760,10 +760,10 @@ FIL_read_error:
 }
 
 int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC) {
-	if(bank >= Data.banksTotal)
+	if(bank >= Geometry.banksTotal)
 		return ERROR_ARG;
 
-	if(page >= Data.pagesPerBank)
+	if(page >= Geometry.pagesPerBank)
 		return ERROR_ARG;
 
 	if(buffer == NULL && spare == NULL)
@@ -799,7 +799,7 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC) {
 		SET_REG(NAND + FMADDR0, page << 16); // lower bits of the page number to the upper bits of CONFIG3
 		SET_REG(NAND + FMADDR1, (page >> 16) & 0xFF); // upper bits of the page number
 	} else {
-		SET_REG(NAND + FMADDR0, (page << 16) | Data.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
+		SET_REG(NAND + FMADDR0, (page << 16) | Geometry.bytesPerPage); // lower bits of the page number to the upper bits of CONFIG3
 		SET_REG(NAND + FMADDR1, (page >> 16) & 0xFF); // upper bits of the page number	
 	}
 
@@ -810,13 +810,13 @@ int nand_write(int bank, int page, uint8_t* buffer, uint8_t* spare, int doECC) {
 	}
 
 	if(buffer) {
-		if(transferToFlash(buffer, Data.bytesPerPage) != 0) {
+		if(transferToFlash(buffer, Geometry.bytesPerPage) != 0) {
 			bufferPrintf("nand: transferToFlash failed\r\n");
 			goto FIL_write_error;
 		}
 	}
 
-	if(transferToFlash(aTemporarySBuf, Data.bytesPerSpare) != 0) {
+	if(transferToFlash(aTemporarySBuf, Geometry.bytesPerSpare) != 0) {
 		bufferPrintf("nand: transferToFlash for spare failed\r\n");
 		goto FIL_write_error;
 	}
@@ -839,11 +839,11 @@ FIL_write_error:
 }
 
 NANDData* nand_get_geometry() {
-	return &Data;
+	return &Geometry;
 }
 
-UnknownNANDType* nand_get_data() {
-	return &Data2;
+NANDFTLData* nand_get_ftl_data() {
+	return &FTLData;
 }
 
 int nand_read_multiple(uint16_t* bank, uint32_t* pages, uint8_t* main, SpareData* spare, int pagesCount) {
@@ -854,7 +854,7 @@ int nand_read_multiple(uint16_t* bank, uint32_t* pages, uint8_t* main, SpareData
 		if(ret > 1)
 			return ret;
 
-		main += Data.bytesPerPage;
+		main += Geometry.bytesPerPage;
 	}
 
 	return 0;

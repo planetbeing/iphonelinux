@@ -6,16 +6,23 @@
 #define ERROR_INPUT 0x80030000
 
 typedef struct VFLCxt {
-	uint32_t field_0;				// 0x000
-	uint16_t field_4[3];				// 0x004
-	uint8_t unk1[0x10];				// 0x00A
+	uint32_t usnInc;				// 0x000
+	uint16_t FTLCtrlBlock[3];			// 0x004
+	uint8_t unk1[2];				// 0x00A
+	uint32_t usnDec;				// 0x00C
+	uint16_t activecxtblock;			// 0x010
+	uint16_t nextcxtpage;				// 0x012
+	uint8_t unk2[2];				// 0x014
+	uint16_t field_16;				// 0x016
+	uint16_t field_18;				// 0x018
 	uint16_t numReservedBlocks;			// 0x01A
 	uint16_t reservedBlockPoolStart;		// 0x01C
-	uint16_t field_1E;				// 0x01E
+	uint16_t totalReservedBlocks;			// 0x01E
 	uint16_t reservedBlockPoolMap[0x334];		// 0x020
 	uint8_t badBlockTable[0x11a];			// 0x688
 	uint16_t VFLCxtBlock[4];			// 0x7A2
-	uint8_t unk3[0x4E];				// 0x7AA
+	uint16_t remappingScheduledStart;		// 0x7AA
+	uint8_t unk3[0x4C];				// 0x7AC
 	uint32_t checksum1;				// 0x7F8
 	uint32_t checksum2;				// 0x7FC
 } VFLCxt;
@@ -36,14 +43,13 @@ typedef struct FTLCxtElement2 {
 } FTLCxtElement2;
 
 typedef struct FTLCxt {
-	uint32_t unk0;					// 0x0
-	uint32_t unk1;					// 0x4
+	uint32_t usnDec;				// 0x0
+	uint32_t nextblockusn;				// 0x4
 	uint16_t wNumOfFreeVb;				// 0x8
-	uint16_t wUnk2;					// 0xA
-	uint16_t wUnk3;					// 0xC
-	uint16_t awUnkBlockList1[4];			// 0xE
-	uint16_t awFreeVb[10];				// 0x16
-	uint16_t awUnkBlockList2[7];			// 0x2A
+	uint16_t nextFreeIdx;				// 0xA
+	uint16_t swapCounter;				// 0xC
+	uint16_t awFreeVb[20];				// 0xE
+	uint16_t field_36;				// 0x36
 	uint32_t pages_for_pawMapTable[18];		// 0x38
 	uint32_t pages_for_pawEraseCounterTable[36];	// 0x80
 	uint32_t pages_for_wPageOffsets[34];		// 0x110
@@ -51,11 +57,11 @@ typedef struct FTLCxt {
 	uint16_t* pawEraseCounterTable;			// 0x19C
 	uint16_t* wPageOffsets;				// 0x1A0
 	FTLCxtLog pLog[18];				// 0x1A4
-	uint32_t unk2;					// 0x30C
+	uint32_t eraseCounterPagesDirty;		// 0x30C
 	uint16_t unk3;					// 0x310
-	uint16_t thing[3];				// 0x312
-	uint32_t page_318;				// 0x318
-	uint32_t field_31C;				// 0x31C
+	uint16_t FTLCtrlBlock[3];			// 0x312
+	uint32_t FTLCtrlPage;				// 0x318
+	uint32_t clean;					// 0x31C
 	uint32_t pages_for_pawReadCounterTable[36];	// 0x320
 	uint16_t* pawReadCounterTable;			// 0x3B0
 	FTLCxtElement2 elements2[5];			// 0x3B4
@@ -111,5 +117,6 @@ int VFL_Erase(uint16_t block);
 int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf);
 int ftl_read(void* buffer, uint64_t offset, int size);
 void ftl_printdata();
+int ftl_commit_cxt();
 
 #endif
