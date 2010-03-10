@@ -259,7 +259,7 @@ static int vfl_store_cxt(int bank)
 		uint32_t index = pstVFLCxt[bank].activecxtblock;
 		uint32_t block = pstVFLCxt[bank].VFLCxtBlock[index];
 		uint32_t page = block * Geometry->pagesPerBlock;
-		page += pstVFLCxt[bank].nextcxtpage + i;
+		page += pstVFLCxt[bank].nextcxtpage - 8 + i;
 		nand_write(bank, page, (uint8_t*) &pstVFLCxt[bank], (uint8_t*) spareData, TRUE);
 	}
 
@@ -269,7 +269,7 @@ static int vfl_store_cxt(int bank)
 		uint32_t index = pstVFLCxt[bank].activecxtblock;
 		uint32_t block = pstVFLCxt[bank].VFLCxtBlock[index];
 		uint32_t page = block * Geometry->pagesPerBlock;
-		page += pstVFLCxt[bank].nextcxtpage + i;
+		page += pstVFLCxt[bank].nextcxtpage - 8 + i;
 		if(nand_read(bank, page, pageBuffer, (uint8_t*) spareData, TRUE, TRUE) != 0)
 			continue;
 
@@ -790,7 +790,6 @@ static int VFL_Open() {
 		vfl_gen_checksum(bank);
 	}
 
-	bufferPrintf("ftl: VFL usnInc: 0x%x, usnDec: 0x%x\r\n", pstVFLCxt->usnInc, pstVFLCxt->usnDec);
 	return 0;
 }
 
@@ -1422,11 +1421,40 @@ int ftl_commit_cxt()
 		return ERROR_ARG;
 	}
 
+	// We need to precalculate how many pages we'd need to write to determine if we should start a new block.
+
+	int eraseCounterPages;
+	int readCounterPages;
+	int mapPages;
+	int offsetsPages;
+
+	eraseCounterPages = ((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) / Geometry->bytesPerPage;
+	if((((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) % Geometry->bytesPerPage) != 0)
+		eraseCounterPages++;
+
+	readCounterPages = eraseCounterPages;
+	
+	mapPages = (Geometry->userSuBlksTotal * sizeof(uint16_t)) / Geometry->bytesPerPage;
+	if(((Geometry->userSuBlksTotal * sizeof(uint16_t)) % Geometry->bytesPerPage) != 0)
+		mapPages++;
+
+	offsetsPages = (Geometry->pagesPerSuBlk * (17 * sizeof(uint16_t))) / Geometry->bytesPerPage;
+	if(((Geometry->pagesPerSuBlk * (17 * sizeof(uint16_t))) % Geometry->bytesPerPage) != 0)
+		offsetsPages++;
+
+	int totalPages = eraseCounterPages + readCounterPages + mapPages + offsetsPages + 1 /* for the SID */ + 1 /* for FTLCxt */;
+
+	uint16_t curBlock = pstFTLCxt->FTLCtrlPage / Geometry->pagesPerSuBlk;
+	if((pstFTLCxt->FTLCtrlPage + totalPages) >= ((curBlock * Geometry->pagesPerSuBlk) + Geometry->pagesPerSuBlk))
+	{
+		// looks like we would be overflowing into the next block, force the next ctrl page to be on a fresh
+		// block in that case
+		pstFTLCxt->FTLCtrlPage = (curBlock * Geometry->pagesPerSuBlk) + Geometry->pagesPerSuBlk - 1;
+	}
+
 	int pagesToWrite;
 
-	pagesToWrite = ((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) / Geometry->bytesPerPage;
-	if((((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) % Geometry->bytesPerPage) != 0)
-		pagesToWrite++;
+	pagesToWrite = eraseCounterPages;
 
 	for(i = 0; i < pagesToWrite; i++) {
 		if(!ftl_next_ctrl_page())
@@ -1454,9 +1482,7 @@ int ftl_commit_cxt()
 			goto ftl_commit_cxt_error_release;
 	}
 
-	pagesToWrite = ((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) / Geometry->bytesPerPage;
-	if((((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) % Geometry->bytesPerPage) != 0)
-		pagesToWrite++;
+	pagesToWrite = readCounterPages;
 
 	for(i = 0; i < pagesToWrite; i++) {
 		if(!ftl_next_ctrl_page())
@@ -1484,9 +1510,7 @@ int ftl_commit_cxt()
 			goto ftl_commit_cxt_error_release;
 	}
 
-	pagesToWrite = (Geometry->userSuBlksTotal * sizeof(uint16_t)) / Geometry->bytesPerPage;
-	if(((Geometry->userSuBlksTotal * sizeof(uint16_t)) % Geometry->bytesPerPage) != 0)
-		pagesToWrite++;
+	pagesToWrite = mapPages;
 
 	for(i = 0; i < pagesToWrite; i++) {
 		if(!ftl_next_ctrl_page())
@@ -1514,9 +1538,7 @@ int ftl_commit_cxt()
 			goto ftl_commit_cxt_error_release;
 	}
 
-	pagesToWrite = (Geometry->pagesPerSuBlk * (17 * sizeof(uint16_t))) / Geometry->bytesPerPage;
-	if(((Geometry->pagesPerSuBlk * (17 * sizeof(uint16_t))) % Geometry->bytesPerPage) != 0)
-		pagesToWrite++;
+	pagesToWrite = offsetsPages;
 
 	for(i = 0; i < pagesToWrite; i++) {
 		if(!ftl_next_ctrl_page())
