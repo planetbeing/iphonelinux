@@ -36,7 +36,7 @@ typedef struct SpareData {
 	union {
 		struct {
 			uint32_t logicalPageNumber;
-			uint8_t field_4;
+			uint8_t usn;
 			uint8_t field_5;
 			uint8_t field_6;
 			uint8_t field_7;

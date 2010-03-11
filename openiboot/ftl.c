@@ -15,6 +15,7 @@ static NANDFTLData* FTLData;
 static int vfl_commit_cxt(int bank);
 static int ftl_set_free_vb(uint16_t block);
 static int ftl_get_free_vb(uint16_t* block);
+static int ftl_merge(FTLCxtLog* pLog);
 
 static int findDeviceInfoBBT(int bank, void* deviceInfoBBT) {
 	uint8_t* buffer = malloc(Geometry->bytesPerPage);
@@ -103,7 +104,7 @@ static int VFL_Init() {
 	return 0;
 }
 
-static FTLData1Type FTLData1;
+static FTLCountsTableType FTLCountsTable;
 static FTLCxt* pstFTLCxt;
 static FTLCxt* FTLCxtBuffer;
 static SpareData* FTLSpareBuffer;
@@ -146,7 +147,7 @@ static int FTL_Init() {
 		return -1;
 	}
 
-	memset(&FTLData1, 0, 0x58);
+	memset(&FTLCountsTable, 0, 0x58);
 
 	if(pstFTLCxt == NULL) {
 		pstFTLCxt = FTLCxtBuffer = (FTLCxt*) malloc(sizeof(FTLCxt));
@@ -178,9 +179,9 @@ static int FTL_Init() {
 	for(i = 0; i < 18; i++) {
 		pstFTLCxt->pLog[i].wPageOffsets = pstFTLCxt->wPageOffsets + (i * Geometry->pagesPerSuBlk);
 		memset(pstFTLCxt->pLog[i].wPageOffsets, 0xFF, Geometry->pagesPerSuBlk * 2);
-		pstFTLCxt->pLog[i].field_10 = 1;
-		pstFTLCxt->pLog[i].field_C = 0;
-		pstFTLCxt->pLog[i].field_E = 0;
+		pstFTLCxt->pLog[i].isSequential = 1;
+		pstFTLCxt->pLog[i].pagesUsed = 0;
+		pstFTLCxt->pLog[i].pagesCurrent = 0;
 	}
 
 	return 0;
@@ -846,7 +847,7 @@ static int ftl_get_free_vb(uint16_t* block)
 		return FALSE;
 	}
 
-	uint16_t chosenVb = pstFTLCxt->awFreeVb[pstFTLCxt->nextFreeIdx];
+	uint16_t chosenVb = pstFTLCxt->awFreeVb[chosenVbIdx];
 
 	if(chosenVbIdx != pstFTLCxt->nextFreeIdx)
 	{
@@ -961,9 +962,9 @@ static int FTL_Restore() {
 
 static int FTL_GetStruct(FTLStruct type, void** data, int* size) {
 	switch(type) {
-		case FTLData1SID:
-			*data = &FTLData1;
-			*size = sizeof(FTLData1);
+		case FTLCountsTableSID:
+			*data = &FTLCountsTable;
+			*size = sizeof(FTLCountsTable);
 			return TRUE;
 		default:
 			return FALSE;
@@ -988,7 +989,7 @@ static int VFL_GetStruct(FTLStruct type, void** data, int* size) {
 static int sum_data(uint8_t* pageBuffer) {
 	void* data;
 	int size;
-	FTL_GetStruct(FTLData1SID, &data, &size);
+	FTL_GetStruct(FTLCountsTableSID, &data, &size);
 	FTL_64bit_sum((uint64_t*)pageBuffer, (uint64_t*)data, size);
 	VFL_GetStruct(VFLData1SID, &data, &size);
 	FTL_64bit_sum((uint64_t*)(pageBuffer + 0x200), (uint64_t*)data, size);
@@ -1168,10 +1169,10 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 			memcpy(((uint8_t*)pstFTLCxt->pawReadCounterTable) + (i * Geometry->bytesPerPage), pageBuffer, toRead);	
 		}
 
-		if((pstFTLCxt->field_3D4 + 1) == 0) {
-			int x = pstFTLCxt->page_3D0 / Geometry->pagesPerSuBlk;
+		if((pstFTLCxt->hasFTLCountsTable + 1) == 0) {
+			int x = pstFTLCxt->page_for_FTLCountsTable / Geometry->pagesPerSuBlk;
 			if(x == 0 || x <= Geometry->userSuBlksTotal) {
-				if(VFL_Read(pstFTLCxt->page_3D0, pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
+				if(VFL_Read(pstFTLCxt->page_for_FTLCountsTable, pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
 					goto FTL_Open_Error_Release;
 
 				sum_data(pageBuffer);
@@ -1229,12 +1230,26 @@ uint32_t FTL_map_page(FTLCxtLog* pLog, int lbn, int offset) {
 	return (pstFTLCxt->pawMapTable[lbn] * Geometry->pagesPerSuBlk) + offset;
 }
 
+static inline FTLCxtLog* ftl_get_log(uint16_t lbn)
+{
+	int i;
+	for(i = 0; i < 17; i++) {
+		if(pstFTLCxt->pLog[i].wVbn == 0xFFFF)
+			continue;
+
+		if(pstFTLCxt->pLog[i].wLbn == lbn) {
+			return &pstFTLCxt->pLog[i];
+		}
+	}
+	return NULL;
+}
+
 int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf) {
 	int i;
 	int hasError = FALSE;
 
-	FTLData1.field_8 += totalPagesToRead;
-	FTLData1.field_18++;
+	FTLCountsTable.totalPagesRead += totalPagesToRead;
+	++FTLCountsTable.totalReads;
 	pstFTLCxt->totalReadCount++;
 
 	if(!pBuf) {
@@ -1256,16 +1271,7 @@ int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf) {
 		return ERROR_ARG;
 	}
 
-	FTLCxtLog* pLog = NULL;
-	for(i = 0; i < 17; i++) {
-		if(pstFTLCxt->pLog[i].wVbn == 0xFFFF)
-			continue;
-
-		if(pstFTLCxt->pLog[i].wLbn == lbn) {
-			pLog = &pstFTLCxt->pLog[i];
-			break;
-		}
-	}
+	FTLCxtLog* pLog = ftl_get_log(lbn);
 
 	int ret = 0;
 	int pagesRead = 0;
@@ -1379,13 +1385,7 @@ int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf) {
 				if(lbn >= Geometry->userSuBlksTotal)
 					goto FTL_Read_Error_Release;
 
-				pLog = NULL;
-				for(i = 0; i < 17; i++) {
-					if(pstFTLCxt->pLog[i].wVbn != 0xFFFF && pstFTLCxt->pLog[i].wLbn == lbn) {
-						pLog = &pstFTLCxt->pLog[i];
-						break;
-					}
-				}
+				pLog = ftl_get_log(lbn);
 
 				offset = 0;
 				break;
@@ -1573,15 +1573,15 @@ int ftl_commit_cxt()
 			goto ftl_commit_cxt_error_release;
 		}
 
-		pstFTLCxt->page_3D0 = pstFTLCxt->FTLCtrlPage;
-		pstFTLCxt->field_3D4 = 0xFFFFFFFF;
+		pstFTLCxt->page_for_FTLCountsTable = pstFTLCxt->FTLCtrlPage;
+		pstFTLCxt->hasFTLCountsTable = 0xFFFFFFFF;
 
 		void* data;
 		int size;
 
 		memset(pageBuffer, 0, Geometry->bytesPerPage);
 
-		FTL_GetStruct(FTLData1SID, &data, &size);
+		FTL_GetStruct(FTLCountsTableSID, &data, &size);
 		memcpy(pageBuffer, data, size);
 		VFL_GetStruct(VFLData1SID, &data, &size);
 		memcpy(pageBuffer + 0x200, data, size);
@@ -1596,7 +1596,7 @@ int ftl_commit_cxt()
 		spareData->type1 = 0x47;
 		spareData->meta.idx = 0;
 
-		if(VFL_Write(pstFTLCxt->page_3D0, pageBuffer, (uint8_t*) spareData) != 0)
+		if(VFL_Write(pstFTLCxt->page_for_FTLCountsTable, pageBuffer, (uint8_t*) spareData) != 0)
 			goto ftl_commit_cxt_error_release;
 	}
 
@@ -1626,6 +1626,768 @@ ftl_commit_cxt_error_release:
 	free(spareData);
 
 	return FALSE;
+}
+
+static int ftl_mark_unclean()
+{
+	uint8_t* pageBuffer = (uint8_t*) malloc(Geometry->bytesPerPage);
+	uint8_t* spareBuffer = (uint8_t*) malloc(Geometry->bytesPerSpare);
+	if(!pageBuffer || !spareBuffer) {
+		bufferPrintf("ftl: ftl_mark_unclean: out of memory\r\n");
+		return FALSE;
+	}
+
+	if(!pstFTLCxt->clean)
+		return TRUE;
+
+	int i;
+	for(i = 0; i < 3; ++i)
+	{
+		if(!ftl_next_ctrl_page())
+		{
+			bufferPrintf("ftl: ftl_mark_unclean: could not get a ctrl page\r\n");
+			goto error_release;
+		}
+
+		memset(pageBuffer, 0xFF, Geometry->bytesPerPage);
+		((SpareData*)spareBuffer)->type1 = 0x4F;
+
+		if(VFL_Write(pstFTLCxt->FTLCtrlPage, pageBuffer, spareBuffer) == 0)
+		{
+			pstFTLCxt->clean = 0;
+			free(pageBuffer);
+			free(spareBuffer);
+			return TRUE;
+		}
+
+		// have an error, try again on the next block.
+		uint16_t block = pstFTLCxt->FTLCtrlPage / Geometry->pagesPerSuBlk;
+		pstFTLCxt->FTLCtrlPage = (block * Geometry->pagesPerSuBlk) + Geometry->pagesPerSuBlk - 1;	
+	}
+
+	bufferPrintf("ftl: ftl_mark_unclean failed!\r\n");
+
+error_release:
+	free(pageBuffer);
+	free(spareBuffer);
+	return FALSE;
+}
+
+static FTLCxtLog* ftl_prepare_log(uint16_t lbn)
+{
+	FTLCxtLog* pLog = ftl_get_log(lbn);
+
+	if(pLog == NULL)
+	{
+		int i;
+		for(i = 0; i < 17; ++i)
+		{
+			if((pstFTLCxt->pLog[i].wVbn != 0xFFFF) && (pstFTLCxt->pLog[i].pagesUsed == 0))
+			{
+				pLog = &pstFTLCxt->pLog[i];
+				break;
+			}
+		}
+
+		if(pLog == NULL)
+		{
+			if(pstFTLCxt->wNumOfFreeVb < 3)
+			{
+				bufferPrintf("ftl: prepare_log WARNING: Pool block leak detected!\r\n");
+				return NULL;
+			} else if(pstFTLCxt->wNumOfFreeVb == 3)
+			{
+				if(!ftl_merge(NULL))
+				{
+					bufferPrintf("ftl: block merged failed!\r\n");
+					return NULL;
+				}
+			}
+
+			for(i = 0; i < 17; ++i)
+			{
+				if(pstFTLCxt->pLog[i].wVbn == 0xFFFF)
+				       break;
+			}
+
+			pLog = &pstFTLCxt->pLog[i];
+
+			if(!ftl_get_free_vb(&pLog->wVbn))
+			{
+				bufferPrintf("ftl: prepare_log could not get free vb\r\n");
+				return NULL;
+			}
+		}
+
+		memset(pLog->wPageOffsets, 0xFF, Geometry->pagesPerSuBlk * sizeof(uint16_t));
+		pLog->wLbn = lbn;
+		pLog->pagesUsed = 0;
+		pLog->pagesCurrent = 0;
+		pLog->isSequential = 1;
+	}
+
+	pLog->usn = pstFTLCxt->nextblockusn - 1;
+
+	if(pstFTLCxt->nextblockusn == 1)
+		memset(pstFTLCxt->pLog, 0, sizeof(FTLCxtLog) * 17);
+
+	return pLog;
+}
+
+static inline void ftl_check_still_sequential(FTLCxtLog* pLog, uint32_t page)
+{
+	if((pLog->pagesUsed != pLog->pagesCurrent) || (pLog->wPageOffsets[page] != page))
+		pLog->isSequential = 0;
+}
+
+static int ftl_copy_page(uint32_t src, uint32_t dest, uint32_t lpn, uint32_t isSequential)
+{
+	uint8_t* pageBuffer = malloc(Geometry->bytesPerPage);
+	SpareData* spareData = (SpareData*) malloc(Geometry->bytesPerSpare);
+
+	int ret = VFL_Read(src, pageBuffer, (uint8_t*) spareData, TRUE, NULL);
+
+	memset(spareData, 0xFF, Geometry->bytesPerSpare);
+	
+	if(ret == ERROR_EMPTYBLOCK)
+		memset(pageBuffer, 0, Geometry->bytesPerPage);
+	else if(ret != 0)
+		spareData->eccMark = 0x55;
+
+	// FIXME: In CPICH, not all uses of this seem to increment this value. Find out whose fail it is.
+	// Incrementing shouldn't hurt, though.
+	spareData->user.usn = ++pstFTLCxt->nextblockusn;
+	spareData->user.logicalPageNumber = lpn;
+
+	// This isn't always done either
+	if(isSequential == 1 && ((dest % Geometry->pagesPerSuBlk) == (Geometry->pagesPerSuBlk - 1)))
+		spareData->type1 = 0x41;
+	else
+		spareData->type1 = 0x40;
+
+	ret = VFL_Write(dest, pageBuffer, (uint8_t*) spareData);
+	if(ret != 0)
+		goto error_release;
+
+	free(pageBuffer);
+	free(spareData);
+	return TRUE;
+
+error_release:
+	free(pageBuffer);
+	free(spareData);
+
+	return FALSE;
+}
+
+static int ftl_copy_block(uint16_t lSrc, uint16_t vDest)
+{
+	int error = FALSE;
+	uint8_t* pageBuffer = malloc(Geometry->bytesPerPage);
+	SpareData* spareData = (SpareData*) malloc(Geometry->bytesPerSpare);
+
+	++pstFTLCxt->nextblockusn;
+
+	int i;
+	for(i = 0; i < Geometry->pagesPerSuBlk; ++i)
+	{
+		int ret = FTL_Read(lSrc * Geometry->pagesPerSuBlk + i, 1, pageBuffer);
+		memset(spareData, 0xFF, Geometry->bytesPerSpare);
+		if(ret)
+			spareData->eccMark = 0x55;
+
+		spareData->user.logicalPageNumber = lSrc * Geometry->pagesPerSuBlk + i;
+		spareData->user.usn = pstFTLCxt->nextblockusn;
+		if(i == (Geometry->pagesPerSuBlk - 1))
+			spareData->type1 = 0x41;
+		else
+			spareData->type1 = 0x40;
+
+		if(VFL_Write(vDest * Geometry->pagesPerSuBlk + i, pageBuffer, (uint8_t*) spareData) != 0)
+		{
+			error = TRUE;
+			break;
+		}
+	}
+
+	if(error)
+	{
+		++pstFTLCxt->pawEraseCounterTable[vDest];
+		pstFTLCxt->pawReadCounterTable[vDest] = 0;
+
+		if(VFL_Erase(vDest) != 0)
+		{
+			bufferPrintf("ftl: ftl_copy_block failed to erase after failure!\r\n");
+			goto error_release;
+		}
+
+		bufferPrintf("ftl: ftl_copy_block failed!\r\n");
+		goto error_release;
+	}
+
+	free(pageBuffer);
+	free(spareData);
+	return TRUE;
+
+error_release:
+	free(pageBuffer);
+	free(spareData);
+
+	return FALSE;
+}
+
+static int ftl_compact_scattered(FTLCxtLog* pLog)
+{
+	++FTLCountsTable.compactScatteredCount;
+
+	if(pLog->pagesCurrent == 0)
+	{
+		// nothing useful in here, just release it.
+		if(!ftl_set_free_vb(pLog->wVbn))
+		{
+			bufferPrintf("ftl: ftl_compact_scattered cannot release vb!\r\n");
+		}
+
+		pLog->wVbn = 0xFFFF;
+		++pstFTLCxt->swapCounter;
+		return TRUE;
+	}
+
+	// make a backup
+	pstFTLCxt->pLog[17].usn  = pLog->usn;
+	pstFTLCxt->pLog[17].wVbn  = pLog->wVbn;
+	pstFTLCxt->pLog[17].wLbn  = pLog->wLbn;
+	pstFTLCxt->pLog[17].pagesUsed  = pLog->pagesUsed;
+	pstFTLCxt->pLog[17].pagesCurrent  = pLog->pagesCurrent;
+	pstFTLCxt->pLog[17].isSequential  = pLog->isSequential;
+
+	memcpy(pstFTLCxt->pLog[17].wPageOffsets, pLog->wPageOffsets, Geometry->pagesPerSuBlk); 
+
+	int error = FALSE;
+	
+	int i;
+	for(i = 0; i < 4; ++i)
+	{
+		uint16_t newBlock;
+		if(!ftl_get_free_vb(&newBlock))
+		{
+			bufferPrintf("ftl: ftl_compact_scattered ran out of free vb!\r\n");
+			goto error_release;
+		}
+
+		pLog->pagesUsed = 0;
+		pLog->pagesCurrent = 0;
+		pLog->isSequential = 1;
+		pLog->wVbn = newBlock;
+
+		int page;
+		for(page = 0; page < Geometry->pagesPerSuBlk; ++page)
+		{
+			if(pLog->wPageOffsets[page] != 0xFFFF)
+			{
+				uint32_t lpn = pLog->wLbn * Geometry->pagesPerSuBlk + page;
+				uint32_t newPage = newBlock * Geometry->pagesPerSuBlk + pLog->pagesUsed;
+				uint32_t oldPage = pstFTLCxt->pLog[17].wVbn * Geometry->pagesPerSuBlk + pLog->wPageOffsets[page];
+				if(!ftl_copy_page(oldPage, newPage, lpn, pLog->isSequential))
+				{
+					error = TRUE;
+					break;
+				}
+				pLog->wPageOffsets[page] = pLog->pagesUsed++;
+				++pLog->pagesCurrent;
+				ftl_check_still_sequential(pLog, page);
+			}
+		}
+
+		if(pstFTLCxt->pLog[17].pagesCurrent != pLog->pagesCurrent)
+			error = TRUE;
+
+		if(!error)
+		{
+			if(!ftl_set_free_vb(pstFTLCxt->pLog[17].wVbn))
+			{
+				bufferPrintf("ftl: ftl_compact_scattered could not set old Vb free!\r\n");
+				goto error_release;
+			}
+
+			return TRUE;
+		}
+
+		if(!ftl_set_free_vb(pLog->wVbn))
+		{
+			bufferPrintf("ftl: ftl_compact_scattered could not set failed Vb free!\r\n");
+			// better just to continue anyway
+		}
+
+		// restore the backup
+		pLog->usn = pstFTLCxt->pLog[17].usn;
+		pLog->wVbn = pstFTLCxt->pLog[17].wVbn;
+		pLog->wLbn = pstFTLCxt->pLog[17].wLbn;
+		pLog->pagesUsed = pstFTLCxt->pLog[17].pagesUsed;
+		pLog->pagesCurrent = pstFTLCxt->pLog[17].pagesCurrent;
+		pLog->isSequential = pstFTLCxt->pLog[17].isSequential;
+
+		memcpy(pLog->wPageOffsets, pstFTLCxt->pLog[17].wPageOffsets, Geometry->pagesPerSuBlk); 
+	}
+
+error_release:
+	return FALSE;
+}
+
+static int ftl_simple_merge(FTLCxtLog* pLog)
+{
+	int i;
+	int error = FALSE;
+	uint16_t block;
+
+	++FTLCountsTable.simpleMergeCount;
+
+	for(i = 0; i < 4; ++i)
+	{
+		if(!ftl_get_free_vb(&block))
+		{
+			bufferPrintf("ftl: ftl_simple_merge can't get free vb!\r\n");
+			return FALSE;
+		}
+
+		if(ftl_copy_block(pLog->wLbn, block))
+		{
+			error = FALSE;
+			break;
+		}
+
+		error = TRUE;
+		if(!ftl_set_free_vb(block))
+		{
+			bufferPrintf("ftl: ftl_simple_merge can't set free vb after failure!\r\n");
+			return FALSE;
+		}
+	}
+
+	if(error)
+	{
+		bufferPrintf("ftl: ftl_simple_merge failed!\r\n");
+		return FALSE;
+	}
+
+	if(!ftl_set_free_vb(pLog->wVbn))
+	{
+			bufferPrintf("ftl: ftl_simple_merge can't set free scatter vb!\r\n");
+			return FALSE;
+	}
+
+	pLog->wVbn = 0xFFFF;
+
+	if(!ftl_set_free_vb(pstFTLCxt->pawMapTable[pLog->wLbn]))
+	{
+			bufferPrintf("ftl: ftl_simple_merge can't set free map vb!\r\n");
+			return FALSE;
+	}
+
+	pstFTLCxt->pawMapTable[pLog->wLbn] = block;
+
+	return TRUE;
+}
+
+static int ftl_copy_merge(FTLCxtLog* pLog)
+{
+	if((pLog->isSequential != 1) || (pLog->pagesCurrent != pLog->pagesUsed))
+	{
+		bufferPrintf("ftl: attempted ftl_copy_merge on non-sequential scatter block!\r\n");
+		return FALSE;
+	}
+
+	if(pLog->pagesUsed >= Geometry->pagesPerSuBlk)
+		++FTLCountsTable.copyMergeWhileFullCount;
+	else
+		++FTLCountsTable.copyMergeWhileNotFullCount;
+
+	for(; pLog->pagesUsed < Geometry->pagesPerSuBlk; ++pLog->pagesUsed)
+	{
+		uint32_t lpn = pLog->wLbn * Geometry->pagesPerSuBlk  + pLog->pagesUsed;
+		uint32_t newPage = pLog->wVbn * Geometry->pagesPerSuBlk + pLog->pagesUsed;
+		uint32_t oldPage = pstFTLCxt->pawMapTable[pLog->wLbn] * Geometry->pagesPerSuBlk + pLog->pagesUsed;
+
+		// wtf, this isn't really all sequential!
+		if(pLog->wPageOffsets[pLog->pagesUsed] != 0xFFFF)
+			return ftl_simple_merge(pLog);
+
+		// try the simple merge if this fails
+		if(!ftl_copy_page(oldPage, newPage, lpn, 1))
+			return ftl_simple_merge(pLog);
+	}
+
+	if(!ftl_set_free_vb(pstFTLCxt->pawMapTable[pLog->wLbn]))
+	{
+			bufferPrintf("ftl: ftl_copy_merge can't set free map vb!\r\n");
+			return FALSE;
+	}
+
+	// replace it with our now completed block
+	pstFTLCxt->pawMapTable[pLog->wLbn] = pLog->wVbn;
+
+	// set this log block as free
+	pLog->wVbn = 0xFFFF;
+
+	return TRUE;
+}
+
+static int ftl_merge(FTLCxtLog* pLog)
+{
+	if(!ftl_mark_unclean())
+	{
+		bufferPrintf("ftl: merge failed - cannot open new mark context\r\n");
+		return FALSE;
+	}
+
+	uint32_t oldest = 0xFFFFFFFF;
+	uint32_t mostCurrent = 0;
+	if(pLog == NULL)
+	{
+		int i;
+
+		// find one to swap out
+		for(i = 0; i < 17; ++i)
+		{
+			if(pstFTLCxt->pLog[i].wVbn == 0xFFFF)
+				continue;
+			
+			if(pstFTLCxt->pLog[i].pagesUsed == 0 || pstFTLCxt->pLog[i].pagesCurrent == 0)
+			{
+				bufferPrintf("ft: merge error - we still have logs that can be used instead!\r\n");
+				return FALSE;
+			}
+
+			if(pstFTLCxt->pLog[i].usn < oldest || (pstFTLCxt->pLog[i].usn == oldest && pstFTLCxt->pLog[i].pagesCurrent > mostCurrent))
+			{
+				pLog = &pstFTLCxt->pLog[i];
+				oldest = pstFTLCxt->pLog[i].usn;
+				mostCurrent = pstFTLCxt->pLog[i].pagesCurrent;
+			}
+		}
+
+		if(pLog == NULL)
+			return FALSE;
+	} else if(pLog->pagesCurrent < (Geometry->pagesPerSuBlk / 2))
+	{
+		// less than half the pages in this log seems to be current, let's get rid of the crap and just reuse this one.
+
+		++pstFTLCxt->swapCounter;
+		return ftl_compact_scattered(pLog);
+	}
+
+	if(pLog->isSequential == 1)
+	{
+		if(!ftl_copy_merge(pLog))
+		{
+			bufferPrintf("ftl: simple merge failed\r\n");
+			return FALSE;
+		}
+		++pstFTLCxt->swapCounter;
+		return TRUE;
+	}
+	else
+	{
+		if(!ftl_simple_merge(pLog))
+		{
+			bufferPrintf("ftl: simple merge failed\r\n");
+			return FALSE;
+		}
+		++pstFTLCxt->swapCounter;
+		return TRUE;
+	}
+}
+
+int ftl_auto_wearlevel()
+{
+	int i;
+	uint16_t smallestEraseCount = 0xFFFF;
+	uint16_t leastErasedBlock = 0;
+	uint16_t leastErasedBlockLbn = 0;
+	uint16_t largestEraseCount = 0;
+	uint16_t mostErasedFreeBlock = 0;
+	uint16_t mostErasedFreeBlockIdx = 20;
+
+	if(!ftl_mark_unclean())
+	{
+		bufferPrintf("ftl: auto wearlevel failed due to mark_unclean failure\r\n");
+		return FALSE;
+	}
+
+	for(i = 0; i < pstFTLCxt->wNumOfFreeVb; ++i)
+	{
+		int idx = (pstFTLCxt->nextFreeIdx + i) % 20;
+
+		if(pstFTLCxt->awFreeVb[idx] == 0xFFFF)
+			continue;
+
+		if((mostErasedFreeBlockIdx == 20) || pstFTLCxt->pawEraseCounterTable[pstFTLCxt->awFreeVb[idx]] > largestEraseCount)
+		{
+			mostErasedFreeBlockIdx = idx;
+			mostErasedFreeBlock = pstFTLCxt->awFreeVb[idx];
+			largestEraseCount = pstFTLCxt->pawEraseCounterTable[mostErasedFreeBlock];
+		}
+	}
+
+	for(i = 0; i < Geometry->userSuBlksTotal; ++i)
+	{
+		if(pstFTLCxt->pawEraseCounterTable[pstFTLCxt->pawMapTable[i]] > largestEraseCount)
+			largestEraseCount = pstFTLCxt->pawEraseCounterTable[pstFTLCxt->pawMapTable[i]];
+
+		// don't swap stuff with log blocks attached
+		if(ftl_get_log(i) != NULL)
+			continue;
+
+		if(pstFTLCxt->pawEraseCounterTable[pstFTLCxt->pawMapTable[i]] < smallestEraseCount)
+		{
+			leastErasedBlockLbn = i;
+			leastErasedBlock = pstFTLCxt->pawMapTable[i];
+			smallestEraseCount = pstFTLCxt->pawEraseCounterTable[leastErasedBlock];
+		}
+	}
+
+	if(largestEraseCount == 0)
+		return TRUE;
+
+	if((largestEraseCount - smallestEraseCount) < 5)
+		return TRUE;
+
+	++pstFTLCxt->pawEraseCounterTable[mostErasedFreeBlock];
+	pstFTLCxt->pawReadCounterTable[mostErasedFreeBlock] = 0;
+
+	if(VFL_Erase(mostErasedFreeBlock) != 0)
+	{
+		bufferPrintf("ftl: auto wear-level cannot erase most erased free block\r\n");
+		return FALSE;
+	}
+
+	++FTLCountsTable.blockSwapCount;
+
+	if(!ftl_copy_block(leastErasedBlockLbn, mostErasedFreeBlock))
+	{
+		bufferPrintf("ftl: auto wear-level cannot copy least erased to most erased\r\n");
+		return FALSE;
+	}
+
+	pstFTLCxt->pawMapTable[leastErasedBlockLbn] = mostErasedFreeBlock;
+
+	++pstFTLCxt->pawEraseCounterTable[leastErasedBlock];
+	pstFTLCxt->pawReadCounterTable[leastErasedBlock] = 0;
+
+	if(VFL_Erase(leastErasedBlock) != 0)
+	{
+		bufferPrintf("ftl: auto wear-level cannot erase previously least erased block\r\n");
+		return FALSE;
+	}
+
+	pstFTLCxt->awFreeVb[mostErasedFreeBlockIdx] = leastErasedBlock;
+
+	return TRUE;
+}
+
+int FTL_Write(int logicalPageNumber, int totalPagesToWrite, uint8_t* pBuf) 
+{
+	int i;
+
+	FTLCountsTable.totalPagesWritten += totalPagesToWrite;
+	++FTLCountsTable.totalWrites;
+
+	if(!pBuf) {
+		return ERROR_ARG;
+	}
+
+	if(totalPagesToWrite == 0 || (logicalPageNumber + totalPagesToWrite) >= Geometry->userPagesTotal) {
+		bufferPrintf("ftl: write has invalid input parameters\r\n");
+		return ERROR_INPUT;
+	}
+
+	if(!ftl_mark_unclean())
+	{
+		bufferPrintf("ftl: write could not mark FTL as unclean!\r\n");
+		return ERROR_ARG;
+	}
+
+	uint8_t* pageBuffer = malloc(Geometry->bytesPerPage);
+	SpareData* spareData = (SpareData*) malloc(Geometry->bytesPerSpare);
+	if(!pageBuffer || !spareData) {
+		bufferPrintf("ftl: FTL_Write ran out of memory!\r\n");
+		return ERROR_ARG;
+	}
+
+	for(i = 0; i < totalPagesToWrite; )
+	{
+		int lbn = logicalPageNumber / Geometry->pagesPerSuBlk;
+		int offset = logicalPageNumber - (lbn * Geometry->pagesPerSuBlk);
+
+		FTLCxtLog* pLog = ftl_prepare_log(lbn);
+
+		if(pLog == NULL)
+		{
+			bufferPrintf("ftl: write failed to prepare log!\r\n");
+			goto error_release;
+		}
+
+		if(offset == 0 && (totalPagesToWrite - i) >= Geometry->pagesPerSuBlk)
+		{
+			// we are replacing an entire block
+
+			uint16_t vblock;
+
+			if(pLog->pagesUsed != 0)
+			{
+				// we can't use this log block since it's not empty, get rid of it.
+				if(!ftl_set_free_vb(pLog->wVbn))
+				{
+					bufferPrintf("ftl: write failed to set a free Vb when replacing an entire block!\r\n");
+					goto error_release;
+				}
+
+				if(!ftl_get_free_vb(&vblock))
+				{
+					bufferPrintf("ftl: write failed to get a free Vb for replacing an entire block!\r\n");
+					goto error_release;
+				}
+			} else
+			{
+				// we can just use this empty log block
+				vblock = pLog->wVbn;
+			}
+
+			// don't need this log block anymore, we're now a full map block
+			pLog->wVbn = 0xFFFF;
+
+			++pstFTLCxt->nextblockusn;
+
+			int j;
+			for(j = 0; j < Geometry->pagesPerSuBlk; ++j)
+			{
+				memset(spareData, 0xFF, Geometry->bytesPerSpare);
+				spareData->user.logicalPageNumber = logicalPageNumber + i + j;
+				spareData->user.usn = pstFTLCxt->nextblockusn;
+				if(j == (Geometry->pagesPerSuBlk - 1))
+					spareData->type1 = 0x41;
+				else
+					spareData->type1 = 0x40;
+
+				int tries = 0;
+				for(tries = 0; tries < 4; ++tries)
+				{
+					if(VFL_Write((vblock * Geometry->pagesPerSuBlk) + j, 
+							pBuf + ((i + j) * (Geometry->bytesPerPage)), (uint8_t*) spareData) == 0)
+						break;
+				}
+
+				if(tries == 4)
+				{
+					bufferPrintf("ftl: write error during writing replacement block!\r\n");
+					// FIXME: no real error handling here!
+				}
+			}
+
+			if(!ftl_set_free_vb(pstFTLCxt->pawMapTable[lbn]))
+			{
+				bufferPrintf("ftl: write failed to set a free Vb after writing replacement block!\r\n");
+				goto error_release;
+			}
+
+			pstFTLCxt->pawMapTable[lbn] = vblock;
+			i += Geometry->pagesPerSuBlk;
+		} else
+		{
+			// we'll have to use the log since we're not replacing the whole block
+
+			if(pLog->pagesUsed == Geometry->pagesPerSuBlk)
+			{
+				// oh no, this log is full. we have to commit it
+				if(!ftl_merge(pLog))
+				{
+					bufferPrintf("ftl: write failed to merge in the log!\r\n");
+					goto error_release;
+				}
+
+				pLog = ftl_prepare_log(lbn);
+
+				if(pLog == NULL)
+				{
+					bufferPrintf("ftl: write failed to prepare log after merging!\r\n");
+					goto error_release;
+				}
+			}
+
+			int pagesCanWrite = totalPagesToWrite - i;
+
+			// don't overflow the log
+			if(pagesCanWrite > (Geometry->pagesPerSuBlk - pLog->pagesUsed))
+				pagesCanWrite = Geometry->pagesPerSuBlk - pLog->pagesUsed;
+
+			// don't write pages belonging to some other block here
+			if(pagesCanWrite > (Geometry->pagesPerSuBlk - offset))
+				pagesCanWrite = Geometry->pagesPerSuBlk - offset;
+
+			int origPagesUsed = pLog->pagesUsed;
+
+			int j;
+			for(j = 0; j < pagesCanWrite; ++j)
+			{
+				memset(spareData, 0xFF, Geometry->bytesPerSpare);
+				spareData->user.logicalPageNumber = logicalPageNumber + i + j;
+				spareData->user.usn = ++pstFTLCxt->nextblockusn;
+				if(((origPagesUsed + j) == (Geometry->pagesPerSuBlk - 1)) && pLog->isSequential)
+					spareData->type1 = 0x41;
+				else
+					spareData->type1 = 0x40;
+
+				int abspage = pLog->wVbn * Geometry->pagesPerSuBlk + origPagesUsed + j;
+
+				int tries = 0;
+				for(tries = 0; tries < 4; ++tries)
+				{
+					if(VFL_Write(abspage, 
+							pBuf + ((i + j) * (Geometry->bytesPerPage)), (uint8_t*) spareData) == 0)
+						break;
+				}
+
+				if(tries == 4)
+				{
+					bufferPrintf("ftl: write error during writing to log!\r\n");
+					// FIXME: no real error handling here
+				}
+
+				if(pLog->wPageOffsets[offset + j] == 0xFFFF)
+				{
+					// This page wasn't current before but now it is
+					++pLog->pagesCurrent;
+				}
+
+				pLog->wPageOffsets[offset + j] = origPagesUsed + j;
+				++pLog->pagesUsed;
+
+				ftl_check_still_sequential(pLog, offset + j);
+			}
+
+			i += pagesCanWrite;
+		}
+
+	}
+
+	if(pstFTLCxt->swapCounter >= 300)
+	{
+		pstFTLCxt->swapCounter -= 20;
+		int tries;
+		for(tries = 0; tries < 4; ++tries)
+		{
+			if(ftl_auto_wearlevel())
+				break;
+		}
+	}
+
+	return 0;
+
+error_release:
+	free(pageBuffer);
+	free(spareData);
+
+	return ERROR_ARG;
 }
 
 int ftl_setup() {
@@ -1715,6 +2477,36 @@ int ftl_read(void* buffer, uint64_t offset, int size) {
 	return TRUE;
 }
 
+int ftl_write(void* buffer, uint64_t offset, int size) {
+	uint8_t* curLoc = (uint8_t*) buffer;
+	int curPage = offset / Geometry->bytesPerPage;
+	int toWrite = size;
+	int pageOffset = offset - (curPage * Geometry->bytesPerPage);
+	uint8_t* tBuffer = (uint8_t*) malloc(Geometry->bytesPerPage);
+	while(toWrite > 0) {
+		if(FTL_Read(curPage, 1, tBuffer) != 0) {
+			free(tBuffer);
+			return FALSE;
+		}
+
+		int write = (((Geometry->bytesPerPage - pageOffset) > toWrite) ? toWrite : Geometry->bytesPerPage - pageOffset);
+		memcpy(tBuffer + pageOffset, curLoc, write);
+
+		if(FTL_Write(curPage, 1, tBuffer) != 0) {
+			free(tBuffer);
+			return FALSE;
+		}
+
+		curLoc += write;
+		toWrite -= write;
+		pageOffset = 0;
+		curPage++;
+	}
+
+	free(tBuffer);
+	return TRUE;
+}
+
 void ftl_printdata() {
 	int i, j;
 
@@ -1727,8 +2519,8 @@ void ftl_printdata() {
 	bufferPrintf("FTLCtrlPage: %u\r\n", pstFTLCxt->FTLCtrlPage);
 	bufferPrintf("clean: %u\r\n", pstFTLCxt->clean);
 	bufferPrintf("field_3C8: %u\r\n", pstFTLCxt->field_3C8);
-	bufferPrintf("page_3D0: %u\r\n", pstFTLCxt->page_3D0);
-	bufferPrintf("field_3D4: %u\r\n", pstFTLCxt->field_3D4);
+	bufferPrintf("page_for_FTLCountsTable: %u\r\n", pstFTLCxt->page_for_FTLCountsTable);
+	bufferPrintf("hasFTLCountsTable: %u\r\n", pstFTLCxt->hasFTLCountsTable);
 	bufferPrintf("Total read count: %u\r\n", pstFTLCxt->totalReadCount);
 
 	bufferPrintf("Free virtual blocks: %d\r\n", pstFTLCxt->wNumOfFreeVb);

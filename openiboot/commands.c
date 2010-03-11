@@ -955,6 +955,7 @@ OPIBCommand CommandList[] =
 		{"fs_ls", "list files and folders", fs_cmd_ls},
 		{"fs_cat", "display a file", fs_cmd_cat},
 		{"fs_extract", "extract a file into memory", fs_cmd_extract},
+		{"fs_add", "store a file from memory", fs_cmd_add},
 #endif
 		{"nor_read", "read a block of NOR into RAM", cmd_nor_read},
 		{"nor_write", "write RAM into NOR", cmd_nor_write},

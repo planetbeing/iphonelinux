@@ -43,8 +43,8 @@ int bdevRead(io_func* io, off_t location, size_t size, void *buffer) {
 
 static int bdevWrite(io_func* io, off_t location, size_t size, void *buffer) {
 	MBRPartitionRecord* record = (MBRPartitionRecord*) io->data;
-	bufferPrintf("bdev: attempt to write %d sectors to partition %d, sector %d!\r\n", size, ((uint32_t)record - (uint32_t)MBRData.partitions)/sizeof(MBRPartitionRecord), location);
-	return FALSE;
+	//bufferPrintf("bdev: attempt to write %d sectors to partition %d, sector %d!\r\n", size, ((uint32_t)record - (uint32_t)MBRData.partitions)/sizeof(MBRPartitionRecord), location);
+	return ftl_write(buffer, location + record->beginLBA * BLOCK_SIZE, size);
 }
 
 static void bdevClose(io_func* io) {

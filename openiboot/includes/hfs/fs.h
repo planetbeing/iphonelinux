@@ -20,5 +20,6 @@ ExtentList* fs_get_extents(int partition, const char* fileName);
 void fs_cmd_ls(int argc, char** argv);
 void fs_cmd_cat(int argc, char** argv);
 void fs_cmd_extract(int argc, char** argv);
+void fs_cmd_add(int argc, char** argv);
 
 #endif

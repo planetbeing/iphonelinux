@@ -28,13 +28,13 @@ typedef struct VFLCxt {
 } VFLCxt;
 
 typedef struct FTLCxtLog {
-	void* field_0;					// 0x0
+	uint32_t usn;					// 0x0
 	uint16_t wVbn;					// 0x4
 	uint16_t wLbn;					// 0x6
 	uint16_t* wPageOffsets;				// 0x8
-	uint16_t field_C;				// 0xC
-	uint16_t field_E;				// 0xE
-	uint32_t field_10;				// 0x10
+	uint16_t pagesUsed;				// 0xC
+	uint16_t pagesCurrent;				// 0xE
+	uint32_t isSequential;				// 0x10
 } FTLCxtLog;
 
 typedef struct FTLCxtElement2 {
@@ -67,8 +67,8 @@ typedef struct FTLCxt {
 	FTLCxtElement2 elements2[5];			// 0x3B4
 	uint32_t field_3C8;				// 0x3C8
 	uint32_t totalReadCount;			// 0x3CC
-	uint32_t page_3D0;				// 0x3D0
-	uint32_t field_3D4;				// 0x3D4
+	uint32_t page_for_FTLCountsTable;		// 0x3D0
+	uint32_t hasFTLCountsTable;			// 0x3D4, set to -1 if yes
 	uint8_t field_3D8[0x420];			// 0x3D8
 	uint32_t versionLower;				// 0x7F8
 	uint32_t versionUpper;				// 0x7FC
@@ -86,22 +86,22 @@ typedef struct VFLData1Type {
 	uint64_t field_40;
 } VFLData1Type;
 
-typedef struct FTLData1Type {
-	uint64_t field_0;
-	uint64_t field_8;
-	uint64_t field_10;
-	uint64_t field_18;
-	uint64_t field_20;
-	uint64_t field_28;
-	uint64_t field_30;
-	uint64_t field_38;
-	uint64_t field_40;
+typedef struct FTLCountsTableType {
+	uint64_t totalPagesWritten;		// 0x0
+	uint64_t totalPagesRead;		// 0x8
+	uint64_t totalWrites;			// 0x10
+	uint64_t totalReads;			// 0x18
+	uint64_t compactScatteredCount;		// 0x20
+	uint64_t copyMergeWhileFullCount;	// 0x28
+	uint64_t copyMergeWhileNotFullCount;	// 0x30
+	uint64_t simpleMergeCount;		// 0x38
+	uint64_t blockSwapCount;		// 0x40
 	uint64_t field_48;
 	uint64_t field_50;
-} FTLData1Type;
+} FTLCountsTableType;
 
 typedef enum FTLStruct {
-	FTLData1SID = 0x1000200
+	FTLCountsTableSID = 0x1000200
 } FTLStruct;
 
 typedef enum VFLStruct {
@@ -115,7 +115,9 @@ int ftl_setup();
 int VFL_Read(uint32_t virtualPageNumber, uint8_t* buffer, uint8_t* spare, int empty_ok, int* did_error);
 int VFL_Erase(uint16_t block);
 int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf);
+int FTL_Write(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf);
 int ftl_read(void* buffer, uint64_t offset, int size);
+int ftl_write(void* buffer, uint64_t offset, int size);
 void ftl_printdata();
 int ftl_commit_cxt();
 

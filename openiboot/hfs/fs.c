@@ -4,9 +4,57 @@
 #include "hfs/fs.h"
 #include "hfs/hfsplus.h"
 #include "util.h"
+#include "ftl.h"
 #include "nand.h"
 
 int HasFSInit = FALSE;
+
+void writeToHFSFile(HFSPlusCatalogFile* file, uint8_t* buffer, size_t bytesLeft, Volume* volume) {
+	io_func* io;
+
+	io = openRawFile(file->fileID, &file->dataFork, (HFSPlusCatalogRecord*)file, volume);
+	if(io == NULL) {
+		hfs_panic("error opening file");
+		return;
+	}
+	allocate((RawFile*)io->data, bytesLeft);
+	
+	if(!WRITE(io, 0, (size_t)bytesLeft, buffer)) {
+		hfs_panic("error writing");
+	}
+
+	CLOSE(io);
+}
+
+int add_hfs(Volume* volume, uint8_t* buffer, size_t size, const char* outFileName) {
+	HFSPlusCatalogRecord* record;
+	int ret;
+	
+	record = getRecordFromPath(outFileName, volume, NULL, NULL);
+	
+	if(record != NULL) {
+		if(record->recordType == kHFSPlusFileRecord) {
+			writeToHFSFile((HFSPlusCatalogFile*)record, buffer, size, volume);
+			ret = TRUE;
+		} else {
+			ret = FALSE;
+		}
+	} else {
+		if(newFile(outFileName, volume)) {
+			record = getRecordFromPath(outFileName, volume, NULL, NULL);
+			writeToHFSFile((HFSPlusCatalogFile*)record, buffer, size, volume);
+			ret = TRUE;
+		} else {
+			ret = FALSE;
+		}
+	}
+	
+	if(record != NULL) {
+		free(record);
+	}
+	
+	return ret;
+}
 
 void displayFolder(HFSCatalogNodeID folderID, Volume* volume) {
 	CatalogRecordList* list;
@@ -219,6 +267,48 @@ void fs_cmd_extract(int argc, char** argv) {
 
 	closeVolume(volume);
 	CLOSE(io);
+}
+
+void fs_cmd_add(int argc, char** argv) {
+	Volume* volume;
+	io_func* io;
+
+	if(argc < 5) {
+		bufferPrintf("usage: %s <partition> <file> <location> <size>\r\n", argv[0]);
+		return;
+	}
+
+	io = bdev_open(parseNumber(argv[1]));
+	if(io == NULL) {
+		bufferPrintf("fs: cannot read partition!\r\n");
+		return;
+	}
+
+	volume = openVolume(io);
+	if(volume == NULL) {
+		bufferPrintf("fs: cannot openHFS volume!\r\n");
+		return;
+	}
+
+	uint32_t address = parseNumber(argv[3]);
+	uint32_t size = parseNumber(argv[4]);
+
+	if(add_hfs(volume, (uint8_t*) address, size, argv[2]))
+	{
+		bufferPrintf("%d bytes of 0x%x stored in %s\r\n", size, address, argv[2]);
+	}
+	else
+	{
+		bufferPrintf("add_hfs failed for %s!\r\n", argv[2]);
+	}
+
+	closeVolume(volume);
+	CLOSE(io);
+
+	if(!ftl_commit_cxt())
+	{
+		bufferPrintf("FTL context commit error!\r\n");
+	}
 }
 
 ExtentList* fs_get_extents(int partition, const char* fileName) {
