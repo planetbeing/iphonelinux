@@ -96,7 +96,7 @@ typedef struct FTLCountsTableType {
 	uint64_t copyMergeWhileNotFullCount;	// 0x30
 	uint64_t simpleMergeCount;		// 0x38
 	uint64_t blockSwapCount;		// 0x40
-	uint64_t field_48;
+	uint64_t ftlRestoresCount;		// 0x48
 	uint64_t field_50;
 } FTLCountsTableType;
 

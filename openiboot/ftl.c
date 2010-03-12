@@ -17,6 +17,7 @@ static int ftl_set_free_vb(uint16_t block);
 static int ftl_get_free_vb(uint16_t* block);
 static int ftl_merge(FTLCxtLog* pLog);
 static int ftl_commit_cxt();
+static int ftl_open_read_counter_tables();
 
 static int findDeviceInfoBBT(int bank, void* deviceInfoBBT) {
 	uint8_t* buffer = malloc(Geometry->bytesPerPage);
@@ -957,7 +958,514 @@ static int ftl_next_ctrl_page()
 	}
 }
 
+// Return whether the block is sequential and also the highest USN of pages
+// found in that block. Assumption: for any pages p_i, p_j in a block where
+// i < j, usn(p_i) <= usn(p_j)
+static int determine_block_type(uint16_t block, uint32_t* highest_usn)
+{
+	uint8_t* pageBuffer = (uint8_t*) malloc(Geometry->bytesPerPage);
+	SpareData* spareData = (SpareData*) malloc(Geometry->bytesPerSpare);
+
+	uint32_t max = 0;	
+	int page;
+	for(page = Geometry->pagesPerSuBlk - 1; page >= 0; --page)
+	{
+		int ret = VFL_Read(block * Geometry->pagesPerSuBlk + page, pageBuffer, (uint8_t*) spareData, TRUE, NULL);
+		if(ret != 0)
+			continue;
+		
+		if(spareData->user.usn > max)
+			max = spareData->user.usn;
+
+		if((spareData->user.logicalPageNumber % Geometry->pagesPerSuBlk) != page)
+			break;
+	}
+
+	free(spareData);
+	free(pageBuffer);
+
+	*highest_usn = max;
+
+	if(page < 0)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+// Assumptions: same conditions that FTL_Open would have been called in.
 static int FTL_Restore() {
+	uint16_t* blockMap = (uint16_t*) malloc((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t));
+	uint8_t* isEmpty = (uint8_t*) malloc((Geometry->userSuBlksTotal + 23) * sizeof(uint8_t));
+	uint8_t* nonSequential = (uint8_t*) malloc((Geometry->userSuBlksTotal + 23) * sizeof(uint8_t));
+	uint16_t* awFreeVb = &pstFTLCxt->awFreeVb[0];
+	uint16_t* pawMapTable = pstFTLCxt->pawMapTable;
+	uint16_t* pawEraseCounterTable = pstFTLCxt->pawEraseCounterTable;
+	void* pawReadCounterTable = pstFTLCxt->pawReadCounterTable;
+	uint16_t* wPageOffsets = pstFTLCxt->wPageOffsets;
+	FTLCxtLog* pLog = &pstFTLCxt->pLog[0];
+
+	uint8_t* pageBuffer = (uint8_t*) malloc(Geometry->bytesPerPage);
+	SpareData* spareData = (SpareData*) malloc(Geometry->bytesPerSpare);
+
+	int i;
+	int block;
+
+	bufferPrintf("ftl: restore searching for latest FTL context...\r\n");
+
+	// Step 0, find and load the last readable FTLCxt, so we can have a base erase counter data and
+	// goodies. It is not really mandatory though; we could just make a new one.
+
+	void* FTLCtrlBlock;
+	if((FTLCtrlBlock = VFL_get_FTLCtrlBlock()) == NULL)
+	{
+		bufferPrintf("ftl: restore could not get FTL control blocks from VFL!\r\n");
+		goto error_release;
+	}
+	
+	memcpy(pstFTLCxt->FTLCtrlBlock, FTLCtrlBlock, sizeof(pstFTLCxt->FTLCtrlBlock));
+
+	uint32_t ftlCtrlBlock = 0xffff;
+	uint32_t minUsnDec = 0xffffffff;
+	int ftlCxtFound = FALSE;
+	for(i = 0; i < sizeof(pstFTLCxt->FTLCtrlBlock)/sizeof(uint16_t); ++i)
+	{
+		// read the first page of the block
+		int ret = VFL_Read(Geometry->pagesPerSuBlk * pstFTLCxt->FTLCtrlBlock[i], pageBuffer, (uint8_t*) spareData, TRUE, NULL);
+		if(ret != 0)
+			continue;	// this block errored out!
+
+		// 0x43 is the lowest type of FTL control data. Apparently 0x4F would be the highest type.
+		if((spareData->type1 - 0x43) > 0xC)
+			continue;	// this block doesn't have FTL data in it! Try the next one
+
+		if(ftlCtrlBlock != 0xffff && spareData->meta.usnDec >= minUsnDec)
+			continue;	// we've seen a newer FTLCxtBlock before
+
+		// this is the latest so far
+		ftlCtrlBlock = pstFTLCxt->FTLCtrlBlock[i];
+
+		uint32_t blockUSNDec = spareData->meta.usnDec;
+
+		int page;
+		for(page = Geometry->pagesPerSuBlk - 1; page > 0; page--)
+		{
+			ret = VFL_Read(Geometry->pagesPerSuBlk * ftlCtrlBlock + page, pageBuffer, (uint8_t*) spareData, TRUE, NULL);
+			if(ret == 1) {
+				continue;
+			} else if(ret == 0 && spareData->type1 == 0x43) { // 43 is FTLCxtBlock
+				minUsnDec = blockUSNDec;
+				memcpy(pstFTLCxt, pageBuffer, sizeof(FTLCxt));
+
+				// we just overwrote our good FTLCtrlBlock info, fill it in again.
+				memcpy(pstFTLCxt->FTLCtrlBlock, FTLCtrlBlock, sizeof(pstFTLCxt->FTLCtrlBlock));
+				ftlCxtFound = TRUE;
+				break;
+			}
+		}
+	}
+
+	if(!ftlCxtFound)
+	{
+		bufferPrintf("ftl: restore could not find ANY FTL contexts!\r\n");
+		goto error_release;
+	}
+
+	bufferPrintf("ftl: restore found useable FTL context with usnDec = 0x%x\r\n", pstFTLCxt->usnDec);
+
+	// Reset the pointers
+	pstFTLCxt->pawMapTable = pawMapTable;
+	pstFTLCxt->pawEraseCounterTable = pawEraseCounterTable;
+	pstFTLCxt->pawReadCounterTable = pawReadCounterTable;
+	pstFTLCxt->wPageOffsets = wPageOffsets;
+
+	// Clean out now almost certainly invalid values
+
+	memset(&FTLCountsTable, 0, 0x58);
+
+	pstFTLCxt->clean = 0;
+
+	for(i = 0; i < 17; ++i)
+	{
+		pLog[i].wPageOffsets = pstFTLCxt->wPageOffsets + (i * Geometry->pagesPerSuBlk);
+		memset(pLog[i].wPageOffsets, 0xFF, Geometry->pagesPerSuBlk * sizeof(uint16_t));
+		pLog[i].isSequential = 1;
+		pLog[i].pagesUsed = 0;
+		pLog[i].pagesCurrent = 0;
+		pLog[i].wVbn = 0xFFFF;
+	}
+
+	for(i = 0; i < 20; ++i)
+		awFreeVb[i] = 0xFFFF;
+
+	pstFTLCxt->nextFreeIdx = 0;
+	pstFTLCxt->wNumOfFreeVb = 0;
+
+	// Read back the counter tables... those are still useful.
+	if(!ftl_open_read_counter_tables())
+	{
+		bufferPrintf("ftl: restore could not read back the counter tables from the FTL context!\r\n");
+		goto error_release;
+	}
+
+	++FTLCountsTable.ftlRestoresCount;
+
+	// next time we commit, do it on a fresh block
+	block = pstFTLCxt->FTLCtrlPage / Geometry->pagesPerSuBlk;
+	pstFTLCxt->FTLCtrlPage = (block * Geometry->pagesPerSuBlk) + Geometry->pagesPerSuBlk - 1;
+
+	int numLogs = 0;
+
+	// Step one, create an overview of which virtual blocks have pages belonging to which logical blocks.
+	// Mark any blocks discovered to be empty. Also to save time in the next step, if a block is proven
+	// to be non-sequential, mark it as such.
+	
+	for(block = 0; block < (Geometry->userSuBlksTotal + 23); ++block)
+	{
+		if((block % 1000) == 0)
+		{
+			bufferPrintf("ftl: restore scanning virtual blocks %d - %d\r\n", block,
+					block + ((((Geometry->userSuBlksTotal + 23) - block) > 1000) ? 999 : ((Geometry->userSuBlksTotal + 23) - block - 1)));
+		}
+
+		blockMap[block] = 0xFFFF;
+		isEmpty[block] = 1;
+		nonSequential[block] = 0;
+
+		int page;
+		for(page = 0; page < Geometry->pagesPerSuBlk; ++page)
+		{
+			int ret = VFL_Read(block * Geometry->pagesPerSuBlk + page, pageBuffer, (uint8_t*) spareData, TRUE, NULL);
+
+			if(ret == ERROR_EMPTYBLOCK)
+				continue;
+			
+			isEmpty[block] = 0;
+			
+			if(ret != 0)
+				continue;
+			
+			if(spareData->type1 >= 0x43 && spareData->type1 <= 0x4F)
+				break;
+
+			// wtf is this? well, we'll just count it as empty
+			if(spareData->type1 != 0x40 && spareData->type1 != 0x41)
+				continue;
+
+			if((spareData->user.logicalPageNumber % Geometry->pagesPerSuBlk) != page)
+				nonSequential[block] = 1;
+
+			blockMap[block] = spareData->user.logicalPageNumber / Geometry->pagesPerSuBlk;
+			break;	
+		}
+	}
+
+	// Step two, make sure each logical block has a mapping to virtual block. If more than one virtual
+	// block contain pages to a logical block, pick which one is a mapping block and which one is a
+	// log block based on whether the entries are sequential and which ones have the highest USN. If
+	// no virtual block for a logical block is found, then it must have been empty so we select an
+	// empty block to use as its virtual block.
+
+	bufferPrintf("ftl: restore creating mapping table...\r\n");
+
+	for(block = 0; block < Geometry->userSuBlksTotal; ++block)
+	{
+		uint16_t mapCandidate = 0xFFFF;
+		uint32_t mapCandidateUSN = 0xFFFFFFFF;
+		uint16_t logCandidate = 0xFFFF;
+		uint32_t logCandidateUSN = 0xFFFFFFFF;
+
+		uint16_t candidate;
+		for(candidate = 0; candidate < (Geometry->userSuBlksTotal + 23); ++candidate)
+		{
+			uint32_t candidateUSN;
+
+			if(blockMap[candidate] != block)
+				continue;
+
+			if(nonSequential[candidate])
+			{
+				if(logCandidate == 0xFFFF)
+				{
+					logCandidate = candidate;
+					continue;
+				}
+				if(logCandidateUSN == 0xFFFFFFFF)
+					determine_block_type(logCandidate, &logCandidateUSN);
+
+				determine_block_type(candidate, &candidateUSN);
+
+				if(logCandidateUSN < candidateUSN)
+				{
+					logCandidate = candidate;
+					logCandidateUSN = candidateUSN;
+				}
+			} else if(mapCandidate == 0xFFFF)
+			{
+				mapCandidate = candidate;
+				continue;
+			}
+
+			int origMCSeq = TRUE;
+			if(mapCandidateUSN == 0xFFFFFFFF)
+				origMCSeq = determine_block_type(mapCandidate, &mapCandidateUSN);
+
+			int newMCSeq = determine_block_type(candidate, &candidateUSN);
+
+			uint16_t newLCandidate;
+			uint32_t newLCandidateUSN;
+
+			if(origMCSeq && newMCSeq)
+			{
+				if(mapCandidateUSN > candidateUSN)
+				{
+					newLCandidate = candidate;
+					newLCandidateUSN = candidateUSN;
+				} else
+				{
+					newLCandidate = mapCandidate;
+					newLCandidateUSN = mapCandidateUSN;
+					mapCandidate = candidate;
+					mapCandidateUSN = candidateUSN;
+				}
+			} else if(origMCSeq && !newMCSeq)
+			{	
+				newLCandidate = candidate;
+				newLCandidateUSN = candidateUSN;
+			} else if(!origMCSeq && newMCSeq)
+			{
+				newLCandidate = mapCandidate;
+				newLCandidateUSN = mapCandidateUSN;
+				mapCandidate = candidate;
+				mapCandidateUSN = candidateUSN;
+			} else if(!origMCSeq && !newMCSeq)
+			{	
+				if(mapCandidateUSN > candidateUSN)
+				{
+					newLCandidate = mapCandidate;
+					newLCandidateUSN = mapCandidateUSN;
+				} else
+				{
+					newLCandidate = candidate;
+					newLCandidateUSN = candidateUSN;
+				}
+				mapCandidate = 0xFFFF;
+				mapCandidateUSN = 0xFFFFFFFF;
+			}
+
+			if(logCandidate == 0xFFFF)
+			{
+				logCandidate = newLCandidate;
+				logCandidateUSN = newLCandidateUSN;
+				continue;
+			}
+
+			if(logCandidateUSN == 0xFFFFFFFF)
+				determine_block_type(logCandidate, &logCandidateUSN);
+
+			if(logCandidateUSN < newLCandidateUSN)
+			{
+				logCandidate = newLCandidate;
+				logCandidateUSN = newLCandidateUSN;
+			}
+		}
+
+		if(mapCandidate == 0xFFFF)
+		{
+			for(candidate = 0; candidate < (Geometry->userSuBlksTotal + 23); ++candidate)
+			{
+				if(isEmpty[candidate])
+				{
+					mapCandidate = candidate;
+					isEmpty[candidate] = 0;
+					break;
+				}
+			}
+
+			if(mapCandidate == 0xFFFF)
+			{
+				bufferPrintf("ftl: restore failed, didn't find enough empty blocks to pair with orphan logical blocks.\r\n");
+				goto error_release;
+			}
+		}
+
+		pawMapTable[block] = mapCandidate;
+		blockMap[mapCandidate] = 0;
+
+		if(logCandidate != 0xFFFF)
+		{
+			pLog[numLogs].wLbn = block;
+			pLog[numLogs].wVbn = logCandidate;
+			++numLogs;
+
+			blockMap[logCandidate] = 0;
+		}
+	}	
+
+	// Step three
+	// At this point, pawMapTable ought to be correct. We can also assert that all blocks that were originally
+	// either in pawMapTable or pLog, we have put in pawMapTable or pLog. The rest are either the three control
+	// blocks, or the free vbs. Therefore, we look for blocks that were not marked as pawMapTable or pLog and
+	// also not a control block and mark them as free vbs.
+
+	bufferPrintf("ftl: restore determing free vbs...\r\n");
+
+	for(block = 0; block < (Geometry->userSuBlksTotal + 23); ++block)
+	{
+		if(blockMap[block] == 0)
+			continue;
+
+		for(i = 0; i < 3; ++i)
+		{
+			if(block == pstFTLCxt->FTLCtrlBlock[i])
+				break;
+		}
+
+		if(i < 3)
+			continue;
+
+		awFreeVb[pstFTLCxt->wNumOfFreeVb++] = block;
+	}
+	
+	bufferPrintf("ftl: restore wNumOfFreeVb = %d, number of log vbs = %d\r\n",
+			pstFTLCxt->wNumOfFreeVb, numLogs);
+
+	// Now we do a consistency check. The total number of virtual blocks accessible by
+	// our FTL is the number of user superblocks + 3 control blocks + 20 blocks divided
+	// between free blocks and log blocks. It can get down to 3 free blocks and 17 log
+	// blocks (defined by the size of the log block array, and explicitly guarded by
+	// ftl_prepare_log), or up to 20 free blocks and 0 log blocks (there is space for
+	// 20 free vbs). That counts up to the + 23 number you see everywhere. Therefore,
+	// the number of free vbs and the number of log blocks used must equal 20.
+	if((pstFTLCxt->wNumOfFreeVb + numLogs) != 20)
+	{
+		bufferPrintf("ftl: restore failed, we are missing pool blocks!\r\n");
+		goto error_release;
+	}
+
+	// Step four. Now for those blocks that have log entries, we must decide how to
+	// populate the page offsets table, i.e. divide the logical block between these
+	// two blocks. Assumption: if block L is the log block for block B, pick any
+	// page u from L and v from B -- usn(u) > usn(v). This is because after the
+	// map block is written, any further write to it will hit the log block for it
+	// and increment the USN.
+	
+	uint32_t highest_usn = 0;
+
+	for(i = 0; i < numLogs; ++i)
+	{
+		// TODO: could be optimized to use previously figured out USN info.
+
+		// Since we always store the highest USN block as the map in step two
+		// to ensure we always end up with the two highest USN blocks, we
+		// could have the ordering swapped. Figure out the correct one.
+		uint32_t mapUSN;
+		uint32_t logUSN;
+
+		int mapSeq = determine_block_type(pawMapTable[pLog[i].wLbn], &mapUSN);
+		int logSeq = determine_block_type(pLog[i].wVbn, &logUSN);
+
+		if(mapUSN > logUSN)
+		{
+			// oh, we must have gotten them switched up.
+
+			if(logSeq)
+			{
+				uint32_t tmp = pawMapTable[pLog[i].wLbn];
+				pawMapTable[pLog[i].wLbn] = pLog[i].wVbn;
+				pLog[i].wVbn = tmp;
+			} else
+			{
+				// ruh-roh. we can't make our log the map because it's not sequential!
+				bufferPrintf("ftl: restore warning -- mapUSN = %d, logUSN = %d, mapSeq = %d, logSeq = %d\r\n",
+						mapUSN, logUSN, mapSeq, logSeq);
+				// our assumption is seemingly violated. However it does not matter in this
+				// specific case since as a scatter block, the log has to be a log anyway.
+
+
+				if(mapUSN > highest_usn)
+					highest_usn = mapUSN;
+			}
+		} else
+		{
+			// just a sanity check
+			if(!mapSeq)
+			{
+				bufferPrintf("ftl: restore failed, Our map must be sequential!\r\n");
+				goto error_release;
+			}
+		}
+
+		// This keeps track of the highest USN for all log blocks.
+		if(logUSN > highest_usn)
+			highest_usn = logUSN;
+
+		// okay, now we will populate the log block with the correct information. Assumption:
+		// for any page p_i for lpn n in the log block such that there does not exist another
+		// page q_j for lpn n in the block such that j > i, then p_i should be mapped for
+		// lpn n. That is, any page in the log block is more recent than the equivalent page
+		// in the map block. In addition, any page appearing later in the log block is more
+		// recent than any page appearing earlier.
+
+		int page;
+		for(page = Geometry->pagesPerSuBlk - 1; page >= 0; --page)
+		{
+			int ret = VFL_Read((pLog[i].wVbn * Geometry->pagesPerSuBlk) + page, pageBuffer, (uint8_t*) spareData, TRUE, NULL);
+			if(ret == ERROR_EMPTYBLOCK)
+				continue;
+
+			// we set it to after the first non-empty page
+			if(pLog[i].pagesUsed == 0)
+				pLog[i].pagesUsed = page + 1;
+
+			if(ret != 0)
+				continue;
+
+			int logOffset = spareData->user.logicalPageNumber % Geometry->pagesPerSuBlk;
+
+			// have we seen this lpn before?
+			if(pLog[i].wPageOffsets[logOffset] != 0xFFFF)
+				continue;	// if so, we this is old crap.
+
+
+			// if not, we'll use it since it's the most recent.
+			pLog[i].wPageOffsets[logOffset] = page;
+			++pLog[i].pagesCurrent;
+
+			if(logOffset != page)
+				pLog[i].isSequential = 0;
+		}
+
+		if(pLog[i].pagesUsed != pLog[i].pagesCurrent)
+			pLog[i].isSequential = 0;
+
+		bufferPrintf("ftl: restore -- log %d, wLbn = %d, wVbn = %d, pagesUsed = %d, pagesCurrent = %d, isSequential = %d\r\n",
+				i, pLog[i].wLbn, pLog[i].wVbn, pLog[i].pagesUsed, pLog[i].pagesCurrent, pLog[i].isSequential);
+	}
+
+	pstFTLCxt->nextblockusn = highest_usn + 1;
+
+	for(i = 0; i < numLogs; ++i)
+	{
+		pLog[i].usn = pstFTLCxt->nextblockusn - 1;
+	}
+
+	bufferPrintf("ftl: restore successful!\r\n");
+
+	free(pageBuffer);
+	free(spareData);
+	free(blockMap);
+	free(nonSequential);
+	free(isEmpty);
+
+	return TRUE;
+
+error_release:	
+	free(pageBuffer);
+	free(spareData);
+	free(blockMap);
+	free(nonSequential);
+	free(isEmpty);
+
 	return FALSE;
 }
 
@@ -997,6 +1505,93 @@ static int sum_data(uint8_t* pageBuffer) {
 	VFL_GetStruct(VFLData5SID, &data, &size);
 	FTL_64bit_sum((uint64_t*)(pageBuffer + 0x400), (uint64_t*)data, size);
 	return TRUE;
+}
+
+static int ftl_open_read_counter_tables()
+{
+	int i;
+	int pagesToRead;
+
+	uint8_t* pageBuffer = malloc(Geometry->bytesPerPage);
+	uint8_t* spareBuffer = malloc(Geometry->bytesPerSpare);
+
+	pagesToRead = ((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) / Geometry->bytesPerPage;
+	if((((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) % Geometry->bytesPerPage) != 0)
+		pagesToRead++;
+
+	int success = FALSE;
+
+	for(i = 0; i < pagesToRead; i++) {
+		if(VFL_Read(pstFTLCxt->pages_for_pawEraseCounterTable[i], pageBuffer, spareBuffer, TRUE, NULL) != 0)
+		{
+			success = FALSE;
+			goto release;
+		}
+
+		int toRead = Geometry->bytesPerPage;
+		if(toRead > (((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) - (i * Geometry->bytesPerPage))) {
+			toRead = ((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) - (i * Geometry->bytesPerPage);
+		}
+
+		memcpy(((uint8_t*)pstFTLCxt->pawEraseCounterTable) + (i * Geometry->bytesPerPage), pageBuffer, toRead);	
+	}
+
+	bufferPrintf("ftl: Detected version %x %x\r\n", FTLCxtBuffer->versionLower, FTLCxtBuffer->versionUpper);
+	if(FTLCxtBuffer->versionLower == 0x46560001 && FTLCxtBuffer->versionUpper == 0xB9A9FFFE) {
+		pagesToRead = ((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) / Geometry->bytesPerPage;
+		if((((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) % Geometry->bytesPerPage) != 0)
+			pagesToRead++;
+
+		success = TRUE;
+		for(i = 0; i < pagesToRead; i++) {
+			if(VFL_Read(pstFTLCxt->pages_for_pawReadCounterTable[i], pageBuffer, spareBuffer, TRUE, NULL) != 0) {
+				success = FALSE;
+				break;
+			}
+
+			int toRead = Geometry->bytesPerPage;
+			if(toRead > (((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) - (i * Geometry->bytesPerPage))) {
+				toRead = ((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) - (i * Geometry->bytesPerPage);
+			}
+
+			memcpy(((uint8_t*)pstFTLCxt->pawReadCounterTable) + (i * Geometry->bytesPerPage), pageBuffer, toRead);	
+		}
+
+		if((pstFTLCxt->hasFTLCountsTable + 1) == 0) {
+			int x = pstFTLCxt->page_for_FTLCountsTable / Geometry->pagesPerSuBlk;
+			if(x == 0 || x <= Geometry->userSuBlksTotal) {
+				if(VFL_Read(pstFTLCxt->page_for_FTLCountsTable, pageBuffer, spareBuffer, TRUE, NULL) != 0)
+				{
+					success = FALSE;
+					goto release;
+				}
+
+				sum_data(pageBuffer);
+			}
+		}
+	} else {
+		bufferPrintf("ftl: updating the FTL from seemingly compatible version\r\n");
+		for(i = 0; i < (Geometry->userSuBlksTotal + 23); i++) {
+			pstFTLCxt->pawReadCounterTable[i] = 0x1388;
+		}
+
+		for(i = 0; i < 5; i++) {
+			pstFTLCxt->elements2[i].field_0 = -1;
+			pstFTLCxt->elements2[i].field_2 = -1;
+		}
+
+		pstFTLCxt->field_3C8 = 0;
+		pstFTLCxt->clean = 0;
+		FTLCxtBuffer->versionLower = 0x46560000;
+		FTLCxtBuffer->versionUpper = 0xB9A9FFFF;
+
+		success = TRUE;
+	}
+
+release:
+	free(pageBuffer);
+	free(spareBuffer);
+	return success;
 }
 
 static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
@@ -1147,56 +1742,7 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 		memcpy(((uint8_t*)pstFTLCxt->pawEraseCounterTable) + (i * Geometry->bytesPerPage), pageBuffer, toRead);	
 	}
 
-	int success = FALSE;
-
-	bufferPrintf("ftl: Detected version %x %x\r\n", FTLCxtBuffer->versionLower, FTLCxtBuffer->versionUpper);
-	if(FTLCxtBuffer->versionLower == 0x46560001 && FTLCxtBuffer->versionUpper == 0xB9A9FFFE) {
-		pagesToRead = ((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) / Geometry->bytesPerPage;
-		if((((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) % Geometry->bytesPerPage) != 0)
-			pagesToRead++;
-
-		success = TRUE;
-		for(i = 0; i < pagesToRead; i++) {
-			if(VFL_Read(pstFTLCxt->pages_for_pawReadCounterTable[i], pageBuffer, spareBuffer, TRUE, &refreshPage) != 0) {
-				success = FALSE;
-				break;
-			}
-
-			int toRead = Geometry->bytesPerPage;
-			if(toRead > (((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) - (i * Geometry->bytesPerPage))) {
-				toRead = ((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t)) - (i * Geometry->bytesPerPage);
-			}
-
-			memcpy(((uint8_t*)pstFTLCxt->pawReadCounterTable) + (i * Geometry->bytesPerPage), pageBuffer, toRead);	
-		}
-
-		if((pstFTLCxt->hasFTLCountsTable + 1) == 0) {
-			int x = pstFTLCxt->page_for_FTLCountsTable / Geometry->pagesPerSuBlk;
-			if(x == 0 || x <= Geometry->userSuBlksTotal) {
-				if(VFL_Read(pstFTLCxt->page_for_FTLCountsTable, pageBuffer, spareBuffer, TRUE, &refreshPage) != 0)
-					goto FTL_Open_Error_Release;
-
-				sum_data(pageBuffer);
-			}
-		}
-	} else {
-		bufferPrintf("ftl: updating the FTL from seemingly compatible version\r\n");
-		for(i = 0; i < (Geometry->userSuBlksTotal + 23); i++) {
-			pstFTLCxt->pawReadCounterTable[i] = 0x1388;
-		}
-
-		for(i = 0; i < 5; i++) {
-			pstFTLCxt->elements2[i].field_0 = -1;
-			pstFTLCxt->elements2[i].field_2 = -1;
-		}
-
-		pstFTLCxt->field_3C8 = 0;
-		pstFTLCxt->clean = 0;
-		FTLCxtBuffer->versionLower = 0x46560000;
-		FTLCxtBuffer->versionUpper = 0xB9A9FFFF;
-
-		success = TRUE;
-	}
+	int success = ftl_open_read_counter_tables();
 
 	if(success) {
 		bufferPrintf("ftl: FTL successfully opened!\r\n");
@@ -2368,7 +2914,8 @@ int FTL_Write(int logicalPageNumber, int totalPagesToWrite, uint8_t* pBuf)
 				pLog->wPageOffsets[offset + j] = origPagesUsed + j;
 				++pLog->pagesUsed;
 
-				ftl_check_still_sequential(pLog, offset + j);
+				if(pLog->isSequential == 1)
+					ftl_check_still_sequential(pLog, offset + j);
 			}
 
 			i += pagesCanWrite;
