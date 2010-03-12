@@ -305,9 +305,9 @@ void fs_cmd_add(int argc, char** argv) {
 	closeVolume(volume);
 	CLOSE(io);
 
-	if(!ftl_commit_cxt())
+	if(!ftl_sync())
 	{
-		bufferPrintf("FTL context commit error!\r\n");
+		bufferPrintf("FTL sync error!\r\n");
 	}
 }
 

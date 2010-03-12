@@ -119,6 +119,6 @@ int FTL_Write(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf);
 int ftl_read(void* buffer, uint64_t offset, int size);
 int ftl_write(void* buffer, uint64_t offset, int size);
 void ftl_printdata();
-int ftl_commit_cxt();
+int ftl_sync();
 
 #endif

@@ -16,6 +16,7 @@ static int vfl_commit_cxt(int bank);
 static int ftl_set_free_vb(uint16_t block);
 static int ftl_get_free_vb(uint16_t* block);
 static int ftl_merge(FTLCxtLog* pLog);
+static int ftl_commit_cxt();
 
 static int findDeviceInfoBBT(int bank, void* deviceInfoBBT) {
 	uint8_t* buffer = malloc(Geometry->bytesPerPage);
@@ -1410,8 +1411,13 @@ FTL_Read_Error_Release:
 	return ret;
 }
 
-int ftl_commit_cxt()
+static int ftl_commit_cxt()
 {
+
+	// TODO: We should use the StoreCxt for this. Not only would we be able to more easily do
+	// multiplanar writes, but if any of this fails, we can back out without changes to our
+	// working context
+
 	int i;
 
 	uint8_t* pageBuffer = malloc(Geometry->bytesPerPage);
@@ -2372,12 +2378,14 @@ int FTL_Write(int logicalPageNumber, int totalPagesToWrite, uint8_t* pBuf)
 
 	if(pstFTLCxt->swapCounter >= 300)
 	{
-		pstFTLCxt->swapCounter -= 20;
 		int tries;
 		for(tries = 0; tries < 4; ++tries)
 		{
 			if(ftl_auto_wearlevel())
+			{
+				pstFTLCxt->swapCounter -= 20;
 				break;
+			}
 		}
 	}
 
@@ -2388,6 +2396,41 @@ error_release:
 	free(spareData);
 
 	return ERROR_ARG;
+}
+
+int ftl_sync()
+{
+	int tries;
+
+	if(pstFTLCxt->clean)
+		return TRUE;
+
+	if(pstFTLCxt->swapCounter >= 20)
+	{
+		for(tries = 0; tries < 4; ++ tries)
+		{
+			if(ftl_auto_wearlevel())
+			{
+				pstFTLCxt->swapCounter -= 20;
+				break;
+			}
+		}
+	}
+
+	for(tries = 0; tries < 4; ++ tries)
+	{
+		if(ftl_commit_cxt())
+		{
+			return TRUE;
+		} else
+		{
+			// have some kind of error, try again on a new block
+			uint16_t block = pstFTLCxt->FTLCtrlPage / Geometry->pagesPerSuBlk;
+			pstFTLCxt->FTLCtrlPage = (block * Geometry->pagesPerSuBlk) + Geometry->pagesPerSuBlk - 1;	
+		}
+	}
+
+	return FALSE;
 }
 
 int ftl_setup() {
