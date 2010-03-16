@@ -965,6 +965,7 @@ static int determine_block_type(uint16_t block, uint32_t* highest_usn)
 {
 	uint8_t* pageBuffer = (uint8_t*) malloc(Geometry->bytesPerPage);
 	SpareData* spareData = (SpareData*) malloc(Geometry->bytesPerSpare);
+	int isSequential = TRUE;
 
 	uint32_t max = 0;	
 	int page;
@@ -978,7 +979,7 @@ static int determine_block_type(uint16_t block, uint32_t* highest_usn)
 			max = spareData->user.usn;
 
 		if((spareData->user.logicalPageNumber % Geometry->pagesPerSuBlk) != page)
-			break;
+			isSequential = FALSE;
 	}
 
 	free(spareData);
@@ -986,10 +987,7 @@ static int determine_block_type(uint16_t block, uint32_t* highest_usn)
 
 	*highest_usn = max;
 
-	if(page < 0)
-		return TRUE;
-	else
-		return FALSE;
+	return isSequential;
 }
 
 // Assumptions: same conditions that FTL_Open would have been called in.
@@ -997,6 +995,10 @@ static int FTL_Restore() {
 	uint16_t* blockMap = (uint16_t*) malloc((Geometry->userSuBlksTotal + 23) * sizeof(uint16_t));
 	uint8_t* isEmpty = (uint8_t*) malloc((Geometry->userSuBlksTotal + 23) * sizeof(uint8_t));
 	uint8_t* nonSequential = (uint8_t*) malloc((Geometry->userSuBlksTotal + 23) * sizeof(uint8_t));
+	uint32_t* usnA = (uint32_t*) malloc(sizeof(uint32_t) * Geometry->pagesPerSuBlk);
+	uint32_t* usnB = (uint32_t*) malloc(sizeof(uint32_t) * Geometry->pagesPerSuBlk);
+	uint32_t* lpnA = (uint32_t*) malloc(sizeof(uint32_t) * Geometry->pagesPerSuBlk);
+	uint32_t* lpnB = (uint32_t*) malloc(sizeof(uint32_t) * Geometry->pagesPerSuBlk);
 	uint16_t* awFreeVb = &pstFTLCxt->awFreeVb[0];
 	uint16_t* pawMapTable = pstFTLCxt->pawMapTable;
 	uint16_t* pawEraseCounterTable = pstFTLCxt->pawEraseCounterTable;
@@ -1173,8 +1175,14 @@ static int FTL_Restore() {
 		uint32_t mapCandidateUSN = 0xFFFFFFFF;
 		uint16_t logCandidate = 0xFFFF;
 		uint32_t logCandidateUSN = 0xFFFFFFFF;
-
 		uint16_t candidate;
+
+		if((block % 1000) == 0)
+		{
+			bufferPrintf("ftl: restore scanning logical blocks %d - %d\r\n", block,
+					block + (((Geometry->userSuBlksTotal - block) > 1000) ? 999 : (Geometry->userSuBlksTotal - block - 1)));
+		}
+
 		for(candidate = 0; candidate < (Geometry->userSuBlksTotal + 23); ++candidate)
 		{
 			uint32_t candidateUSN;
@@ -1353,84 +1361,111 @@ static int FTL_Restore() {
 
 	for(i = 0; i < numLogs; ++i)
 	{
-		// TODO: could be optimized to use previously figured out USN info.
-
 		// Since we always store the highest USN block as the map in step two
 		// to ensure we always end up with the two highest USN blocks, we
 		// could have the ordering swapped. Figure out the correct one.
-		uint32_t mapUSN;
-		uint32_t logUSN;
 
-		int mapSeq = determine_block_type(pawMapTable[pLog[i].wLbn], &mapUSN);
-		int logSeq = determine_block_type(pLog[i].wVbn, &logUSN);
+		uint16_t blockA = pawMapTable[pLog[i].wLbn];
+		uint16_t blockB = pLog[i].wVbn;
+		int aSequential = 1;
+		int bSequential = 1;
+		uint32_t aHighestUSN = 0;
+		uint32_t bHighestUSN = 0;
+		uint32_t* mapBlockUSN;
+		uint32_t* mapBlockLPN;
+		uint32_t* logBlockUSN;
+		uint32_t* logBlockLPN;
+		int page;
 
-		if(mapUSN > logUSN)
+		// Populate information about these two blocks
+
+		for(page = Geometry->pagesPerSuBlk - 1; page >= 0; --page)
 		{
-			// oh, we must have gotten them switched up.
-
-			if(logSeq)
+			int ret = VFL_Read((blockA * Geometry->pagesPerSuBlk) + page, pageBuffer, (uint8_t*) spareData, TRUE, NULL);
+			if(ret == ERROR_EMPTYBLOCK)
+				usnA[page] = 0;
+			else
 			{
-				uint32_t tmp = pawMapTable[pLog[i].wLbn];
-				pawMapTable[pLog[i].wLbn] = pLog[i].wVbn;
-				pLog[i].wVbn = tmp;
-			} else
-			{
-				// ruh-roh. we can't make our log the map because it's not sequential!
-				bufferPrintf("ftl: restore warning -- mapUSN = %d, logUSN = %d, mapSeq = %d, logSeq = %d\r\n",
-						mapUSN, logUSN, mapSeq, logSeq);
-				// our assumption is seemingly violated. However it does not matter in this
-				// specific case since as a scatter block, the log has to be a log anyway.
+				usnA[page] = spareData->user.usn;
+				lpnA[page] = spareData->user.logicalPageNumber;
 
+				if(usnA[page] > aHighestUSN)
+					aHighestUSN = usnA[page];
 
-				if(mapUSN > highest_usn)
-					highest_usn = mapUSN;
-			}
-		} else
-		{
-			// just a sanity check
-			if(!mapSeq)
-			{
-				bufferPrintf("ftl: restore failed, Our map must be sequential!\r\n");
-				goto error_release;
+				if((spareData->user.logicalPageNumber % Geometry->pagesPerSuBlk) != page)
+					aSequential = 0;
 			}
 		}
 
-		// This keeps track of the highest USN for all log blocks.
-		if(logUSN > highest_usn)
-			highest_usn = logUSN;
-
-		// okay, now we will populate the log block with the correct information. Assumption:
-		// for any page p_i for lpn n in the log block such that there does not exist another
-		// page q_j for lpn n in the block such that j > i, then p_i should be mapped for
-		// lpn n. That is, any page in the log block is more recent than the equivalent page
-		// in the map block. In addition, any page appearing later in the log block is more
-		// recent than any page appearing earlier.
-
-		int page;
 		for(page = Geometry->pagesPerSuBlk - 1; page >= 0; --page)
 		{
-			int ret = VFL_Read((pLog[i].wVbn * Geometry->pagesPerSuBlk) + page, pageBuffer, (uint8_t*) spareData, TRUE, NULL);
+			int ret = VFL_Read((blockB * Geometry->pagesPerSuBlk) + page, pageBuffer, (uint8_t*) spareData, TRUE, NULL);
 			if(ret == ERROR_EMPTYBLOCK)
+				usnB[page] = 0;
+			else
+			{
+				usnB[page] = spareData->user.usn;
+				lpnB[page] = spareData->user.logicalPageNumber;
+
+				if(usnB[page] > bHighestUSN)
+					bHighestUSN = usnB[page];
+
+				if((spareData->user.logicalPageNumber % Geometry->pagesPerSuBlk) != page)
+					bSequential = 0;
+			}
+		}
+
+		// Determine which is which
+		if((aSequential && bSequential && bHighestUSN > aHighestUSN) || aSequential)
+		{
+			pLog[i].wVbn = blockB;
+			pawMapTable[pLog[i].wLbn] = blockA;
+			mapBlockUSN = usnA;
+			logBlockUSN = usnB;
+			mapBlockLPN = lpnA;
+			logBlockLPN = lpnB;
+			if(bHighestUSN > highest_usn)
+				highest_usn = bHighestUSN;
+		} else if((aSequential && bSequential && bHighestUSN <= aHighestUSN) || bSequential)
+		{
+			pLog[i].wVbn = blockA;
+			pawMapTable[pLog[i].wLbn] = blockB;
+			mapBlockUSN = usnB;
+			logBlockUSN = usnA;
+			mapBlockLPN = lpnB;
+			logBlockLPN = lpnA;
+			if(aHighestUSN > highest_usn)
+				highest_usn = aHighestUSN;
+		} else
+		{
+			bufferPrintf("ftl: restore failed, we have two non-sequential blocks!\n");
+			goto error_release;
+		}
+
+		// okay, now we will populate the log block with the correct information.
+
+		for(page = Geometry->pagesPerSuBlk - 1; page >= 0; --page)
+		{
+			int logOffset;
+
+			// check if empty
+			if(logBlockUSN[page] == 0)
 				continue;
 
 			// we set it to after the first non-empty page
 			if(pLog[i].pagesUsed == 0)
 				pLog[i].pagesUsed = page + 1;
 
-			if(ret != 0)
+			logOffset = logBlockLPN[page] % Geometry->pagesPerSuBlk;
+
+			// is there a newer copy of this page in the map block?
+			if(logBlockUSN[page] < mapBlockUSN[logOffset])
 				continue;
-
-			int logOffset = spareData->user.logicalPageNumber % Geometry->pagesPerSuBlk;
-
-			// have we seen this lpn before?
-			if(pLog[i].wPageOffsets[logOffset] != 0xFFFF)
-				continue;	// if so, we this is old crap.
-
 
 			// if not, we'll use it since it's the most recent.
 			pLog[i].wPageOffsets[logOffset] = page;
 			++pLog[i].pagesCurrent;
-
+			
 			if(logOffset != page)
 				pLog[i].isSequential = 0;
 		}
@@ -1459,7 +1494,11 @@ static int FTL_Restore() {
 
 	return TRUE;
 
-error_release:	
+error_release:
+	free(usnA);
+	free(usnB);
+	free(lpnA);
+	free(lpnB);
 	free(pageBuffer);
 	free(spareData);
 	free(blockMap);

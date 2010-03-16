@@ -7,6 +7,7 @@
 #include "hfs/fs.h"
 #include "nand.h"
 #include "wdt.h"
+#include "dma.h"
 
 #define MACH_APPLE_IPHONE 1506
 
@@ -289,6 +290,7 @@ void boot_linux(const char* args) {
 	uint32_t mach_type = MACH_APPLE_IPHONE;
 
 	EnterCriticalSection();
+	dma_shutdown();
 	wdt_disable();
 	arm_disable_caches();
 	mmu_disable();

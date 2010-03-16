@@ -312,6 +312,13 @@ int dma_finish(int controller, int channel, int timeout) {
 	return 0;
 }
 
+int dma_shutdown()
+{
+	SET_REG(DMAC0 + DMACConfiguration, ~DMACConfiguration_ENABLE);
+	SET_REG(DMAC1 + DMACConfiguration, ~DMACConfiguration_ENABLE);
+	return 0;
+}
+
 static void dispatchRequest(volatile DMARequest *request, int controller, int channel) {
 	// TODO: Implement this
 	request->done = TRUE;

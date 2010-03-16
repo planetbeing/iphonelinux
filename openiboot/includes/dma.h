@@ -29,6 +29,7 @@ typedef struct DMALinkedList {
 #define DMA_NAND 8
 
 int dma_setup();
+int dma_shutdown();
 int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int Destination, int DestinationTransferWidth, int DestinationBurstSize, int* controller, int* channel, DMAHandler handler);
 int dma_perform(uint32_t Source, uint32_t Destination, int size, int continueList, int* controller, int* channel);
 int dma_finish(int controller, int channel, int timeout);
