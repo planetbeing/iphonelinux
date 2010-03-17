@@ -477,6 +477,20 @@ void cmd_dma(int argc, char** argv) {
 	bufferPrintf("dma_finish(controller: %d, channel %d): %d\r\n", controller, channel, dma_finish(controller, channel, 500));
 }
 
+void cmd_nand_erase(int argc, char** argv)
+{
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <bank> <block> -- You probably don't want to do this.\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t bank = parseNumber(argv[1]);
+	uint32_t block = parseNumber(argv[2]);
+
+	bufferPrintf("Erasing bank %d, block %d...\r\n", bank, block);
+	bufferPrintf("nand_erase: %d\r\n", nand_erase(bank, block));
+}
+
 void cmd_nand_read(int argc, char** argv) {
 	if(argc < 4) {
 		bufferPrintf("Usage: %s <address> <bank> <page> [pages]\r\n", argv[0]);
@@ -945,6 +959,7 @@ OPIBCommand CommandList[] =
 		{"nand_read_spare", "read a page of NAND's spare into RAM", cmd_nand_read_spare},
 		{"nand_status", "read NAND status", cmd_nand_status},
 		{"nand_ecc", "hardware ECC a page", cmd_nand_ecc},
+		{"nand_erase", "erase a NAND block", cmd_nand_erase},
 		{"vfl_read", "read a page of VFL into RAM", cmd_vfl_read},
 		{"vfl_erase", "erase a block of VFL", cmd_vfl_erase},
 		{"ftl_read", "read a page of FTL into RAM", cmd_ftl_read},

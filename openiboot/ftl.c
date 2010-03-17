@@ -1458,8 +1458,8 @@ static int FTL_Restore() {
 
 			logOffset = logBlockLPN[page] % Geometry->pagesPerSuBlk;
 
-			// is there a newer copy of this page in the map block?
-			if(logBlockUSN[page] < mapBlockUSN[logOffset])
+			// is there a newer copy of this page already in this log block?
+			if(pLog[i].wPageOffsets[logOffset] != 0xFFFF)
 				continue;
 
 			// if not, we'll use it since it's the most recent.
@@ -1686,7 +1686,6 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 		ftlCtrlBlock = pstFTLCxt->FTLCtrlBlock[i];
 	}
 
-
 	if(ftlCtrlBlock == 0xffff) {
 		bufferPrintf("ftl: Cannot find context!\r\n");
 		goto FTL_Open_Error_Release;
@@ -1849,7 +1848,7 @@ int FTL_Read(int logicalPageNumber, int totalPagesToRead, uint8_t* pBuf) {
 
 	int lbn = logicalPageNumber / Geometry->pagesPerSuBlk;
 	int offset = logicalPageNumber - (lbn * Geometry->pagesPerSuBlk);
-	
+
 	uint8_t* pageBuffer = malloc(Geometry->bytesPerPage);
 	uint8_t* spareBuffer = malloc(Geometry->bytesPerSpare);
 	if(!pageBuffer || !spareBuffer) {
