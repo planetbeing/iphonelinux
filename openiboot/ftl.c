@@ -2806,8 +2806,8 @@ int FTL_Write(int logicalPageNumber, int totalPagesToWrite, uint8_t* pBuf)
 
 	for(i = 0; i < totalPagesToWrite; )
 	{
-		int lbn = logicalPageNumber / Geometry->pagesPerSuBlk;
-		int offset = logicalPageNumber - (lbn * Geometry->pagesPerSuBlk);
+		int lbn = (logicalPageNumber + i) / Geometry->pagesPerSuBlk;
+		int offset = (logicalPageNumber + i) - (lbn * Geometry->pagesPerSuBlk);
 
 		FTLCxtLog* pLog = ftl_prepare_log(lbn);
 
