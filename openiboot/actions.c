@@ -181,7 +181,7 @@ static void setup_mem_tag(uint32_t start, uint32_t len)
 
 static void setup_cmdline_tag(const char * line)
 {
-	int linelen = strlen(line);
+	int linelen = strlen(line) + 1;
 
 	if(!linelen)
 		return;                             /* do not insert a tag for an empty commandline */

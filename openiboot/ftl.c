@@ -1086,7 +1086,7 @@ static int FTL_Restore() {
 
 	pstFTLCxt->clean = 0;
 
-	for(i = 0; i < 17; ++i)
+	for(i = 0; i < 18; ++i)
 	{
 		pLog[i].wPageOffsets = pstFTLCxt->wPageOffsets + (i * Geometry->pagesPerSuBlk);
 		memset(pLog[i].wPageOffsets, 0xFF, Geometry->pagesPerSuBlk * sizeof(uint16_t));
