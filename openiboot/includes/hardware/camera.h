@@ -1,12 +1,13 @@
 #ifndef HW_CAMERA_H
 #define HW_CAMERA_H
 
-#define GPIO_function_power_on 0x605
-#define GPIO_function_standby 0xA01
-#define GPIO_function_reset 0xA02
-#define GPIO_function_clock_enable 0xA00
+#define CAMERA_I2C 1
 
-#define camera_i2c_slave_read 0x79
-#define camera_i2c_slave_write 0x78
+#define CAMERA_GPIO_POWER_ON 0x605
+#define CAMERA_GPIO_STANDBY 0xA01
+#define CAMERA_GPIO_RESET 0xA02
+#define CAMERA_GPIO_CLOCK_ENABLE 0xA00
+
+#define CAMERA_ADDR 0x78
 
 #endif

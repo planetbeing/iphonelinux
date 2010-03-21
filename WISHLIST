@@ -60,13 +60,10 @@ ought to be documented in GSM.
 Jobs for people who want to get their hands dirty with drivers
 --------------------------------------------------------------
 
-1. Look at TheSeven's NAND FTL code in Rockbox and CPICH's reverse engineering
-efforts to figure out the FTL write code and get it working.
-
-2. Write a new USB driver: I hate the current one. TheSeven might have some
+1. Write a new USB driver: I hate the current one. TheSeven might have some
 better code.
 
-3. Can we steal some code from that userland bluetooth stack and put it on top
+2. Can we steal some code from that userland bluetooth stack and put it on top
 of our UART code? It might be even cleaner than USB, ironically, since we can
 probably do it all without interrupts.
 
@@ -79,18 +76,10 @@ Jobs for reverse engineers
 investigated, and at least some functions are shared, so it shouldn't be
 terrible.
 
-3. Figure out how to talk to the light sensor. It's a TSL2561 according to the
-ioreg. The slave address is 0x92/0x93 according to the ioreg "reg" setting and
-is one of the slave addresses allowed on the TSL2561. It's on i2c0 according to
-ioreg. It all looks good except for the fact I cannot get a response out of this
-part. I even bruteforced all the slave addresses on i2c0 and only got responses
-from the PMU, the accelerometer and the Wolfson, stuff we already know how to
-talk to. What's going on? Is it just my 2G is broken?
-
-4. Figure out the new FTL they're using on the newer devices. That's going to be
+3. Figure out the new FTL they're using on the newer devices. That's going to be
 a pain.
 
-5. I managed to boost the uart1 baud rate to 750000, which is half of what
+4. I managed to boost the uart1 baud rate to 750000, which is half of what
 ioreg advertised (though it also advertised a data width of 16). 750000 IS the
 baud that CommCenter sets though, and I don't see it ever changing that, so I
 don't know what's going on. at+ipr advertises as the maximum speed. Someone
@@ -103,5 +92,6 @@ some sort of software compression?
 	"serial baud rate" = 0x16e360
 	"serial stop bits" = 0x2
 
+5. Reverse AppleH1CameraInterface to figure out how to get data from the camera.
 
 Thanks for reading all this. I'm impressed.
