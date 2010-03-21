@@ -24,7 +24,7 @@
 #include "accel.h"
 #include "sdio.h"
 #include "wlan.h"
-
+#include "camera.h"
 #include "util.h"
 #include "commands.h"
 #include "framebuffer.h"
@@ -400,6 +400,8 @@ static int setup_openiboot() {
 	framebuffer_setup();
 
 	audiohw_init();
+
+	camera_setup();
 
 	return 0;
 }
