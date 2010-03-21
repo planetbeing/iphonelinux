@@ -67,6 +67,22 @@ static int readResultData(int len);
 
 static void newPacket(const uint8_t* data, int len);
 
+int MultitouchOn = FALSE;
+
+void multitouch_on()
+{
+	if(!MultitouchOn)
+	{
+		bufferPrintf("multitouch: powering on\r\n");
+		gpio_pin_output(MT_GPIO_POWER, 0);
+		udelay(200000);
+		gpio_pin_output(MT_GPIO_POWER, 1);
+
+		udelay(15000);
+		MultitouchOn = TRUE;
+	}
+}
+
 int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const uint8_t* mainFirmware, int mainFirmwareLen)
 {
 	bufferPrintf("multitouch: A-Speed firmware at 0x%08x - 0x%08x, Main firmware at 0x%08x - 0x%08x\r\n",
@@ -84,11 +100,7 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 	gpio_register_interrupt(MT_ATN_INTERRUPT, 0, 0, 0, multitouch_atn, 0);
 	gpio_interrupt_enable(MT_ATN_INTERRUPT);
 
-	gpio_pin_output(MT_GPIO_POWER, 0);
-	udelay(200000);
-	gpio_pin_output(MT_GPIO_POWER, 1);
-
-	udelay(15000);
+	multitouch_on();
 
 	bufferPrintf("multitouch: Sending A-Speed firmware...\r\n");
 	if(!loadASpeedFirmware(ASpeedFirmware, ASpeedFirmwareLen))

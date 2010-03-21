@@ -26,6 +26,7 @@
 #include "multitouch.h"
 #include "wlan.h"
 #include "radio.h"
+#include "als.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -741,6 +742,20 @@ void cmd_accel(int argc, char** argv) {
 	bufferPrintf("x: %d, y: %d, z: %d\r\n", x, y, z);
 }
 
+void cmd_als(int argc, char** argv) {
+	bufferPrintf("channel 0 (visible and IR) = %d, channel 1 (IR only) = %d\r\n", als_data0(), als_data1());
+}
+
+void cmd_als_en(int argc, char** argv) {
+	bufferPrintf("Enabling ALS interrupt.\r\n");
+	als_enable_interrupt();
+}
+
+void cmd_als_dis(int argc, char** argv) {
+	bufferPrintf("Disabling ALS interrupt.\r\n");
+	als_disable_interrupt();
+}
+
 void cmd_sdio_status(int argc, char** argv) {
 	sdio_status();
 }
@@ -978,6 +993,9 @@ OPIBCommand CommandList[] =
 		{"iic_read", "read a IIC register", cmd_iic_read},
 		{"iic_write", "write a IIC register", cmd_iic_write},
 		{"accel", "display accelerometer data", cmd_accel},
+		{"als", "display ambient light sensor data", cmd_als},
+		{"als_en", "enable continuous reporting of ALS data", cmd_als_en},
+		{"als_dis", "disable continuous reporting of ALS data", cmd_als_dis},
 		{"sdio_status", "display sdio registers", cmd_sdio_status},
 		{"sdio_setup", "restart SDIO stuff", cmd_sdio_setup},
 		{"wlan_prog_helper", "program wlan fw helper", cmd_wlan_prog_helper},

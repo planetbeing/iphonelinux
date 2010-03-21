@@ -163,10 +163,11 @@ static void do_i2c(I2CInfo* i2c) {
 					proceed = TRUE;
 				} else {
 					i2c->operation_result = OPERATION_CONDITIONCHANGE;
-					i2c->current_iicstat &= (IICSTAT_MODE_SLAVETX << IICSTAT_MODE_SHIFT) | (IICSTAT_STARTSTOPGEN_MASK << IICSTAT_STARTSTOPGEN_SHIFT);
+					i2c->current_iicstat = (IICSTAT_MODE_MASTERRX << IICSTAT_MODE_SHIFT) | (IICSTAT_STARTSTOPGEN_MASK << IICSTAT_STARTSTOPGEN_SHIFT);
 					SET_REG(i2c->register_IICSTAT, i2c->current_iicstat);
 					SET_REG(i2c->register_IICCON, i2c->iiccon_settings | IICCON_INTPENDING);
 					i2c->state = I2CSetup;
+					proceed = TRUE;
 				}
 				break;
 			case I2CSetup:

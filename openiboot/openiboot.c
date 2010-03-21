@@ -38,6 +38,7 @@
 #include "radio.h"
 #include "wm8958.h"
 #include "wdt.h"
+#include "als.h"
 
 int received_file_size;
 
@@ -89,6 +90,7 @@ void OpenIBootStart() {
 	sdio_setup();
 	wlan_setup();
 	accel_setup();
+	als_setup();
 
 	nand_setup();
 #ifndef NO_HFS
