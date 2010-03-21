@@ -5,6 +5,9 @@
 #
 # on ubuntu install the following packages : build-essential texinfo
 
+#########  Setup Variables  ###########
+MYDIR="$PWD/`dirname $0`"
+
 # Package URL
 PKG_MIRROR="http://www.gnuarm.com"
 
@@ -17,219 +20,310 @@ PKG_NEWLIB="newlib-1.14.0.tar.gz"
 PATCH_GCC411_ARMELF="t-arm-elf.patch"
 PATCH_NEWLIB_MAKEINFO="newlib-1.14.0-missing-makeinfo.patch"
 
-NEEDROOT=0
 
 if [ -z "$IPHONELINUXDEV" ]; then
 	PREFIX=/usr/local
 	NEEDROOT=1
 else
 	PREFIX="$IPHONELINUXDEV"
+	NEEDROOT=0
 fi
-
 export PATH="$PATH:$PREFIX/bin"
+
+# Check for different toolchain prefix
+if [ -z "$TOOLCHAIN_PATH" ]; then
+  TOOLCHAIN_PATH="/tmp/ipl-toolchain"
+fi
 
 #LOG FILE
 BUILDLOG=build.log
 
-# display usage
-Usage () 
-{ 
-	if [ "$NEEDROOT" == "1" -a "$(id -u)" != "0" ]; then
-		echo "This script must be run as root" 1>&2
-		exit 1
-	fi
 
-	if [ -z "$1" ];
-	then
-		echo "Usage: ./build-toolchain.sh make|clean"
-		exit 1
-	elif [ "$1" == "make" ];
-		then
-			return 1
-	elif [ "$1" == "clean" ];
-		then
-			return 2
-	fi
+
+#########  Helper functions  ###########
+
+usage() {
+	echo "Usage: ./build-toolchain.sh clean | make [stage]"
+	echo "  if stage is included the build will begin from"
+	echo "  there instead of from the beginning"
+	exit 1
 }
-# Check file 
-checkFile()
-{
-	if [ -e $1 ];
-	then
-		return 1;
-	fi
-	return 0;
-}
-# Check return code
-EXIT_TRUE=1
-EXIT_FALSE=0
-checkRet ()
-{
-	if [ $1 -ne 0 ];
-	then
-  	echo $2
-		if [ $3 -eq $EXIT_TRUE ];
-		then
-  		exit 1
+
+# Holds the value of the current stage so that checkRet can echo it if it fails
+CURRENT_STAGE=""
+
+checkRet() {
+	# Die if return code != 0
+	if [ $? -ne 0 ]; then
+		if [ -n "$CURRENT_STAGE" ]; then
+			echo "$1 (stage: $CURRENT_STAGE)"
+		else
+			echo "$1"
 		fi
+  		exit 1
 	fi
 }
-# Show usage
-Usage $1
-CMD_TYPE=$?
 
-# Check for different prefix
-if [ -z "$TOOLCHAIN_PATH" ];
-then
-  TOOLCHAIN_PATH="/tmp/ipl-toolchain"
-fi
-
-if [ $CMD_TYPE -gt 1 ];
-then
-	echo -en "Removing temporary files\n"
-	rm -rf $TOOLCHAIN_PATH
-	checkRet $? "Failed to remove $TOOLCHAIN_PATH/src"
-	echo -en "Done\n"
-	exit 0
-fi
-
-echo -en "=======================================\n"
-
-# Create tmp dirs
-# BinUtils
-echo -en "Creating default directories\n"
-mkdir -p $TOOLCHAIN_PATH/binutils-build
-checkRet $? "failed to create $TOOLCHAIN_PATH/binutils-build" $EXIT_TRUE
-echo "- $TOOLCHAIN_PATH/binutils-build"
-# GCC
-mkdir -p $TOOLCHAIN_PATH/gcc-build
-checkRet $? "failed to create $TOOLCHAIN_PATH/gcc-build" $EXIT_TRUE
-echo "- $TOOLCHAIN_PATH/gcc-build"
-# New lib
-mkdir -p $TOOLCHAIN_PATH/newlib-build
-checkRet $? "failed to create $TOOLCHAIN_PATH/newlib-build" $EXIT_TRUE
-echo "- $TOOLCHAIN_PATH/newlib-build"
-# Package src dir
-mkdir -p $TOOLCHAIN_PATH/src/
-checkRet $? "failed to create $TOOLCHAIN_PATH/src" $EXIT_TRUE
-echo "- $TOOLCHAIN_PATH/src"
-
-# Copy patch files
-cp ./*.patch $TOOLCHAIN_PATH
-
+log() {
+	#execute command redirecting to the log file
+	"$@" >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
+}
 # Create log file
-echo "" > $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-echo -en "Downloading packages\n"
-# BinUtils
-echo -en "- Downloading $PKG_BINUTILS\n"
-checkFile $TOOLCHAIN_PATH/src/$PKG_BINUTILS
-if [ $? -eq 0 ];
-then
-	wget $PKG_MIRROR/$PKG_BINUTILS -O $TOOLCHAIN_PATH/src/$PKG_BINUTILS >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-	checkRet $? "Failed to retrive $PKG_BINUTILS" $EXIT_TRUE
+echo > $TOOLCHAIN_PATH/$BUILDLOG
+
+STAGE=$2
+STAGE_MSG=""
+stage() {
+	# if $STAGE is not empty then only execute stage if it matches, clearing afterwards
+	# Sets $CURRENT_STAGE and executes the stage
+	if [ -n "$STAGE" -a "$STAGE" != "$1" ]; then
+		STAGE_MSG=""
+		return 0
+	fi
+	STAGE=""
+	CURRENT_STAGE="$1"
+	
+	echo -en "$STAGE_MSG"
+	STAGE_MSG=""
+	stage_$1
+}
+
+#Stores a message that will be printed before the next stage
+#if the next stage is run
+msg() {
+	STAGE_MSG="$STAGE_MSG$@\n"
+}
+
+
+#########  Quick tests  ###########
+
+if [ "$NEEDROOT" == "1" -a "$(id -u)" != "0" ]; then
+	echo "This script must be run as root" 1>&2
+	exit 1
 fi
-echo "- $PKG_BINUTILS download complete"
-# GCC
-echo -en "- Downloading $PKG_GCC411\n"
-checkFile $TOOLCHAIN_PATH/src/$PKG_GCC411
-if [ $? -eq 0 ];
-then
-  wget $PKG_MIRROR/$PKG_GCC411 -O $TOOLCHAIN_PATH/src/$PKG_GCC411 >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-  checkRet $? "Failed to retrive $PKG_GCC411" $EXIT_TRUE
+
+# check for make or clean
+case "$1" in
+	make);; #good, move on through
+	clean)
+		echo "Removing temporary files"
+		rm -rf $TOOLCHAIN_PATH
+		checkRet "Failed to remove $TOOLCHAIN_PATH"
+		echo "Done"
+		exit 0
+		;;
+	*) #bad
+		usage
+esac
+
+
+#########  Build stages  ###########
+
+stage_setup() {
+	# Create tmp dirs
+	echo "- Creating default directories"
+	cd $MYDIR
+	for dir in binutils-build gcc-build newlib-build src; do
+		mkdir -p $TOOLCHAIN_PATH/$dir
+		checkRet "failed to create $TOOLCHAIN_PATH/$dir"
+		echo "  - $TOOLCHAIN_PATH/$dir"
+	done
+
+	# Copy patch files
+	cp $MYDIR/*.patch $TOOLCHAIN_PATH
+}
+
+stage_download() {
+	echo "- Downloading packages"
+
+	for pkg in "$PKG_BINUTILS" "$PKG_GCC411" "$PKG_NEWLIB"; do
+	
+		if [ -e $TOOLCHAIN_PATH/src/$pkg ];
+		then
+			echo "  - $pkg exists"
+		else
+			# Download to a .tmp file so that if the download is interupted
+			# we don't think that the file is downloaded
+			echo "  - Downloading $pkg"
+			log wget $PKG_MIRROR/$pkg -O $TOOLCHAIN_PATH/src/$pkg.tmp
+			checkRet "Failed to retrive $pkg"
+			mv $TOOLCHAIN_PATH/src/$pkg{.tmp,} # move file.tmp to file
+			echo "  - $pkg download complete"
+		fi
+	done
+}
+
+stage_binutils_extract() {
+	echo "- Extracting binutils"
+	cd $TOOLCHAIN_PATH
+	log tar -jxvf $TOOLCHAIN_PATH/src/$PKG_BINUTILS
+	checkRet "Failed to extract package $PKG_BINUTILS"
+}
+
+stage_binutils_configure() {
+	echo "- Configuring binutils"
+	cd $TOOLCHAIN_PATH/binutils-build
+	log ../binutils-2.17/configure --target=arm-elf --prefix=$PREFIX \
+			--enable-interwork --enable-multilib --disable-werror
+	checkRet "Failed to configure binutils"
+}
+
+stage_binutils_build() {
+	echo "- Building binutils"
+	cd $TOOLCHAIN_PATH/binutils-build
+	log make all
+	checkRet "Failed to build binutils"
+}
+
+stage_binutils_install() {
+	echo "- Installing binutils"
+	cd $TOOLCHAIN_PATH/binutils-build
+	log make install
+	checkRet "Failed to install binutils"
+}
+
+stage_gcc_extract() {
+	echo "- Extracting GCC"
+	cd $TOOLCHAIN_PATH
+	log tar -jxvf $TOOLCHAIN_PATH/src/$PKG_GCC411
+	checkRet "Failed to extract package $PKG_GCC411"
+}
+
+stage_newlib_extract() {
+	echo "- Extracting Newlib dependency for gcc"
+	cd $TOOLCHAIN_PATH
+	log tar -zxvf $TOOLCHAIN_PATH/src/$PKG_NEWLIB
+	checkRet "Failed to extract package $PKG_NEWLIB"
+}
+
+stage_gcc_patch() {
+	echo "- Patching GCC for t-arm-elf"
+	cd $TOOLCHAIN_PATH
+	log patch -p0 < $PATCH_GCC411_ARMELF
+	checkRet "Failed to apply patch for t-arm-elf"
+}
+
+stage_gcc_configure() {
+	echo "- Configuring GCC"
+	cd $TOOLCHAIN_PATH/gcc-build
+	log ../gcc-4.1.1/configure --target=arm-elf --prefix=$PREFIX \
+			--enable-interwork --enable-multilib --with-fpu=vfp \
+			--enable-languages="c,c++" --with-newlib \
+			--with-headers=../newlib-1.14.0/newlib/libc/include --disable-werror
+	checkRet "Failed to configure gcc"
+}
+
+stage_gcc_build() {
+	echo "- Building GCC part 1"
+	cd $TOOLCHAIN_PATH/gcc-build
+	log make all-gcc
+	checkRet "Failed to build GCC part 1"
+}
+
+stage_gcc_install() {
+	echo "- Installing GCC part 1"
+	cd $TOOLCHAIN_PATH/gcc-build
+	log make install-gcc
+	checkRet "Failed to install GCC part 1"
+}
+
+stage_newlib_patch() {
+	echo "- Patching Newlib for makeinfo"
+	cd $TOOLCHAIN_PATH
+	log patch -p0 < $PATCH_NEWLIB_MAKEINFO
+	checkRet "Failed to apply patch for newlib makeinfo"
+}
+
+stage_newlib_configure() {
+	echo "- Configuring Newlib"
+	cd $TOOLCHAIN_PATH/newlib-build
+	log ../newlib-1.14.0/configure --target=arm-elf --prefix=$PREFIX \
+		--enable-interwork --enable-multilib --disable-werror
+	checkRet "Failed to configure newlib"
+}
+
+stage_makesymlink() {
+	echo "- Making arm-elf-cc symlink"
+	cd $TOOLCHAIN_PATH/newlib-build
+	ln -s arm-elf-gcc $PREFIX/bin/arm-elf-cc
+	checkRet "Failed to create symlink"
+}
+
+stage_newlib_build() {
+	echo "- Building Newlib"
+	cd $TOOLCHAIN_PATH/newlib-build
+	log make all
+	checkRet "Failed to build newlib"
+}
+
+stage_newlib_install() {
+	echo "- Installing NewLib"
+	cd $TOOLCHAIN_PATH/newlib-build
+	log make install
+	checkRet "Failed to install newlib"
+}
+
+stage_gcc_build2() {
+	echo "- Building GCC part 2"
+	cd $TOOLCHAIN_PATH/gcc-build
+	log make all
+	checkRet "Failed to build GCC part 2"
+}
+
+stage_gcc_install2() {
+	echo "- Installing GCC part 2"
+	cd $TOOLCHAIN_PATH/gcc-build
+	log make install
+	checkRet "Failed to install GCC part 2"
+}
+
+echo "======================================="
+stage setup
+stage download
+
+msg "Starting Binutils"
+
+stage binutils_extract
+stage binutils_configure
+stage binutils_build
+stage binutils_install
+
+msg "Completed Binutils"
+
+msg "Starting GCC Part 1"
+
+stage gcc_extract
+stage newlib_extract
+
+stage gcc_patch
+stage gcc_configure
+stage gcc_build
+stage gcc_install
+
+msg "Completed GCC Part 1"
+
+msg "Starting Newlib"
+
+stage newlib_patch
+stage newlib_configure
+
+stage makesymlink
+
+stage newlib_build
+stage newlib_install
+
+msg "Completed NewLib"
+
+msg "Starting GCC Part 2"
+stage gcc_build2
+stage gcc_install2
+
+if [ -n "$STAGE" ]; then
+	echo "Error: unknown stage $STAGE"
+	usage
 fi
-echo "- $PKG_GCC411 download complete"
-# NewLib
-echo -en "- Downloading $PKG_NEWLIB\n"
-checkFile $TOOLCHAIN_PATH/src/$PKG_NEWLIB
-if [ $? -eq 0 ];
-then
-  wget $PKG_MIRROR/$PKG_NEWLIB -O $TOOLCHAIN_PATH/src/$PKG_NEWLIB >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-  checkRet $? "Failed to retrive $PKG_NEWLIB" $EXIT_TRUE
-fi
-echo "- $PKG_NEWLIB download complete"
 
-echo -en "Starting package build/install\n"
-echo -en "- Extracting binutils\n"
-cd $TOOLCHAIN_PATH
-tar -jxvf $TOOLCHAIN_PATH/src/$PKG_BINUTILS >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to extract package $PKG_BINUTILS" $EXIT_TRUE
-
-echo -en "- Doing binutils configure\n"
-cd $TOOLCHAIN_PATH/binutils-build
-../binutils-2.17/configure --target=arm-elf --prefix=$PREFIX \
-	--enable-interwork --enable-multilib --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to configure binutils" $EXIT_TRUE
-
-echo -en "- Starting binutils build\n"
-make all >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to build binutils" $EXIT_TRUE
-
-echo -en "- Installing binutils\n"
-make install >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to install binutils" $EXIT_TRUE
-cd ../
-echo -en "- Binutils Completed\n"
-
-echo -en "- Extracting GCC\n"
-cd $TOOLCHAIN_PATH
-tar -jxvf $TOOLCHAIN_PATH/src/$PKG_GCC411 >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to extract package $PKG_GCC411" $EXIT_TRUE
-echo -en "- Extracting Newlib dependency for gcc\n"
-
-tar -zxvf $TOOLCHAIN_PATH/src/$PKG_NEWLIB >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to extract package $PKG_NEWLIB" $EXIT_TRUE
-
-patch -p0 < $PATCH_GCC411_ARMELF >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to apply patch for t-arm-elf" $EXIT_TRUE
-echo -en "- Doing GCC configure\n"
-cd gcc-build
-../gcc-4.1.1/configure --target=arm-elf --prefix=$PREFIX \
-    --enable-interwork --enable-multilib --with-fpu=vfp \
-    --enable-languages="c,c++" --with-newlib \
-    --with-headers=../newlib-1.14.0/newlib/libc/include --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to configure gcc" $EXIT_TRUE
-
-echo -en "- Starting GCC build\n"
-make all-gcc >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to build GCC" $EXIT_TRUE
-
-echo -en "- Installing GCC\n"
-make install-gcc >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to install GCC" $EXIT_TRUE
-cd ../
-echo -en "- GCC Part 1 Completed\n"
-
-patch -p0 < $PATCH_NEWLIB_MAKEINFO >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to apply patch for newlib makeinfo" $EXIT_TRUE
-echo -en "- Doing NewLib configure\n"
-cd newlib-build
-checkRet $? "Failed to configure newlib" $EXIT_TRUE
-../newlib-1.14.0/configure --target=arm-elf --prefix=$PREFIX \
-	--enable-interwork --enable-multilib --disable-werror >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-
-echo -en "- Making arm-elf-cc symlink\n"
-ln -s arm-elf-gcc $PREFIX/bin/arm-elf-cc
-checkRet $? "Failed to create symlink" $EXIT_TRUE
-
-echo -en "- Starting NewLib build\n"
-make all >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to build newlib" $EXIT_TRUE
-
-echo -en "- Installing NewLib\n"
-make install >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to install newlib" $EXIT_TRUE
-cd ../
-echo -en "- NewLib Completed\n"
-
-echo "- Doing part 2 of GCC build"
-cd gcc-build
-echo "- Making all GCC"
-make all >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to build GCC" $EXIT_TRUE
-echo "- Installing GCC"
-make install >> $TOOLCHAIN_PATH/$BUILDLOG 2>&1
-checkRet $? "Failed to install GCC" $EXIT_TRUE
-
-echo "- GCC part 2 complete"
-echo -en "Toolchain install successful\n"
-echo -en "=======================================\n"
+echo "Completed GCC Part 2"
+echo "Toolchain install successful"
+echo "======================================="
+echo
