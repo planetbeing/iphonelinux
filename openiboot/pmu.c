@@ -225,11 +225,11 @@ void epoch_to_date(uint64_t epoch, int* year, int* month, int* day, int* day_of_
 		if((i & 0x3) != 0)
 		{
 			dec = 365 * 86400;
-			days_since_1970 += 365;
+			if(epoch >= dec) days_since_1970 += 365;
 		} else
 		{
 			dec = 366 * 86400;
-			days_since_1970 += 366;
+			if(epoch >= dec) days_since_1970 += 366;
 		}
 		++i;
 	}
@@ -257,13 +257,13 @@ void epoch_to_date(uint64_t epoch, int* year, int* month, int* day, int* day_of_
 	{
 		if(epoch < 86400)
 		{
-			*day = i;
+			*day = i + 1;
 			break;
 		}
 		epoch -= 86400;
 	}
 
-	days_since_1970 += i - 1;
+	days_since_1970 += i;
 
 	*day_of_week = (days_since_1970 + 4) % 7;
 
