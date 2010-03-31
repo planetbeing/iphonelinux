@@ -695,7 +695,17 @@ void cmd_version(int argc, char** argv) {
 }
 
 void cmd_time(int argc, char** argv) {
-	bufferPrintf("Current time: %02d:%02d:%02d, %s %02d/%02d/20%02d\r\n", pmu_get_hours(), pmu_get_minutes(), pmu_get_seconds(), pmu_get_dayofweek_str(), pmu_get_month(), pmu_get_day(), pmu_get_year());
+	int day;
+	int month;
+	int year;
+	int hour;
+	int minute;
+	int second;
+	int day_of_week;
+	pmu_date(&year, &month, &day, &day_of_week, &hour, &minute, &second);
+	bufferPrintf("Current time: %02d:%02d:%02d, %s %02d/%02d/%02d GMT\r\n", hour, minute, second, get_dayofweek_str(day_of_week), month, day, year);
+	//bufferPrintf("Current time: %02d:%02d:%02d, %s %02d/%02d/20%02d\r\n", pmu_get_hours(), pmu_get_minutes(), pmu_get_seconds(), pmu_get_dayofweek_str(), pmu_get_month(), pmu_get_day(), pmu_get_year());
+	//bufferPrintf("Current time: %llu\n", pmu_get_epoch());
 }
 
 void cmd_iic_read(int argc, char** argv) {

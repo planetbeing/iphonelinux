@@ -29,18 +29,15 @@ void pmu_set_iboot_stage(uint8_t stage);
 int pmu_get_gpmem_reg(int reg, uint8_t* out);
 int pmu_set_gpmem_reg(int reg, uint8_t data);
 int pmu_get_reg(int reg);
+int pmu_get_regs(int reg, uint8_t* out, int count);
 int pmu_write_reg(int reg, int data, int verify);
 int pmu_write_regs(const PMURegisterData* regs, int num);
 int pmu_get_battery_voltage();
 PowerSupplyType pmu_get_power_supply();
 void pmu_charge_settings(int UseUSB, int SuspendUSB, int StopCharger);
-int pmu_get_seconds();
-int pmu_get_minutes();
-int pmu_get_hours();
-int pmu_get_dayofweek();
-const char* pmu_get_dayofweek_str();
-int pmu_get_day();
-int pmu_get_month();
-int pmu_get_year();
+uint64_t pmu_get_epoch();
+void epoch_to_date(uint64_t epoch, int* year, int* month, int* day, int* day_of_week, int* hour, int* minute, int* second);
+void pmu_date(int* year, int* month, int* day, int* day_of_week, int* hour, int* minute, int* second);
+const char* get_dayofweek_str(int day);
 
 #endif

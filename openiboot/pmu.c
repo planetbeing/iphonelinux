@@ -81,6 +81,14 @@ int pmu_get_reg(int reg) {
 	return out[0];
 }
 
+int pmu_get_regs(int reg, uint8_t* out, int count) {
+	uint8_t registers[1];
+
+	registers[0] = reg;
+
+	return i2c_rx(PMU_I2C_BUS, PMU_GETADDR, registers, 1, out, count);
+}
+
 int pmu_write_reg(int reg, int data, int verify) {
 	uint8_t command[2];
 
@@ -135,24 +143,8 @@ static int bcd_to_int(int bcd) {
 	return (bcd & 0xF) + (((bcd >> 4) & 0xF) * 10);
 }
 
-int pmu_get_seconds() {
-	return bcd_to_int(pmu_get_reg(PMU_RTCSC) & PMU_RTCSC_MASK);
-}
-
-int pmu_get_minutes() {
-	return bcd_to_int(pmu_get_reg(PMU_RTCMN) & PMU_RTCMN_MASK);
-}
-
-int pmu_get_hours() {
-	return bcd_to_int(pmu_get_reg(PMU_RTCHR) & PMU_RTCHR_MASK);
-}
-
-int pmu_get_dayofweek() {
-	return pmu_get_reg(PMU_RTCWD) & PMU_RTCWD_MASK;
-}
-
-const char* pmu_get_dayofweek_str() {
-	switch(pmu_get_dayofweek()) {
+const char* get_dayofweek_str(int day) {
+	switch(day) {
 		case 0:
 			return "Sunday";
 		case 1:
@@ -172,16 +164,135 @@ const char* pmu_get_dayofweek_str() {
 	return NULL;
 }
 
-int pmu_get_day() {
-	return bcd_to_int(pmu_get_reg(PMU_RTCDT) & PMU_RTCDT_MASK);
+static const int days_in_months_leap_year[] = {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335};
+static const int days_in_months[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+uint64_t pmu_get_epoch()
+{
+	int i;
+	int days;
+	int years;
+	uint64_t secs;
+	int32_t offset;
+	uint8_t rtc_data[PMU_RTCYR - PMU_RTCSC + 1];
+	uint8_t rtc_data2[PMU_RTCYR - PMU_RTCSC + 1];
+
+	do
+	{
+		pmu_get_regs(PMU_RTCSC, rtc_data, PMU_RTCYR - PMU_RTCSC + 1);
+		pmu_get_regs(PMU_RTCSC, rtc_data2, PMU_RTCYR - PMU_RTCSC + 1);
+	} while(rtc_data2[0] != rtc_data[0]);
+
+	secs = bcd_to_int(rtc_data[0] & PMU_RTCSC_MASK);
+
+	secs += 60 * bcd_to_int(rtc_data[PMU_RTCMN - PMU_RTCSC] & PMU_RTCMN_MASK);
+	secs += 3600 * bcd_to_int(rtc_data[PMU_RTCHR - PMU_RTCSC] & PMU_RTCHR_MASK);
+
+	days = bcd_to_int(rtc_data[PMU_RTCDT - PMU_RTCSC] & PMU_RTCDT_MASK) - 1;
+
+	years = 2000 + bcd_to_int(rtc_data[PMU_RTCYR - PMU_RTCSC] & PMU_RTCYR_MASK);
+	for(i = 1970; i < years; ++i)
+	{
+		if((i & 0x3) != 0)
+			days += 365;	// non-leap year
+		else
+			days += 366;	// leap year
+	}
+	
+	if((years & 0x3) != 0)
+		days += days_in_months[(rtc_data[PMU_RTCMT - PMU_RTCSC] & PMU_RTCMT_MASK) - 1];
+	else
+		days += days_in_months_leap_year[(rtc_data[PMU_RTCMT - PMU_RTCSC] & PMU_RTCMT_MASK) - 1];
+
+	secs += ((uint64_t)days) * 86400;
+
+	pmu_get_regs(0x6B, (uint8_t*) &offset, sizeof(offset));
+
+	secs += offset;
+	return secs;
 }
 
-int pmu_get_month() {
-	return pmu_get_reg(PMU_RTCMT) & PMU_RTCMT_MASK;
+void epoch_to_date(uint64_t epoch, int* year, int* month, int* day, int* day_of_week, int* hour, int* minute, int* second)
+{
+	int i;
+	int dec = 0;
+	int days_since_1970 = 0;
+	const int* months_to_days;
+
+	i = 1970;	
+	while(epoch >= dec)
+	{
+		epoch -= dec;
+		if((i & 0x3) != 0)
+		{
+			dec = 365 * 86400;
+			days_since_1970 += 365;
+		} else
+		{
+			dec = 366 * 86400;
+			days_since_1970 += 366;
+		}
+		++i;
+	}
+
+	*year = i - 1;
+
+	if(((i - 1) & 0x3) != 0)
+		months_to_days = days_in_months;
+	else
+		months_to_days = days_in_months_leap_year;
+
+	for(i = 0; i < 12; ++i)
+	{
+		dec = months_to_days[i] * 86400;
+		if(epoch < dec)
+		{
+			days_since_1970 += months_to_days[i - 1];
+			epoch -= months_to_days[i - 1] * 86400;
+			*month = i;
+			break;
+		}
+	}
+
+	for(i = 0; i < 31; ++i)
+	{
+		if(epoch < 86400)
+		{
+			*day = i;
+			break;
+		}
+		epoch -= 86400;
+	}
+
+	days_since_1970 += i - 1;
+
+	*day_of_week = (days_since_1970 + 4) % 7;
+
+	for(i = 0; i < 24; ++i)
+	{
+		if(epoch < 3600)
+		{
+			*hour = i;
+			break;
+		}
+		epoch -= 3600;
+	}
+
+	for(i = 0; i < 60; ++i)
+	{
+		if(epoch < 60)
+		{
+			*minute = i;
+			break;
+		}
+		epoch -= 60;
+	}
+
+	*second = epoch;
 }
 
-int pmu_get_year() {
-	return bcd_to_int(pmu_get_reg(PMU_RTCYR) & PMU_RTCYR_MASK);
+void pmu_date(int* year, int* month, int* day, int* day_of_week, int* hour, int* minute, int* second)
+{
+	epoch_to_date(pmu_get_epoch(), year, month, day, day_of_week, hour, minute, second);
 }
 
 static PowerSupplyType identify_usb_charger() {
