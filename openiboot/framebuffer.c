@@ -19,6 +19,9 @@ static int DisplayText = FALSE;
 static uint32_t BackgroundColor;
 static uint32_t ForegroundColor;
 
+#define RGB16(x) (((((x >> 16) & 0xFF) >> 3) << 11) | ((((x >> 8) & 0xFF) >> 2) << 5) | ((x & 0xFF) >> 3))
+#define RGB32(x) (((((x >> 11) & 0x1F) << 3) << 16) | ((((x >> 5) & 0x3F) << 2) << 8) | ((x & 0x1F) << 3))
+
 inline int getCharPixel(OpenIBootFont* font, int ch, int x, int y) {
 	register int bitIndex = ((font->width * font->height) * ch) + (font->width * y) + x;
 	return (font->data[bitIndex / 8] >> (bitIndex % 8)) & 0x1;
@@ -26,6 +29,10 @@ inline int getCharPixel(OpenIBootFont* font, int ch, int x, int y) {
 
 inline volatile uint32_t* PixelFromCoords(register uint32_t x, register uint32_t y) {
 	return CurFramebuffer + (y * FBWidth) + x;
+}
+
+inline volatile uint16_t* PixelFromCoords565(register uint32_t x, register uint32_t y) {
+	return ((uint16_t*)CurFramebuffer) + (y * FBWidth) + x;
 }
 
 int framebuffer_setup() {
@@ -96,7 +103,7 @@ void framebuffer_print_force(const char* str) {
 	}
 }
 
-static void scrollup() {
+static void scrollup888() {
 	register volatile uint32_t* newFirstLine = PixelFromCoords(0, Font->height);
 	register volatile uint32_t* oldFirstLine = PixelFromCoords(0, 0);
 	register volatile uint32_t* end = oldFirstLine + (FBWidth * FBHeight);
@@ -106,10 +113,24 @@ static void scrollup() {
 	while(oldFirstLine < end) {
 		*(oldFirstLine++) = BackgroundColor;
 	}
-	Y--;	
+	Y--;
 }
 
-void framebuffer_putc(int c) {
+static void scrollup565() {
+	register volatile uint16_t* newFirstLine = PixelFromCoords565(0, Font->height);
+	register volatile uint16_t* oldFirstLine = PixelFromCoords565(0, 0);
+	register volatile uint16_t* end = oldFirstLine + (FBWidth * FBHeight);
+	uint16_t bgcolor = RGB16(BackgroundColor);
+	while(newFirstLine < end) {
+		*(oldFirstLine++) = *(newFirstLine++);
+	}
+	while(oldFirstLine < end) {
+		*(oldFirstLine++) = bgcolor;
+	}
+	Y--;
+}
+
+void framebuffer_putc888(int c) {
 	if(c == '\r') {
 		X = 0;
 	} else if(c == '\n') {
@@ -137,11 +158,54 @@ void framebuffer_putc(int c) {
 	}
 
 	if(Y == THeight) {
-		scrollup();
+		scrollup888();
 	}
 }
 
-void framebuffer_draw_image(uint32_t* image, int x, int y, int width, int height) {
+void framebuffer_putc565(int c) {
+	uint16_t fgcolor = RGB16(ForegroundColor);
+	uint16_t bgcolor = RGB16(BackgroundColor);
+
+	if(c == '\r') {
+		X = 0;
+	} else if(c == '\n') {
+		X = 0;
+		Y++;
+	} else {
+		register uint32_t sx;
+		register uint32_t sy;
+		for(sy = 0; sy < Font->height; sy++) {
+			for(sx = 0; sx < Font->width; sx++) {
+				if(getCharPixel(Font, c, sx, sy)) {
+					*(PixelFromCoords565(sx + (Font->width * X), sy + (Font->height * Y))) = fgcolor;
+				} else {
+					*(PixelFromCoords565(sx + (Font->width * X), sy + (Font->height * Y))) = bgcolor;
+				}
+			}
+		}
+
+		X++;
+	}
+
+	if(X == TWidth) {
+		X = 0;
+		Y++;
+	}
+
+	if(Y == THeight) {
+		scrollup565();
+	}
+}
+
+void framebuffer_putc(int c)
+{
+	if(currentWindow->framebuffer.colorSpace == RGB888)
+		framebuffer_putc888(c);
+	else
+		framebuffer_putc565(c);
+}
+
+static void framebuffer_draw_image888(uint32_t* image, int x, int y, int width, int height) {
 	register uint32_t sx;
 	register uint32_t sy;
 	for(sy = 0; sy < height; sy++) {
@@ -151,7 +215,25 @@ void framebuffer_draw_image(uint32_t* image, int x, int y, int width, int height
 	}
 }
 
-void framebuffer_capture_image(uint32_t* image, int x, int y, int width, int height) {
+static void framebuffer_draw_image565(uint32_t* image, int x, int y, int width, int height) {
+	register uint32_t sx;
+	register uint32_t sy;
+	for(sy = 0; sy < height; sy++) {
+		for(sx = 0; sx < width; sx++) {
+			*(PixelFromCoords565(sx + x, sy + y)) = RGB16(image[(sy * width) + sx]);
+		}
+	}
+}
+
+void framebuffer_draw_image(uint32_t* image, int x, int y, int width, int height)
+{
+	if(currentWindow->framebuffer.colorSpace == RGB888)
+		framebuffer_draw_image888(image, x, y, width, height);
+	else
+		framebuffer_draw_image565(image, x, y, width, height);
+}
+
+static void framebuffer_capture_image888(uint32_t* image, int x, int y, int width, int height) {
 	register uint32_t sx;
 	register uint32_t sy;
 	for(sy = 0; sy < height; sy++) {
@@ -159,6 +241,24 @@ void framebuffer_capture_image(uint32_t* image, int x, int y, int width, int hei
 			image[(sy * width) + sx] = *(PixelFromCoords(sx + x, sy + y));
 		}
 	}
+}
+
+static void framebuffer_capture_image565(uint32_t* image, int x, int y, int width, int height) {
+	register uint32_t sx;
+	register uint32_t sy;
+	for(sy = 0; sy < height; sy++) {
+		for(sx = 0; sx < width; sx++) {
+			image[(sy * width) + sx] = RGB32(*(PixelFromCoords565(sx + x, sy + y)));
+		}
+	}
+}
+
+void framebuffer_capture_image(uint32_t* image, int x, int y, int width, int height)
+{
+	if(currentWindow->framebuffer.colorSpace == RGB888)
+		framebuffer_capture_image888(image, x, y, width, height);
+	else
+		framebuffer_capture_image565(image, x, y, width, height);
 }
 
 void framebuffer_draw_rect(uint32_t color, int x, int y, int width, int height) {

@@ -154,12 +154,14 @@ static void configureClockCON0(int OTFClockDivisor, int clockSource, int option4
 static Window* createWindow(int zero0, int zero1, int width, int height, ColorSpace colorSpace);
 static int calculateStrideLen(ColorSpace colorSpace, int option, int width);
 static void createFramebuffer(Framebuffer* framebuffer, uint32_t framebufferAddr, int width, int height, int lineWidth, ColorSpace colorSpace);
-static void setWindow(int window, int zero0, int zero1, ColorSpace colorSpace, int width1, uint32_t framebuffer, int zero2, int width2, int zero3, int height);
+static void setWindow(int window, int wordSetting, int zero1, ColorSpace colorSpace, int width1, uint32_t framebuffer, int zero2, int width2, int zero3, int height);
 static void setLayer(int window, int zero0, int zero1);
 
 static void framebuffer_fill(Framebuffer* framebuffer, int x, int y, int width, int height, int fill);
 static void hline_rgb888(Framebuffer* framebuffer, int start, int line_no, int length, int fill);
+static void hline_rgb565(Framebuffer* framebuffer, int start, int line_no, int length, int fill);
 static void vline_rgb888(Framebuffer* framebuffer, int start, int line_no, int length, int fill);
+static void vline_rgb565(Framebuffer* framebuffer, int start, int line_no, int length, int fill);
 
 static void setCommandMode(OnOff swt);
 static void transmitCommandOnSPI0(int command, int subcommand);
@@ -246,7 +248,7 @@ static int initDisplay() {
 
 	SET_REG(LCD + 0x24, 0);
 
-	currentWindow = createWindow(0, 0, info->width, info->height, RGB888);
+	currentWindow = createWindow(0, 0, info->width, info->height, RGB565);
 	if(currentWindow == NULL)
 		return -1;
 
@@ -408,7 +410,11 @@ static Window* createWindow(int zero0, int zero1, int width, int height, ColorSp
 
 	createFramebuffer(&newWindow->framebuffer, currentFramebuffer, width, height, lineWidth, colorSpace);
 
-	setWindow(currentWindowNo, 0, 0, colorSpace, width, currentFramebuffer, 0, width, 0, height);
+	if(colorSpace == RGB565)
+		setWindow(currentWindowNo, 1, 0, colorSpace, width, currentFramebuffer, 0, width, 0, height);
+	else
+		setWindow(currentWindowNo, 0, 0, colorSpace, width, currentFramebuffer, 0, width, 0, height);
+
 	setLayer(currentWindowNo, zero0, zero1);
 
 	SET_REG(LCD + LCD_CON2, GET_REG(LCD + LCD_CON2) | ((newWindow->lcdConPtr[1] & 0x3F) << 2));
@@ -424,11 +430,18 @@ static void createFramebuffer(Framebuffer* framebuffer, uint32_t framebufferAddr
 	framebuffer->height = height;
 	framebuffer->lineWidth = lineWidth;
 	framebuffer->colorSpace = colorSpace;
-	framebuffer->hline = hline_rgb888;
-	framebuffer->vline = vline_rgb888;
+	if(colorSpace == RGB888)
+	{
+		framebuffer->hline = hline_rgb888;
+		framebuffer->vline = vline_rgb888;
+	} else
+	{
+		framebuffer->hline = hline_rgb565;
+		framebuffer->vline = vline_rgb565;
+	}
 }
 
-static void setWindow(int window, int zero0, int zero1, ColorSpace colorSpace, int width1, uint32_t framebuffer, int zero2, int width2, int zero3, int height) {
+static void setWindow(int window, int wordSetting, int zero1, ColorSpace colorSpace, int width1, uint32_t framebuffer, int zero2, int width2, int zero3, int height) {
 	int nibblesPerPixel;
 
 	switch(colorSpace) {
@@ -452,7 +465,7 @@ static void setWindow(int window, int zero0, int zero1, ColorSpace colorSpace, i
 		stride = 0;
 	}
 
-	uint32_t sfn = ((stride & 0x7) << 24) | ((zero0 & 0x7) << 16) | ((zero1 & 0x3) << 12) | ((colorSpace & 0x7) << 8) | ((zero2 * nibblesPerPixel) & 0x7);
+	uint32_t sfn = ((stride & 0x7) << 24) | ((wordSetting & 0x7) << 16) | ((zero1 & 0x3) << 12) | ((colorSpace & 0x7) << 8) | ((zero2 * nibblesPerPixel) & 0x7);
 	uint32_t addr = (zero3 * ((((width1 * nibblesPerPixel) & 0x7) ? (((width1 * nibblesPerPixel) >> 3) + 1) : ((width1 * nibblesPerPixel) >> 3)) << 2)) +  framebuffer + (((zero2 * nibblesPerPixel) >> 3) << 2);
 	uint32_t size = (height - zero3) | ((width2 - zero2) << 16);
 	uint32_t hspan = (((width1 * nibblesPerPixel) & 0x7) ? (((width1 * nibblesPerPixel) >> 3) + 1) : ((width1 * nibblesPerPixel) >> 3)) << 2;
@@ -1198,6 +1211,34 @@ static void vline_rgb888(Framebuffer* framebuffer, int start, int line_no, int l
 	int stop = start + length;
 	for(i = start; i < stop; i++) {
 		line[i * framebuffer->lineWidth] = fill;
+	}
+}
+
+static void hline_rgb565(Framebuffer* framebuffer, int start, int line_no, int length, int fill) {
+	int i;
+	volatile uint16_t* line;
+	uint16_t fill565;
+
+	fill565= ((((fill >> 16) & 0xFF) >> 3) << 11) | ((((fill >> 8) & 0xFF) >> 2) << 5) | ((fill & 0xFF) >> 3);
+	line = &((uint16_t*)framebuffer->buffer)[line_no * framebuffer->lineWidth];
+
+	int stop = start + length;
+	for(i = start; i < stop; i++) {
+		line[i] = fill565;
+	}
+}
+
+static void vline_rgb565(Framebuffer* framebuffer, int start, int line_no, int length, int fill) {
+	int i;
+	volatile uint16_t* line;
+	uint16_t fill565;
+
+	fill565= ((((fill >> 16) & 0xFF) >> 3) << 11) | ((((fill >> 8) & 0xFF) >> 2) << 5) | ((fill & 0xFF) >> 3);
+	line = &((uint16_t*)framebuffer->buffer)[line_no];
+
+	int stop = start + length;
+	for(i = start; i < stop; i++) {
+		line[i * framebuffer->lineWidth] = fill565;
 	}
 }
 
