@@ -265,7 +265,7 @@ void set_rootfs(int partition, const char* fileName) {
 	rootfs_filename = strdup(fileName);
 }
 
-#define INITRD_LOAD 0x00800000
+#define INITRD_LOAD 0x06000000
 
 static void setup_tags(struct atag* parameters, const char* commandLine)
 {
