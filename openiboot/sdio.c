@@ -702,22 +702,8 @@ int sdio_io_rw_extended(int isWrite, int function, uint32_t address, int incr_ad
 	if(ret)
 		return ret;
 
-	// set the execute bit
-	SET_REG(SDIO + SDIO_CMD, GET_REG(SDIO + SDIO_CMD) | (1 << 31));
-
-	// wait for the response
-	uint64_t startTime = timer_get_system_microtime();
-	while(((GET_REG(SDIO + SDIO_DSTA) >> 4) & 1) == 0)
-	{
-		// FIXME: yield
-		if(has_elapsed(startTime, 100 * 1000)) {
-			return ERROR_TIMEOUT;
-		}
-	}
-	
-	int status = GET_REG(SDIO + SDIO_DSTA);
-
-	ret = (status >> 15) & 0xF;
+	int status = sdio_execute_command(100);
+	ret = status & 0xF;
 	if(ret == 0)
 	{
 		int resp = GET_REG(SDIO + SDIO_RESP0);
@@ -730,13 +716,13 @@ int sdio_io_rw_extended(int isWrite, int function, uint32_t address, int incr_ad
 			return -1;
 
 		// clear the bits we acknlowedged
-		SET_REG(SDIO + SDIO_STAC, (status & 0x1F) | (ret << 15));
+		sdio_clear_state();
 
 		// start data transfer
 		SET_REG(SDIO + SDIO_DCTRL, 0x10);
 
 		// wait until all data transfer is done
-		startTime = timer_get_system_microtime();
+		uint64_t startTime = timer_get_system_microtime();
 		while((GET_REG(SDIO + SDIO_IRQ) & 1) == 0)
 		{
 			//bufferPrintf("dsta: 0x%x, fsta: 0x%x, state: 0x%x\r\n", GET_REG(SDIO + SDIO_DSTA), GET_REG(SDIO + SDIO_FSTA), GET_REG(SDIO + SDIO_STATE));
@@ -755,6 +741,8 @@ int sdio_io_rw_extended(int isWrite, int function, uint32_t address, int incr_ad
 		status = GET_REG(SDIO + SDIO_DSTA);
 
 		CleanAndInvalidateCPUDataCache();
+
+		SET_REG(SDIO + SDIO_CTRL, GET_REG(SDIO + SDIO_CTRL) & ~0x8000);
 
 		return (status >> 15);
 	} else
