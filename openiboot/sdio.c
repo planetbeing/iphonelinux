@@ -736,7 +736,7 @@ int sdio_io_rw_extended(int isWrite, int function, uint32_t address, int incr_ad
 		SET_REG(SDIO + SDIO_IRQ, 1);
 
 		// reenable interrupts
-		SET_REG(SDIO + SDIO_IRQMASK, GET_REG(SDIO + SDIO_IRQMASK) | 1);
+		SET_REG(SDIO + SDIO_IRQMASK, GET_REG(SDIO + SDIO_IRQMASK) | 3);
 
 		status = GET_REG(SDIO + SDIO_DSTA);
 
@@ -762,7 +762,10 @@ int sdio_io_rw_ext_helper(int isWrite, int function, uint32_t address, int incr_
 		if(ret < 0)
 			return ret;
 
-		if(ret != SUCCESS_DATA)
+		if(isWrite && ret != SUCCESS_DATA)
+			return -1;
+
+		if((!isWrite) && ret != 0)
 			return -1;
 
 		int done = blocks * SDIOFunctions[function].blocksize;

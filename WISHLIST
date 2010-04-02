@@ -45,16 +45,9 @@ currently.
 6. It might be cool to be able to parse the iPhone's own device tree for some
 of base addresses. Might make porting less of a pain.
 
-7. I've implemented the firmware upload part of Libertas WLAN driver for
-Marvell 8686 to test out the SDIO functionality. It appears to work.
-Therefore, we have validated readb, writeb and writesb. More of it should be
-implemented to validate SDIO device interrupt handling and also readsb. After
-that, we will definitely have enough to support working wi-fi in the Linux
-kernel!
+7. Implement interactive mode for new loadibec.
 
-8. Implement interactive mode for new loadibec.
-
-9. Figure out the serial mux protocol so we can have multiple DLCs. This
+8. Figure out the serial mux protocol so we can have multiple DLCs. This
 ought to be documented in GSM.
 
 Jobs for people who want to get their hands dirty with drivers
