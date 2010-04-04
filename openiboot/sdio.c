@@ -236,7 +236,7 @@ int sdio_setup()
 		SET_REG(SDIO + SDIO_CTRL, GET_REG(SDIO + SDIO_CTRL) | (1 << 2));
 	}
 
-	SDIOFunctions = (SDIOFunction*) malloc(NumberOfFunctions + 1);
+	SDIOFunctions = (SDIOFunction*) malloc((NumberOfFunctions + 1) * sizeof(SDIOFunction));
 
 	for(i = 0; i <= NumberOfFunctions; ++i)
 	{
