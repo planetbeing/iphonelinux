@@ -2,6 +2,7 @@
 #include "hardware/s5l8900.h"
 #include "util.h"
 #include "timer.h"
+#include "wdt.h"
 #include "openiboot-asmhelpers.h"
 
 #define HAVE_MMAP 0
@@ -1437,8 +1438,11 @@ static int win32munmap(void* ptr, size_t size) {
 
 #define MLOCK_T	int
 #define INITIAL_LOCK(l)      
-#define ACQUIRE_LOCK(l)      (EnterCriticalSection(), 0)
-#define RELEASE_LOCK(l)      (LeaveCriticalSection(), 0)
+// FIXME: hack alert! We might spend a long time with interrupts disabled so wdt has to be disabled.
+// This might be fixed with proper mutexes, but then we would need to ensure no mallocs occur in
+// interrupt contexts
+#define ACQUIRE_LOCK(l)      (wdt_disable(), EnterCriticalSection(), 0)
+#define RELEASE_LOCK(l)      (LeaveCriticalSection(), wdt_enable(), 0)
 #define PTHREAD_MUTEX_INITIALIZER 0
 
 #if HAVE_MORECORE
