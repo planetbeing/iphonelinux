@@ -84,6 +84,7 @@ char* strcpy(char* dst, const char* src) {
 		dst++;
 		src++;
 	}
+	*dst = '\0';
 	return origDest;
 }
 

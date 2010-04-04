@@ -307,6 +307,17 @@ void cmd_mwb(int argc, char** argv) {
 	bufferPrintf("Written to 0x%x to 0x%x\r\n", (uint8_t)data, address);
 }
 
+void cmd_mws(int argc, char** argv) {
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <address> <string>\r\n", argv[0]);
+		return;
+	}
+
+	char* address = (char*) parseNumber(argv[1]);
+	strcpy(address, argv[2]);
+	bufferPrintf("Written %s to 0x%x\r\n", argv[2], address);
+}
+
 void cmd_mw(int argc, char** argv) {
 	if(argc < 3) {
 		bufferPrintf("Usage: %s <address> <data>\r\n", argv[0]);
@@ -974,6 +985,7 @@ OPIBCommand CommandList[] =
 		{"md", "display a block of memory as 32-bit integers", cmd_md},
 		{"mw", "write a 32-bit dword into a memory address", cmd_mw},
 		{"mwb", "write a byte into a memory address", cmd_mwb},
+		{"mws", "write a string into a memory address", cmd_mws},
 		{"aes", "use the hardware crypto engine", cmd_aes},
 		{"hexdump", "display a block of memory like 'hexdump -C'", cmd_hexdump},
 		{"cat", "dumps a block of memory", cmd_cat},
