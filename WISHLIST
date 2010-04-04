@@ -87,4 +87,13 @@ some sort of software compression?
 
 5. Reverse AppleH1CameraInterface to figure out how to get data from the camera.
 
+6. Figure out how to read the baseband's EEPROM/NVRAM. Presumably you can do
+it with at commands. iBoot does it so that's probably the easiest thing to
+reverse.
+
+7. Find out what all the various at+xdrv commands do, or at least which
+systems they are related to. CommCenter probably will have some idea.
+at+xdrv=0,* is speakers/sound, at+xdrv=4,* is the vibrator. What about 7, 5, 9
+or 10? Which are also prominently featured in baseband init.
+
 Thanks for reading all this. I'm impressed.
