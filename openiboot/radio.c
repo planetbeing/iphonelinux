@@ -7,7 +7,12 @@
 #include "uart.h"
 
 // For the +XDRV stuff, it's usually device,function,arg1,arg2,arg3,...
-// device 4 seems to be the vibrator, device 0 seems to be the speakers
+// device 4 seems to be the vibrator, device 0 seems to be the speakers,
+// 7 seems to have to do with bluetooth, and 9 is bb nvram
+
+static int radio_nvram_read_all(char** res);
+static char* radio_nvram;
+static int radio_nvram_len;
 
 int radio_setup()
 {
@@ -56,6 +61,58 @@ int radio_setup()
 	}
 
 	bufferPrintf("radio: ready.\r\n");
+
+	bufferPrintf("radio: reading baseband nvram... ");
+
+	radio_nvram_len = radio_nvram_read_all(&radio_nvram);
+
+	bufferPrintf("done\r\n");
+
+	char* cursor = radio_nvram;
+	while(cursor < (radio_nvram + radio_nvram_len))
+	{
+		int type = (cursor[0] << 8) | cursor[1];
+		int size = ((cursor[2] << 8) | cursor[3]) * 2;
+		if(size == 0)
+			break;
+
+		uint8_t* data = (uint8_t*)(cursor + 4);
+
+		switch(type)
+		{
+			case 1:
+				bufferPrintf("Wi-Fi TX Cal Data : <%d bytes, CRC = %08X>\r\n", size - 4, crc32(0, data, size - 4));
+				break;
+
+			case 4:
+				bufferPrintf("Build name        : %s\r\n", (char*)data);
+				break;
+
+			case 2:
+			case 3:
+			case 5:
+				if(type == 2)
+					bufferPrintf("Wi-Fi MAC         : ");
+
+				if(type == 3)
+					bufferPrintf("Bluetooth MAC     : ");
+
+				if(type == 5)
+					bufferPrintf("Ethernet MAC      : ");
+
+				bufferPrintf("%02X:%02X:%02X:%02X:%02X:%02X\r\n", data[0], data[1], data[2], data[3], data[4], data[5]);
+				break;
+
+			case 7:
+				bufferPrintf("Unknown data      : %08X\r\n", *((uint32_t*)(data)));
+				break;
+
+			default:
+				bufferPrintf("Unknown entry %d  : <%d bytes>\r\n", type, size - 4);
+		}
+
+		cursor += size;
+	}
 
 	speaker_setup();
 
@@ -154,7 +211,7 @@ int radio_cmd(const char* cmd, int tries)
 	int i;
 	for(i = 0; i < tries; ++i)
 	{
-		char buf[100];
+		char buf[200];
 		int n;
 
 		radio_write(cmd);
@@ -174,6 +231,95 @@ int radio_cmd(const char* cmd, int tries)
 		return FALSE;
 	else
 		return TRUE;
+}
+
+static int radio_nvram_read_idx(int idx, char** res)
+{
+	char cmd[20];
+	char* curBuf;
+	char* resultStart;
+	int curBufSize;
+	int curPos;
+	int c;
+	int searchLen;
+
+	sprintf(cmd, "at+xdrv=9,1,%d\r\n", idx);
+
+	radio_write(cmd);
+
+	curPos = 0;
+	curBufSize = 100;
+
+	curBuf = malloc(curBufSize);
+
+	curPos = radio_read(curBuf, curBufSize);
+	while(curPos == (curBufSize - 1))
+	{
+		curBufSize += 100;
+		curBuf = realloc(curBuf, curBufSize);
+		c = radio_read(curBuf + curPos, curBufSize - curPos);
+		curPos += c;
+	}
+
+	sprintf(cmd, "+XDRV: 9,1,0,%d,", idx);
+	searchLen = strlen(cmd);
+
+	resultStart = curBuf;
+
+	while((resultStart - curBuf) <= (curPos - searchLen) && memcmp(resultStart, cmd, searchLen) != 0)
+		++resultStart;
+
+	if(memcmp(resultStart, cmd, searchLen) != 0)
+	{
+		free(curBuf);
+		return 0;
+	}
+
+	resultStart += searchLen;
+
+	if(memcmp(resultStart, "NULL", sizeof("NULL")) == 0)
+	{
+		free(curBuf);
+		return 0;
+	}
+
+	c = 0;
+	while(*resultStart != '\r' && *resultStart != '\n' && *resultStart != '\0')
+	{
+		cmd[0] = resultStart[0];
+		cmd[1] = resultStart[1];
+		cmd[2] = '\0';
+		curBuf[c++] = strtoul(cmd, NULL, 16);
+		resultStart += 2;
+	}
+
+	*res = curBuf;
+
+	return c;
+}
+
+static int radio_nvram_read_all(char** res)
+{
+	int ret;
+	int idx;
+	int len;
+
+	*res = NULL;
+	len = 0;
+	idx = 0;
+	while(TRUE)
+	{
+		char* line;
+		ret = radio_nvram_read_idx(idx, &line);
+		if(ret == 0)
+			return len;
+
+		*res = realloc(*res, len + ret);
+		memcpy(*res + len, line, ret);
+		free(line);
+		len += ret;
+		++idx;
+	}
 }
 
 int speaker_setup()
