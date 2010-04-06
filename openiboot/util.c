@@ -601,7 +601,10 @@ uint32_t crc32(uint32_t* ckSum, const void *buffer, size_t len)
   uint32_t crc;
   const uint8_t* buf = buffer;
   
-  crc = *ckSum;
+  if(ckSum == NULL)
+	  crc = 0;
+  else
+	  crc = *ckSum;
   
   if (buf == NULL) return crc;
   
@@ -620,7 +623,9 @@ DO1(buf);
   
   crc = crc ^ 0xffffffffL;
   
-  *ckSum = crc;
+  if(ckSum != NULL)
+	  *ckSum = crc;
+
   return crc;
 }
 

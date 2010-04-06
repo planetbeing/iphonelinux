@@ -927,6 +927,10 @@ void cmd_radio_send(int argc, char** argv) {
 	printf("\n");
 }
 
+void cmd_radio_nvram_list(int argc, char** argv) {
+	radio_nvram_list();
+}
+
 void cmd_vibrator_loop(int argc, char** argv)
 {
 	if(argc < 4) {
@@ -1023,6 +1027,7 @@ OPIBCommand CommandList[] =
 		{"wlan_prog_helper", "program wlan fw helper", cmd_wlan_prog_helper},
 		{"wlan_prog_real", "program wlan fw", cmd_wlan_prog_real},
 		{"radio_send", "send a command to the baseband", cmd_radio_send},
+		{"radio_nvram_list", "list entries in baseband NVRAM", cmd_radio_nvram_list},
 		{"vibrator_loop", "turn the vibrator on in a loop", cmd_vibrator_loop},
 		{"vibrator_once", "vibrate once", cmd_vibrator_once},
 		{"vibrator_off", "turn the vibrator off", cmd_vibrator_off},

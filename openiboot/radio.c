@@ -11,7 +11,7 @@
 // 7 seems to have to do with bluetooth, and 9 is bb nvram
 
 static int radio_nvram_read_all(char** res);
-static char* radio_nvram;
+static char* radio_nvram = NULL;
 static int radio_nvram_len;
 
 int radio_setup()
@@ -62,11 +62,21 @@ int radio_setup()
 
 	bufferPrintf("radio: ready.\r\n");
 
-	bufferPrintf("radio: reading baseband nvram... ");
 
-	radio_nvram_len = radio_nvram_read_all(&radio_nvram);
 
-	bufferPrintf("done\r\n");
+	speaker_setup();
+
+	return 0;
+}
+
+void radio_nvram_list()
+{
+	if(radio_nvram == NULL)
+	{
+		bufferPrintf("radio: reading baseband nvram... ");
+		radio_nvram_len = radio_nvram_read_all(&radio_nvram);
+		bufferPrintf("done\r\n");
+	}
 
 	char* cursor = radio_nvram;
 	while(cursor < (radio_nvram + radio_nvram_len))
@@ -113,10 +123,6 @@ int radio_setup()
 
 		cursor += size;
 	}
-
-	speaker_setup();
-
-	return 0;
 }
 
 void vibrator_loop(int frequency, int period, int timeOn)
