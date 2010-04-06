@@ -26,8 +26,8 @@ typedef struct MTFrameHeader
 
 typedef struct FingerData
 {
-	uint8_t unk_0;
-	uint8_t unk_1;
+	uint8_t id;
+	uint8_t event;
 	uint8_t unk_2;
 	uint8_t unk_3;
 	int16_t x;

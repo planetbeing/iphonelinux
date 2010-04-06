@@ -64,11 +64,11 @@ void framebuffer_clear() {
 }
 
 int framebuffer_width() {
-	return TWidth;
+	return FBWidth;
 }
 
 int framebuffer_height() {
-	return THeight;
+	return FBHeight;
 }
 
 int framebuffer_x() {

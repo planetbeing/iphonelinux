@@ -266,13 +266,15 @@ static void newPacket(const uint8_t* data, int len)
 	int i;
 	for(i = 0; i < header->numFingers; ++i)
 	{
-		bufferPrintf("multitouch: finger %d -- X(%d/%d, vel: %d), Y(%d/%d, vel: %d), radii(%d, %d, %d, angle: %d), contactDensity: %d\r\n",
-				i,
+		bufferPrintf("multitouch: finger %d -- id=%d, event=%d, X(%d/%d, vel: %d), Y(%d/%d, vel: %d), radii(%d, %d, %d, angle: %d), contactDensity: %d\r\n",
+				i, finger->id, finger->event,
 				finger->x, SensorWidth, finger->velX,
 				finger->y, SensorHeight, finger->velY,
 				finger->radius1, finger->radius2, finger->radius3, finger->angle,
 				finger->contactDensity);
 
+		//framebuffer_draw_rect(0xFF0000, (finger->x * framebuffer_width()) / SensorWidth - 2 , ((SensorHeight - finger->y) * framebuffer_height()) / SensorHeight - 2, 4, 4);
+		//hexdump((uint32_t) finger, sizeof(FingerData));
 		finger = (FingerData*) (((uint8_t*) finger) + header->fingerDataLen);
 	}
 
