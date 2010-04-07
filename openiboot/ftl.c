@@ -8,6 +8,7 @@
 #define FTL_ID_V3 0x43303035
 
 int HasFTLInit = FALSE;
+int CleanFreeVb = FALSE;
 
 static NANDData* Geometry;
 static NANDFTLData* FTLData;
@@ -1633,6 +1634,43 @@ release:
 	return success;
 }
 
+void check_for_dirty_free_vb()
+{
+	int i;
+	int curFreeIdx = pstFTLCxt->nextFreeIdx;
+
+	if(CleanFreeVb)
+		return;
+
+	uint8_t* pageBuffer = (uint8_t*) malloc(Geometry->bytesPerPage);
+	SpareData* spareData = (SpareData*) malloc(Geometry->bytesPerSpare);
+
+	for(i = 0; i < pstFTLCxt->wNumOfFreeVb; ++i)
+	{
+		if(pstFTLCxt->awFreeVb[curFreeIdx] != 0xFFFF)
+		{
+			int page;
+			int block = pstFTLCxt->awFreeVb[curFreeIdx];
+			for(page = 0; page < Geometry->pagesPerSuBlk; ++page)
+			{
+				int ret = VFL_Read(block * Geometry->pagesPerSuBlk + page, pageBuffer, (uint8_t*) spareData, TRUE, NULL);
+
+				if(ret == ERROR_EMPTYBLOCK)
+					continue;
+
+				bufferPrintf("ftl: free block %d has non-empty pages.\r\n");
+				VFL_Erase(block);
+				break;
+			}
+		}
+		curFreeIdx = (curFreeIdx + 1) % 20;
+	}
+
+	CleanFreeVb = TRUE;
+	free(pageBuffer);
+	free(spareData);
+}
+
 static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 	int refreshPage;
 	int ret;
@@ -1783,6 +1821,7 @@ static int FTL_Open(int* pagesAvailable, int* bytesPerPage) {
 	int success = ftl_open_read_counter_tables();
 
 	if(success) {
+		CleanFreeVb = TRUE;
 		bufferPrintf("ftl: FTL successfully opened!\r\n");
 		free(pageBuffer);
 		free(spareBuffer);
@@ -1797,6 +1836,7 @@ FTL_Open_Error_Release:
 
 FTL_Open_Error:
 	bufferPrintf("ftl: FTL_Open cannot load FTLCxt!\r\n");
+	CleanFreeVb = FALSE;
 	if(FTL_Restore() != FALSE) {
 		*pagesAvailable = Geometry->userPagesTotal;
 		*bytesPerPage = Geometry->bytesPerPage;
@@ -2229,6 +2269,8 @@ static int ftl_mark_unclean()
 
 	if(!pstFTLCxt->clean)
 		return TRUE;
+
+	check_for_dirty_free_vb();
 
 	int i;
 	for(i = 0; i < 3; ++i)
@@ -2989,6 +3031,8 @@ int ftl_sync()
 
 	if(pstFTLCxt->clean)
 		return TRUE;
+
+	check_for_dirty_free_vb();
 
 	if(pstFTLCxt->swapCounter >= 20)
 	{
