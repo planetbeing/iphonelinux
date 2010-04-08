@@ -1658,7 +1658,7 @@ void check_for_dirty_free_vb()
 				if(ret == ERROR_EMPTYBLOCK)
 					continue;
 
-				bufferPrintf("ftl: free block %d has non-empty pages.\r\n");
+				bufferPrintf("ftl: free block %d has non-empty pages.\r\n", block);
 				VFL_Erase(block);
 				break;
 			}
