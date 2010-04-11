@@ -33,6 +33,10 @@ int dma_shutdown();
 int dma_request(int Source, int SourceTransferWidth, int SourceBurstSize, int Destination, int DestinationTransferWidth, int DestinationBurstSize, int* controller, int* channel, DMAHandler handler);
 int dma_perform(uint32_t Source, uint32_t Destination, int size, int continueList, int* controller, int* channel);
 int dma_finish(int controller, int channel, int timeout);
+uint32_t dma_dstpos(int controller, int channel);
+uint32_t dma_srcpos(int controller, int channel);
+void dma_pause(int controller, int channel);
+void dma_resume(int controller, int channel);
 
 #endif
 

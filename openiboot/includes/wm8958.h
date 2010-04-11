@@ -31,5 +31,9 @@ void audiohw_set_headphone_vol(int vol_l, int vol_r);
 void audiohw_set_lineout_vol(int vol_l, int vol_r);
 void audiohw_set_aux_vol(int vol_l, int vol_r);
 int audiohw_transfers_done();
+void audiohw_pause();
+void audiohw_resume();
+uint32_t audiohw_get_position();
+uint32_t audiohw_get_total();
 
 extern const struct sound_settings_info audiohw_settings[];

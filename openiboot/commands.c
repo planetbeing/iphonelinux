@@ -791,6 +791,23 @@ void cmd_wdt(int argc, char** argv)
 	bufferPrintf("counter: %d\r\n", wdt_counter());
 }
 
+void cmd_audiohw_position(int argc, char** argv)
+{
+	bufferPrintf("playback position: %u / %u\r\n", audiohw_get_position(), audiohw_get_total());
+}
+
+void cmd_audiohw_pause(int argc, char** argv)
+{
+	audiohw_pause();
+	bufferPrintf("Paused.\r\n");
+}
+
+void cmd_audiohw_resume(int argc, char** argv)
+{
+	audiohw_resume();
+	bufferPrintf("Resumed.\r\n");
+}
+
 void cmd_audiohw_transfers_done(int argc, char** argv)
 {
 	bufferPrintf("transfers done: %d\r\n", audiohw_transfers_done());
@@ -1057,6 +1074,9 @@ OPIBCommand CommandList[] =
 		{"audiohw_play_pcm", "queue some PCM data for playback", cmd_audiohw_play_pcm},
 		{"audiohw_headphone_vol", "set the headphone volume", cmd_audiohw_headphone_vol},
 		{"audiohw_speaker_vol", "set the speaker volume", cmd_audiohw_speaker_vol},
+		{"audiohw_position", "print the playback position", cmd_audiohw_position},
+		{"audiohw_pause", "pause playback", cmd_audiohw_pause},
+		{"audiohw_resume", "resume playback", cmd_audiohw_resume},
 		{"multitouch_setup", "setup the multitouch chip", cmd_multitouch_setup},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}

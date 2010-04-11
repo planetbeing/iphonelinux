@@ -319,6 +319,55 @@ int dma_shutdown()
 	return 0;
 }
 
+uint32_t dma_dstpos(int controller, int channel) {
+	uint32_t regOffset = channel * DMAChannelRegSize;
+
+	if(controller == 1) {
+		regOffset += DMAC0;
+	} else if(controller == 2) {
+		regOffset += DMAC1;
+	}
+
+	return GET_REG(regOffset + DMAC0DestAddress);
+}
+
+uint32_t dma_srcpos(int controller, int channel) {
+	uint32_t regOffset = channel * DMAChannelRegSize;
+
+	if(controller == 1) {
+		regOffset += DMAC0;
+	} else if(controller == 2) {
+		regOffset += DMAC1;
+	}
+
+	return GET_REG(regOffset + DMAC0SrcAddress);
+}
+
+void dma_pause(int controller, int channel) {
+	uint32_t regOffset = channel * DMAChannelRegSize;
+
+	if(controller == 1) {
+		regOffset += DMAC0;
+	} else if(controller == 2) {
+		regOffset += DMAC1;
+	}
+
+	SET_REG(regOffset + DMAC0Configuration, GET_REG(regOffset + DMAC0Configuration) & ~DMAC0Configuration_CHANNELENABLED);
+}
+
+void dma_resume(int controller, int channel) {
+	uint32_t regOffset = channel * DMAChannelRegSize;
+
+	if(controller == 1) {
+		regOffset += DMAC0;
+	} else if(controller == 2) {
+		regOffset += DMAC1;
+	}
+
+	SET_REG(regOffset + DMAC0Configuration, GET_REG(regOffset + DMAC0Configuration) | DMAC0Configuration_CHANNELENABLED);
+}
+
+
 static void dispatchRequest(volatile DMARequest *request, int controller, int channel) {
 	// TODO: Implement this
 	request->done = TRUE;

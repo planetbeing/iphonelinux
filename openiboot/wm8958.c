@@ -29,6 +29,9 @@
 const void* pcm_buffer;
 uint32_t pcm_buffer_size;
 
+int dma_controller = -1;
+int dma_channel = -1;
+
 volatile static int transfersDone;
 
 volatile static int stopTransfers;
@@ -57,6 +60,8 @@ static void iis_transfer_done(int status, int controller, int channel)
 	++transfersDone;
 	CleanCPUDataCache();
 	dma_finish(controller, channel, 0);
+	dma_controller = -1;
+	dma_channel = -1;
 	bufferPrintf("audio: playback complete\r\n");
 	// replace the above line with this bottom one for repeat
 	// dma_perform((uint32_t)pcm_buffer, DMA_WM_I2S_TX, pcm_buffer_size, 0, &controller, &channel);
@@ -65,6 +70,38 @@ static void iis_transfer_done(int status, int controller, int channel)
 int audiohw_transfers_done()
 {
 	return transfersDone;
+}
+
+void audiohw_pause()
+{
+	if(dma_controller == -1)
+		return;
+
+	dma_pause(dma_controller, dma_channel);
+}
+
+void audiohw_resume()
+{
+	if(dma_controller == -1)
+		return;
+
+	dma_resume(dma_controller, dma_channel);
+}
+
+uint32_t audiohw_get_position()
+{
+	if(dma_controller == -1)
+		return 0;
+
+	return dma_srcpos(dma_controller, dma_channel);
+}
+
+uint32_t audiohw_get_total()
+{
+	if(dma_controller == -1)
+		return 0;
+
+	return pcm_buffer_size;
 }
 
 void audiohw_play_pcm(const void* addr_in, uint32_t size, int use_speaker)
@@ -110,6 +147,9 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size, int use_speaker)
 	dma_request(DMA_MEMORY, 2, 1, dma, 2, 1, &controller, &channel, iis_transfer_done);
 
 	dma_perform((uint32_t)pcm_buffer, dma, pcm_buffer_size, 0, &controller, &channel);
+
+	dma_controller = controller;
+	dma_channel = channel;
 
 	SET_REG(i2sController + I2S_CLKCON, (1 << 0)); /* 1 = power on */
 	SET_REG(i2sController + I2S_TXCOM, 
