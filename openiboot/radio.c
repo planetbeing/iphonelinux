@@ -62,8 +62,6 @@ int radio_setup()
 
 	bufferPrintf("radio: ready.\r\n");
 
-
-
 	speaker_setup();
 
 	return 0;
@@ -364,6 +362,159 @@ int speaker_setup()
 
 	bufferPrintf("radio: internal speaker enabled\r\n");
 	return 0;
+}
+
+int radio_register(int timeout)
+{
+	char buf[256];
+
+	// enable auto registration
+	radio_cmd("at+cops=0\r\n", 10);
+
+	uint64_t startTime = timer_get_system_microtime();
+	while(TRUE)
+	{
+		if(has_elapsed(startTime,  timeout * 1000))
+			return -1;
+
+		char* pos;
+		radio_write("at+cops?\r\n");
+		radio_read(buf, sizeof(buf));
+
+		pos = buf;
+		while(memcmp(pos, "+COPS: ", sizeof("+COPS: ") - 1) != 0)
+			++pos;
+
+		if(pos[7] != '0' || pos[8] != ',')
+		{
+			radio_cmd("at+cops=0\r\n", 10);
+			continue;
+		}
+
+		char* name = &pos[12];
+		char* lastQuote = name;
+		while(*lastQuote != '\"')
+			++lastQuote;
+		*lastQuote = '\0';
+
+		bufferPrintf("radio: Registered with %s\r\n", name);
+		return 0;
+	}
+}
+
+void radio_call(const char* number)
+{
+	char buf[256];
+
+	bufferPrintf("radio: Setting up audio\r\n");
+
+	radio_cmd("at+xdrv=0,4\r\n", 10);
+	radio_cmd("at+xdrv=0,20,0\r\n", 10);
+
+	// mute everything?
+	radio_cmd("at+xdrv=0,1,0,0\r\n", 10);
+	radio_cmd("at+xdrv=0,1,0,1\r\n", 10);
+	radio_cmd("at+xdrv=0,1,0,2\r\n", 10);
+	radio_cmd("at+xdrv=0,1,0,6\r\n", 10);
+
+	// I really don't know
+	radio_cmd("at+xdrv=0,24,1,1\r\n", 10);
+
+	// note this is different from before
+	radio_cmd("at+xdrv=0,0,1,1\r\n", 10);
+
+	// microphone volume?
+	radio_cmd("at+xdrv=0,1,100,1\r\n", 10);
+
+	loudspeaker_vol(40);
+	speaker_vol(68);
+
+	// clock
+	// In general, lower is slower and higher is faster, but at some point it loops around.
+	// This may mean the value is a bitset, e.g., at+xdrv=0,2,2,29 will set it to half speed
+	radio_cmd("at+xdrv=0,2,2,10\r\n", 10);
+
+	// channels?
+	radio_cmd("at+xdrv=0,9,2\r\n", 10);
+
+	// enable i2s?
+	radio_cmd("at+xdrv=0,20,1\r\n", 10);
+
+	// unmute?
+	radio_cmd("at+xdrv=0,3,0\r\n", 10);
+
+	// get notifications
+	radio_cmd("at+xcallstat=1\r\n", 10);
+
+	bufferPrintf("radio: Dialing\r\n");
+
+	sprintf(buf, "atd%s;\r\n", number);
+
+	radio_cmd(buf, 10);
+	radio_cmd("at+cmut=0\r\n", 10);
+
+	radio_cmd("at+xdrv=4,0,0,0,0,0\r\n", 10);
+
+	speaker_vol(68);
+
+	radio_cmd("at+xdrv=4,0,0,0,0,0\r\n", 10);
+
+	// we now need to wait for +XCALLSTAT to indicate 0 or active status. This code is less
+	// complex than it seems. The whole point is just to wait until we have a line that says
+	// +XCALLSTAT: *,0. That's it.
+	while(TRUE)
+	{
+		buf[0] = '\0';
+
+		radio_read(buf, sizeof(buf));
+
+		char* pos = buf;
+		int len = strlen(buf);
+		int callstat = -1;
+
+		while(len >= (sizeof("+XCALLSTAT: ") - 1))
+		{
+
+			while(((int)(pos - buf)) <= (len - sizeof("+XCALLSTAT: ") + 1) && memcmp(pos, "+XCALLSTAT: ", sizeof("+XCALLSTAT: ") - 1) != 0)
+				++pos;
+
+			if(memcmp(pos, "+XCALLSTAT: ", sizeof("+XCALLSTAT: ") - 1) != 0)
+				break;
+
+			while(*pos != ',')
+				++pos;
+
+			++pos;
+
+			if(*pos == '0')
+			{
+				bufferPrintf("radio: Call answered\r\n");
+				callstat = 0;
+				break;
+			}
+
+			++pos;
+		}
+
+		if(callstat == 0)
+			break;
+	}
+
+	// do the rest
+	radio_cmd("at+xdrv=4,0,0,0,0,0\r\n", 10);
+
+	// why the same thing again?
+	radio_cmd("at+xdrv=0,4\r\n", 10);
+	radio_cmd("at+xdrv=0,20,0\r\n", 10);
+
+	radio_cmd("at+xcallstat=0\r\n", 10);
+}
+
+void radio_hangup()
+{
+	radio_cmd("at+chld=1\r\n", 10);
+	radio_cmd("at+xctms=0\r\n", 10);
+	speaker_setup();
 }
 
 void loudspeaker_vol(int vol)

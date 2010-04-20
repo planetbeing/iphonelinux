@@ -948,6 +948,27 @@ void cmd_radio_nvram_list(int argc, char** argv) {
 	radio_nvram_list();
 }
 
+void cmd_radio_register(int argc, char** argv) {
+	bufferPrintf("Registering with cellular network...\r\n");
+	if(radio_register(10 * 1000) != 0)
+		bufferPrintf("Failed.\r\n");
+}
+
+void cmd_radio_call(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <phone number>\r\n", argv[0]);
+		return;
+	}
+
+	bufferPrintf("Calling %s...\r\n", argv[1]);
+
+	radio_call(argv[1]);
+}
+
+void cmd_radio_hangup(int argc, char** argv) {
+	radio_hangup(argv[1]);
+}
+
 void cmd_vibrator_loop(int argc, char** argv)
 {
 	if(argc < 4) {
@@ -1045,6 +1066,9 @@ OPIBCommand CommandList[] =
 		{"wlan_prog_real", "program wlan fw", cmd_wlan_prog_real},
 		{"radio_send", "send a command to the baseband", cmd_radio_send},
 		{"radio_nvram_list", "list entries in baseband NVRAM", cmd_radio_nvram_list},
+		{"radio_register", "register with a cellular network", cmd_radio_register},
+		{"radio_call", "make a call", cmd_radio_call},
+		{"radio_hangup", "hang up", cmd_radio_hangup},
 		{"vibrator_loop", "turn the vibrator on in a loop", cmd_vibrator_loop},
 		{"vibrator_once", "vibrate once", cmd_vibrator_once},
 		{"vibrator_off", "turn the vibrator off", cmd_vibrator_off},

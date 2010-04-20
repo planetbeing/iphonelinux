@@ -15,5 +15,8 @@ void vibrator_off();
 int speaker_setup();
 void loudspeaker_vol(int vol);
 void speaker_vol(int vol);
+int radio_register(int timeout);
+void radio_call(const char* number);
+void radio_hangup();
 
 #endif
