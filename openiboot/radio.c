@@ -13,6 +13,7 @@
 static int radio_nvram_read_all(char** res);
 static char* radio_nvram = NULL;
 static int radio_nvram_len;
+static int RadioAvailable = FALSE;
 
 int radio_setup()
 {
@@ -60,11 +61,46 @@ int radio_setup()
 		return -1;
 	}
 
+	RadioAvailable = TRUE;
+
 	bufferPrintf("radio: ready.\r\n");
 
 	speaker_setup();
 
 	return 0;
+}
+
+int radio_nvram_get(int type_in, uint8_t** data_out)
+{
+	if(!RadioAvailable)
+		return -1;
+
+	if(radio_nvram == NULL)
+	{
+		bufferPrintf("radio: reading baseband nvram... ");
+		radio_nvram_len = radio_nvram_read_all(&radio_nvram);
+		bufferPrintf("done\r\n");
+	}
+
+	char* cursor = radio_nvram;
+	while(cursor < (radio_nvram + radio_nvram_len))
+	{
+		int type = (cursor[0] << 8) | cursor[1];
+		int size = ((cursor[2] << 8) | cursor[3]) * 2;
+		if(size == 0)
+			break;
+
+		uint8_t* data = (uint8_t*)(cursor + 4);
+
+		if(type == type_in)
+		{
+			*data_out = data;
+			return size - 4;
+		}
+		cursor += size;
+	}
+
+	return -1;
 }
 
 void radio_nvram_list()

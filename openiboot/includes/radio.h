@@ -18,5 +18,6 @@ void speaker_vol(int vol);
 int radio_register(int timeout);
 void radio_call(const char* number);
 void radio_hangup();
+int radio_nvram_get(int type_in, uint8_t** data_out);
 
 #endif

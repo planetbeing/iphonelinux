@@ -8,6 +8,7 @@
 #include "nand.h"
 #include "wdt.h"
 #include "dma.h"
+#include "radio.h"
 
 #define MACH_APPLE_IPHONE 1506
 
@@ -25,6 +26,7 @@
 #define ATAG_VIDEOLFB   0x54410008
 #define ATAG_CMDLINE    0x54410009
 #define ATAG_IPHONE_NAND    0x54411001
+#define ATAG_IPHONE_WIFI    0x54411002
 
 /* structures for each atag */
 struct atag_header {
@@ -103,6 +105,12 @@ struct atag_iphone_nand {
 	ExtentList	extentList;
 };
 
+struct atag_iphone_wifi {
+	uint8_t		mac[6];
+	uint32_t	calSize;
+	uint8_t		cal[];
+};
+
 struct atag {
 	struct atag_header hdr;
 	union {
@@ -116,6 +124,7 @@ struct atag {
 		struct atag_videolfb     videolfb;
 		struct atag_cmdline      cmdline;
 		struct atag_iphone_nand  nand;
+		struct atag_iphone_wifi  wifi;
 	} u;
 };
 
@@ -191,6 +200,27 @@ static void setup_cmdline_tag(const char * line)
 
 	strcpy(params->u.cmdline.cmdline,line); /* place commandline into tag */
 
+	params = tag_next(params);              /* move pointer to next tag */
+}
+
+static void setup_wifi_tags()
+{
+	uint8_t* mac;
+	uint32_t calSize;
+	uint8_t* cal;
+
+	if(radio_nvram_get(2, &mac) < 0)
+		return;
+
+	if((calSize = radio_nvram_get(1, &cal)) < 0)
+		return;
+
+	memcpy(&params->u.wifi.mac, mac, 6);
+	params->u.wifi.calSize = calSize;
+	memcpy(params->u.wifi.cal, cal, calSize);
+
+	params->hdr.tag = ATAG_IPHONE_WIFI;         /* iPhone NAND tag */
+	params->hdr.size = (sizeof(struct atag_header) + sizeof(struct atag_iphone_wifi) + calSize + 4) >> 2;
 	params = tag_next(params);              /* move pointer to next tag */
 }
 
@@ -276,6 +306,7 @@ static void setup_tags(struct atag* parameters, const char* commandLine)
 		setup_initrd2_tag(INITRD_LOAD, ramdiskSize);
 	}
 	setup_cmdline_tag(commandLine);
+	setup_wifi_tags();
 #ifndef NO_HFS
 	setup_iphone_nand_tag();
 #endif
@@ -284,7 +315,7 @@ static void setup_tags(struct atag* parameters, const char* commandLine)
 
 void boot_linux(const char* args) {
 	uint32_t exec_at = (uint32_t) kernel;
-	uint32_t param_at = exec_at - 0x1000;
+	uint32_t param_at = exec_at - 0x2000;
 	setup_tags((struct atag*) param_at, args);
 
 	uint32_t mach_type = MACH_APPLE_IPHONE;
