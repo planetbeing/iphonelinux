@@ -349,3 +349,35 @@ void boot_linux(const char* args) {
 	    );
 }
 
+#ifndef NO_HFS
+void boot_linux_from_files()
+{
+	int size;
+
+	bufferPrintf("Loading kernel...\r\n");
+
+	size = fs_extract(1, "/zImage", (void*) 0x09000000);
+	if(size < 0)
+	{
+		bufferPrintf("Cannot find kernel.\r\n");
+		return;
+	}
+
+	set_kernel((void*) 0x09000000, size);
+
+	bufferPrintf("Loading initrd...\r\n");
+
+	size = fs_extract(1, "/android.img.gz", (void*) 0x09000000);
+	if(size < 0)
+	{
+		bufferPrintf("Cannot find ramdisk.\r\n");
+		return;
+	}
+
+	set_ramdisk((void*) 0x09000000, size);
+
+	bufferPrintf("Booting Linux...\r\n");
+
+	boot_linux("console=tty root=/dev/ram0 init=/init rw");
+}
+#endif

@@ -21,5 +21,6 @@ void fs_cmd_ls(int argc, char** argv);
 void fs_cmd_cat(int argc, char** argv);
 void fs_cmd_extract(int argc, char** argv);
 void fs_cmd_add(int argc, char** argv);
+int fs_extract(int partition, const char* file, void* location);
 
 #endif

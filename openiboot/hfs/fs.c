@@ -223,6 +223,48 @@ void fs_cmd_cat(int argc, char** argv) {
 	CLOSE(io);
 }
 
+int fs_extract(int partition, const char* file, void* location) {
+	Volume* volume;
+	io_func* io;
+	int ret;
+
+	io = bdev_open(partition);
+	if(io == NULL) {
+		bufferPrintf("fs: cannot read partition!\r\n");
+		return -1;
+	}
+
+	volume = openVolume(io);
+	if(volume == NULL) {
+		return -1;
+	}
+
+	HFSPlusCatalogRecord* record;
+
+	record = getRecordFromPath(file, volume, NULL, NULL);
+
+	if(record != NULL) {
+		if(record->recordType == kHFSPlusFileRecord) {
+			uint8_t* buffer;
+			uint32_t size = readHFSFile((HFSPlusCatalogFile*)record, &buffer, volume);
+			memcpy(location, buffer, size);
+			free(buffer);
+			ret = size;
+		} else {
+			ret = -1;
+		}
+	} else {
+		ret = -1;
+	}
+
+	free(record);
+
+	closeVolume(volume);
+	CLOSE(io);
+
+	return ret;
+}
+
 void fs_cmd_extract(int argc, char** argv) {
 	Volume* volume;
 	io_func* io;

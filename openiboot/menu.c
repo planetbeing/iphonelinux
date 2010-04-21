@@ -16,6 +16,9 @@
 #include "actions.h"
 #include "stb_image.h"
 #include "pmu.h"
+#include "nand.h"
+#include "radio.h"
+#include "hfs/fs.h"
 
 static uint32_t FBWidth;
 static uint32_t FBHeight;
@@ -133,6 +136,28 @@ int menu_setup(int timeout) {
 	}
 
 	if(Selection == MenuSelectionConsole) {
+#ifndef NO_HFS
+		startTime = timer_get_system_microtime();
+		while(TRUE) {
+			if(!buttons_is_home_pushed())
+				break;
+
+			if(has_elapsed(startTime, (uint64_t)2000 * 1000)) {
+				framebuffer_setdisplaytext(TRUE);
+				framebuffer_clear();
+				radio_setup();
+				nand_setup();
+				fs_setup();
+
+				pmu_set_iboot_stage(0);
+
+				boot_linux_from_files();
+			}
+
+			udelay(10000);
+		}
+#endif
+
 		framebuffer_setdisplaytext(TRUE);
 		framebuffer_clear();
 	}
