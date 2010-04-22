@@ -34,7 +34,7 @@ static int img3_setup() {
 		nor_read(rootHeader, offset, sizeof(AppleImg3RootHeader));
 		if(rootHeader->base.magic != IMG3_MAGIC)
 			break;
-		
+
 		if(curImage == NULL) {
 			curImage = (Image*) malloc(sizeof(Image));
 			imageList = curImage;
@@ -148,7 +148,7 @@ int images_setup() {
 
 	free(curImg2);
 	free(header);
-	
+
 	return 0;
 }
 
@@ -406,11 +406,13 @@ unsigned int images_read(Image* image, void** data) {
 
 		AppleImg3KBAGHeader* kbag = (AppleImg3KBAGHeader*) kbagOffset;
 
-		if(kbag->key_modifier == 1) {
-			aes_decrypt((void*)(kbagOffset + sizeof(AppleImg3KBAGHeader)), 16 + (kbag->key_bits / 8), AESGID, NULL, NULL);
-		}
+    if(kbag != 0) {
+      if(kbag->key_modifier == 1) {
+        aes_decrypt((void*)(kbagOffset + sizeof(AppleImg3KBAGHeader)), 16 + (kbag->key_bits / 8), AESGID, NULL, NULL);
+      }
 
-		aes_decrypt((void*)dataOffset, (dataLength / 16) * 16, AESCustom, (uint8_t*)(kbagOffset + sizeof(AppleImg3KBAGHeader) + 16), (uint8_t*)(kbagOffset + sizeof(AppleImg3KBAGHeader)));
+      aes_decrypt((void*)dataOffset, (dataLength / 16) * 16, AESCustom, (uint8_t*)(kbagOffset + sizeof(AppleImg3KBAGHeader) + 16), (uint8_t*)(kbagOffset + sizeof(AppleImg3KBAGHeader)));
+    }
 
 		uint8_t* newBuf = malloc(dataLength);
 		memcpy(newBuf, (void*)dataOffset, dataLength);
@@ -613,7 +615,7 @@ void* images_inject_img3(const void* img3Data, const void* newData, size_t newDa
 
 	AppleImg3KBAGHeader* kbag = (AppleImg3KBAGHeader*) kbagOffset;
 
-	if(kbag->key_modifier == 1) {
+	if(kbag != 0 && kbag->key_modifier == 1) {
 		memcpy(IVKey, (void*)(kbagOffset + sizeof(AppleImg3KBAGHeader)), 16 + (kbag->key_bits / 8));
 		aes_decrypt(IVKey, 16 + (kbag->key_bits / 8), AESGID, NULL, NULL);
 	}
@@ -640,7 +642,9 @@ void* images_inject_img3(const void* img3Data, const void* newData, size_t newDa
 			newHeader->size = sizeof(AppleImg3Header) + (((newHeader->dataSize + 3)/4)*4);
 
 			memcpy(cursor + sizeof(AppleImg3Header), newData, newDataLen);
-			aes_encrypt(cursor + sizeof(AppleImg3Header), (newDataLen / 16) * 16, AESCustom, Key, IV);
+      if(kbag != 0) {
+  			aes_encrypt(cursor + sizeof(AppleImg3Header), (newDataLen / 16) * 16, AESCustom, Key, IV);
+      }
 			cursor += newHeader->size;
 		} else {
 			if(header->magic == IMG3_SHSH_MAGIC) {
