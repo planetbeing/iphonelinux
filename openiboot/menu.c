@@ -19,6 +19,9 @@
 #include "nand.h"
 #include "radio.h"
 #include "hfs/fs.h"
+#include "ftl.h"
+
+int globalFtlHasBeenRestored = 0; /* global variable to tell wether a ftl_restore has been done*/
 
 static uint32_t FBWidth;
 static uint32_t FBHeight;
@@ -148,6 +151,17 @@ int menu_setup(int timeout) {
 				radio_setup();
 				nand_setup();
 				fs_setup();
+				if(globalFtlHasBeenRestored) /* if ftl has been restored, sync it, so kernel doesn't have to do a ftl_restore again */
+				{
+					if(ftl_sync())
+					{
+						bufferPrintf("ftl synced successfully");
+					}
+					else
+					{
+						bufferPrintf("error syncing ftl");
+					}
+				}
 
 				pmu_set_iboot_stage(0);
 
