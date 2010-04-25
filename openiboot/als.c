@@ -27,6 +27,10 @@ static uint8_t als_readb(uint8_t addr);
 static uint16_t als_readw(uint8_t addr);
 static void als_clearint();
 static void als_int(uint32_t token);
+static uint16_t als_data0();
+static uint16_t als_data1();
+
+static int use_channel;
 
 int als_setup()
 {
@@ -41,12 +45,19 @@ int als_setup()
 		bufferPrintf("als: error initializing\r\n");
 		return -1;
 	}
-	
+
+	als_setchannel(0);
+
 	gpio_register_interrupt(ALS_INT, 1, 0, 0, als_int, 0);
 
 	bufferPrintf("als: initialized\r\n");
 
 	return 0;
+}
+
+void als_setchannel(int channel)
+{
+	use_channel = channel;
 }
 
 void als_enable_interrupt()
@@ -95,7 +106,7 @@ static void als_int(uint32_t token)
 		als_sethighthreshold(0xFFFF);
 
 	if(lastData0 != data0)
-		bufferPrintf("als: channel 0 = %d, channel 1 = %d\r\n", data0, data1);
+		bufferPrintf("als: data = %d\r\n", (use_channel == 0 ? data0 : data1));
 
 	lastData0 = data0;
 
@@ -112,14 +123,19 @@ void als_sethighthreshold(uint16_t value)
 	als_writew(THRESHHIGHLOW, value);
 }
 
-uint16_t als_data0()
+static uint16_t als_data0()
 {
 	return als_readw(DATA0LOW);
 }
 
-uint16_t als_data1()
+static uint16_t als_data1()
 {
 	return als_readw(DATA1LOW);
+}
+
+uint16_t als_data()
+{
+	return use_channel == 0 ? als_data0() : als_data1();
 }
 
 static void als_writeb(uint8_t addr, uint8_t b)

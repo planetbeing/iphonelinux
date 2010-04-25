@@ -40,13 +40,13 @@ int radio_setup_3g()
 
 	bufferPrintf("radio: comm board detected.\r\n");
 
-    
+
 	if(!radio_wait_for_ok(10))
 	{
 		bufferPrintf("radio: no response from baseband!\r\n");
 		return -1;
 	}
-  
+
 
 	bufferPrintf("radio: setting speed to 750000 baud.\r\n");
 
@@ -321,14 +321,11 @@ int radio_cmd(const char* cmd, int tries)
 	int i;
 	for(i = 0; i < tries; ++i)
 	{
-        bufferPrintf("radio: trying radio_cmd \r\n");
 		char buf[200];
 		int n;
 
-        bufferPrintf("radio: trying radio_write \r\n");
 		radio_write(cmd);
 
-        bufferPrintf("radio: trying radio_read \r\n");
 		n = radio_read(buf, sizeof(buf) - 1);
 
 		if(n == 0)

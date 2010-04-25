@@ -5,10 +5,17 @@
 
 #ifdef CONFIG_IPOD
 #define WMCODEC_I2C 1
-#define WMCCODEC_I2C_SLAVE_ADDR 0x36
-#else
+#define WMCODEC_I2C_SLAVE_ADDR 0x36
+#endif
+
+#ifdef CONFIG_IPHONE
 #define WMCODEC_I2C 0
-#define WMCCODEC_I2C_SLAVE_ADDR 0x1B
+#define WMCODEC_I2C_SLAVE_ADDR 0x34
+#endif
+
+#ifdef CONFIG_3G
+#define WMCODEC_I2C 0
+#define WMCODEC_I2C_SLAVE_ADDR 0x1B
 #endif
 
 #endif

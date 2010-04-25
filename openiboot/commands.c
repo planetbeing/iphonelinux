@@ -26,11 +26,7 @@
 #include "multitouch.h"
 #include "wlan.h"
 #include "radio.h"
-#ifdef CONFIG_3G
-#include "alsISL29003.h"
-#else
 #include "als.h"
-#endif
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -781,11 +777,19 @@ void cmd_accel(int argc, char** argv) {
 }
 
 void cmd_als(int argc, char** argv) {
-#ifdef CONFIG_3G
-	bufferPrintf("sensor data (photodiode 0 and 1) = %d, timer data = %d\r\n", als_sensordata(), als_timerdata());
-#else
-	bufferPrintf("channel 0 (visible and IR) = %d, channel 1 (IR only) = %d\r\n", als_data0(), als_data1());
-#endif
+	bufferPrintf("data = %d\r\n", als_data());
+}
+
+void cmd_als_channel(int argc, char** argv) {
+	if(argc < 2)
+	{
+		bufferPrintf("usage: %s <channel>\r\n", argv[0]);
+		return;
+	}
+
+	int channel = parseNumber(argv[1]);
+	bufferPrintf("Setting als channel to %d\r\n", channel);
+	als_setchannel(channel);
 }
 
 void cmd_als_en(int argc, char** argv) {
@@ -907,7 +911,7 @@ void cmd_multitouch_setup(int argc, char** argv)
 {
 	if(argc < 5)
 	{
-		bufferPrintf("%s <a-speed fw> <a-speed fw len> <main fw> <main fw len>\r\n");
+		bufferPrintf("%s <a-speed fw> <a-speed fw len> <main fw> <main fw len>\r\n", argv[0]);
 		return;
 	}
 
@@ -1080,6 +1084,7 @@ OPIBCommand CommandList[] =
 		{"iic_write", "write a IIC register", cmd_iic_write},
 		{"accel", "display accelerometer data", cmd_accel},
 		{"als", "display ambient light sensor data", cmd_als},
+		{"als_channel", "set channel to get ALS data from", cmd_als_channel},
 		{"als_en", "enable continuous reporting of ALS data", cmd_als_en},
 		{"als_dis", "disable continuous reporting of ALS data", cmd_als_dis},
 		{"sdio_status", "display sdio registers", cmd_sdio_status},
