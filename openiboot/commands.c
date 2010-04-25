@@ -26,7 +26,11 @@
 #include "multitouch.h"
 #include "wlan.h"
 #include "radio.h"
+#ifdef CONFIG_3G
+#include "alsISL29003.h"
+#else
 #include "als.h"
+#endif
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -340,6 +344,17 @@ void cmd_gpio_pinstate(int argc, char** argv) {
 	bufferPrintf("Pin 0x%x state: 0x%x\r\n", port, gpio_pin_state(port));
 }
 
+void cmd_gpio_out(int argc, char** argv) {
+	if(argc < 3) {
+		bufferPrintf("Usage: %s <port> [0|1]\r\n", argv[0]);
+		return;
+	}
+
+	uint32_t port = parseNumber(argv[1]);
+	uint32_t value = parseNumber(argv[2]);
+	bufferPrintf("Pin 0x%x value: %d\r\n", port, value);
+    gpio_pin_output(port,value);
+}
 void cmd_bgcolor(int argc, char** argv) {
 	if(argc < 4) {
 		bufferPrintf("Usage: %s <red> <green> <blue>\r\n", argv[0]);
@@ -397,7 +412,9 @@ void cmd_saveenv(int argc, char** argv) {
 }
 
 void cmd_install(int argc, char** argv) {
+	bufferPrintf("Installing Images...\r\n");
 	images_install(&_start, (uint32_t)&OpenIBootEnd - (uint32_t)&_start);
+	bufferPrintf("Images installed\r\n");
 }
 
 void cmd_uninstall(int argc, char** argv) {
@@ -764,7 +781,11 @@ void cmd_accel(int argc, char** argv) {
 }
 
 void cmd_als(int argc, char** argv) {
+#ifdef CONFIG_3G
+	bufferPrintf("sensor data (photodiode 0 and 1) = %d, timer data = %d\r\n", als_sensordata(), als_timerdata());
+#else
 	bufferPrintf("channel 0 (visible and IR) = %d, channel 1 (IR only) = %d\r\n", als_data0(), als_data1());
+#endif
 }
 
 void cmd_als_en(int argc, char** argv) {
@@ -1032,6 +1053,7 @@ OPIBCommand CommandList[] =
 		{"hexdump", "display a block of memory like 'hexdump -C'", cmd_hexdump},
 		{"cat", "dumps a block of memory", cmd_cat},
 		{"gpio_pinstate", "get the state of a GPIO pin", cmd_gpio_pinstate},
+		{"gpio_out", "set the state of a GPIO pin", cmd_gpio_out},
 		{"dma", "perform a DMA transfer", cmd_dma},
 		{"nand_read", "read a page of NAND into RAM", cmd_nand_read},
 		{"nand_write", "write a page of NAND", cmd_nand_write},

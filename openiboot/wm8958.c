@@ -52,7 +52,7 @@ void wmcodec_write(int reg, int data)
 	buffer[0] = (reg << 1) | ((data & 0x100) >> 8);
 	buffer[1] = d;
 
-	i2c_tx(WMCODEC_I2C, 0x34, buffer, 2);
+	i2c_tx(WMCODEC_I2C, WMCCODEC_I2C_SLAVE_ADDR, buffer, 2);
 }
 
 static void iis_transfer_done(int status, int controller, int channel)

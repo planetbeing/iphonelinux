@@ -28,13 +28,18 @@
  */
 
 #define PeripheralPort 0x38000000
+#ifdef CONFIG_3G
+#define AMC0 0x38500000
+#define ROM 0x50000000
+#else
 #define AMC0 0x22000000
 #define ROM 0x20000000
+#endif
+
 #define WDT_CTRL 0x3E300000
 #define WDT_CNT 0x3E300004
 
 #define WDT_INT 0x33
-
 /*
  *	Values
  */

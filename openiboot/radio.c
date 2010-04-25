@@ -15,13 +15,14 @@ static char* radio_nvram = NULL;
 static int radio_nvram_len;
 static int RadioAvailable = FALSE;
 
-int radio_setup()
+#ifdef CONFIG_3G
+int radio_setup_3g()
 {
-	gpio_pin_output(RADIO_GPIO_BB_MUX_SEL, OFF);
+	//gpio_pin_output(RADIO_GPIO_DOCK_UART_CTRL, OFF);
 
-	gpio_pulldown_configure(RADIO_BB_PULLDOWN, GPIOPDDown);
+	//gpio_pulldown_configure(RADIO_BB_PULLDOWN, GPIOPDDown);
 
-	gpio_pin_output(RADIO_GPIO_BB_ON, OFF);
+	//gpio_pin_output(RADIO_GPIO_BB_ON, OFF);
 	udelay(100000);
 	gpio_pin_output(RADIO_GPIO_RADIO_ON, ON);
 	udelay(100000);
@@ -30,8 +31,8 @@ int radio_setup()
 	gpio_pin_output(RADIO_GPIO_BB_RESET, OFF);
 	udelay(100000);
 
-	gpio_pin_use_as_input(RADIO_GPIO_BB_DETECT);
-	if(gpio_pin_state(RADIO_GPIO_BB_DETECT) != 0)
+	gpio_pin_use_as_input(RADIO_GPIO_RESET_DETECT);
+	if(gpio_pin_state(RADIO_GPIO_RESET_DETECT) != 0)
 	{
 		bufferPrintf("radio: comm board not present, powered on, or at+xdrv=10,2 had been issued.\r\n");
 		return -1;
@@ -39,11 +40,13 @@ int radio_setup()
 
 	bufferPrintf("radio: comm board detected.\r\n");
 
+    
 	if(!radio_wait_for_ok(10))
 	{
 		bufferPrintf("radio: no response from baseband!\r\n");
 		return -1;
 	}
+  
 
 	bufferPrintf("radio: setting speed to 750000 baud.\r\n");
 
@@ -68,6 +71,73 @@ int radio_setup()
 	speaker_setup();
 
 	return 0;
+}
+#else
+int radio_setup_2g()
+{
+	gpio_pin_output(RADIO_GPIO_BB_MUX_SEL, OFF);
+
+	gpio_pulldown_configure(RADIO_BB_PULLDOWN, GPIOPDDown);
+
+	gpio_pin_output(RADIO_GPIO_BB_ON, OFF);
+	udelay(100000);
+	gpio_pin_output(RADIO_GPIO_RADIO_ON, ON);
+	udelay(100000);
+	gpio_pin_output(RADIO_GPIO_BB_RESET, ON);
+	udelay(100000);
+	gpio_pin_output(RADIO_GPIO_BB_RESET, OFF);
+	udelay(100000);
+
+	gpio_pin_use_as_input(RADIO_GPIO_BB_DETECT);
+	if(gpio_pin_state(RADIO_GPIO_BB_DETECT) != 0)
+	{
+		bufferPrintf("radio: comm board not present, powered on, or at+xdrv=10,2 had been issued.\r\n");
+		return -1;
+	}
+
+	bufferPrintf("radio: comm board detected.\r\n");
+
+    
+	if(!radio_wait_for_ok(10))
+	{
+		bufferPrintf("radio: no response from baseband!\r\n");
+		return -1;
+	}
+  
+
+	bufferPrintf("radio: setting speed to 750000 baud.\r\n");
+
+	radio_write("at+ipr=750000\r\n");
+
+	// wait a millisecond for the command to totally clear uart
+	// I wasn't able to detect this condition with uart registers (looking at FIFO count, transmitter empty)
+	udelay(1000);
+
+	uart_set_baud_rate(RADIO_UART, 750000);
+
+	if(!radio_wait_for_ok(10))
+	{
+		bufferPrintf("radio: no response from baseband!\r\n");
+		return -1;
+	}
+
+	RadioAvailable = TRUE;
+
+	bufferPrintf("radio: ready.\r\n");
+
+	speaker_setup();
+
+	return 0;
+}
+#endif
+
+int radio_setup()
+{
+#if CONFIG_3G
+    return radio_setup_3g();
+#else
+    return radio_setup_2g();
+#endif
 }
 
 int radio_nvram_get(int type_in, uint8_t** data_out)
@@ -251,11 +321,14 @@ int radio_cmd(const char* cmd, int tries)
 	int i;
 	for(i = 0; i < tries; ++i)
 	{
+        bufferPrintf("radio: trying radio_cmd \r\n");
 		char buf[200];
 		int n;
 
+        bufferPrintf("radio: trying radio_write \r\n");
 		radio_write(cmd);
 
+        bufferPrintf("radio: trying radio_read \r\n");
 		n = radio_read(buf, sizeof(buf) - 1);
 
 		if(n == 0)

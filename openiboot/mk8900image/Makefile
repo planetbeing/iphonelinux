@@ -1,6 +1,6 @@
 MKIMAGEOBJS=mk8900image.o
 LIBXPWN=libxpwn.a libcommon.a
-LIBRARIES=-L/opt/local-universal-10.4/lib -lm -ldl -lpng -lcrypto -lz
+LIBRARIES=-L/usr/lib32 -L/opt/local-universal-10.4/lib -lm -ldl -lpng -lcrypto -lz
 CFLAGS += -m32
 
 %.o:	%.c
