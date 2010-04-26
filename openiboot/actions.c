@@ -27,6 +27,7 @@
 #define ATAG_CMDLINE    0x54410009
 #define ATAG_IPHONE_NAND    0x54411001
 #define ATAG_IPHONE_WIFI    0x54411002
+#define ATAG_IPHONE_TYPE    0x54411003
 
 /* structures for each atag */
 struct atag_header {
@@ -105,10 +106,18 @@ struct atag_iphone_nand {
 	ExtentList	extentList;
 };
 
+#define ATAG_IPHONE_WIFI_TYPE_2G 0
+#define ATAG_IPHONE_WIFI_TYPE_3G 1
+#define ATAG_IPHONE_WIFI_TYPE_IPOD 2
+
 struct atag_iphone_wifi {
 	uint8_t		mac[6];
 	uint32_t	calSize;
 	uint8_t		cal[];
+};
+
+struct atag_iphone_type {
+	uint32_t	type;
 };
 
 struct atag {
@@ -125,6 +134,7 @@ struct atag {
 		struct atag_cmdline      cmdline;
 		struct atag_iphone_nand  nand;
 		struct atag_iphone_wifi  wifi;
+		struct atag_iphone_type  iphone_type;
 	} u;
 };
 
@@ -224,6 +234,24 @@ static void setup_wifi_tags()
 	params = tag_next(params);              /* move pointer to next tag */
 }
 
+static void setup_type_tag()
+{
+	params->hdr.tag = ATAG_IPHONE_TYPE;
+	params->hdr.size = tag_size(atag_iphone_type);
+
+#ifdef CONFIG_IPHONE
+	params->u.iphone_type.type = ATAG_IPHONE_WIFI_TYPE_2G;
+#endif
+#ifdef CONFIG_3G
+	params->u.iphone_type.type = ATAG_IPHONE_WIFI_TYPE_3G;
+#endif
+#ifdef CONFIG_IPOD
+	params->u.iphone_type.type = ATAG_IPHONE_WIFI_TYPE_IPOD;
+#endif
+
+	params = tag_next(params);              /* move pointer to next tag */
+}
+
 static int rootfs_partition = 0;
 static char* rootfs_filename = NULL;
 
@@ -306,6 +334,7 @@ static void setup_tags(struct atag* parameters, const char* commandLine)
 		setup_initrd2_tag(INITRD_LOAD, ramdiskSize);
 	}
 	setup_cmdline_tag(commandLine);
+	setup_type_tag();
 	setup_wifi_tags();
 #ifndef NO_HFS
 	setup_iphone_nand_tag();

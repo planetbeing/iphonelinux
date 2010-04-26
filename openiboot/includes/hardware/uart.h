@@ -24,7 +24,7 @@
 #define UART_UTXH 0x20
 #define UART_URXH 0x24
 #define UART_UBAUD 0x28
-#define UART_UINTP 0x2C
+#define UART_UDIVSLOT 0x2C
 
 // Values
 #define NUM_UARTS 5

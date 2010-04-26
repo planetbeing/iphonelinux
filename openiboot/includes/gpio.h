@@ -34,4 +34,6 @@ void gpio_interrupt_disable(uint32_t interrupt);
 
 void gpio_pulldown_configure(int port, GPIOPDSetting setting);
 
+int pmu_gpio(int gpio, int is_output, int value);
+
 #endif

@@ -371,3 +371,21 @@ void pmu_charge_settings(int UseUSB, int SuspendUSB, int StopCharger) {
 		gpio_pin_output(PMU_GPIO_CHARGER_USB_1000, 0);
 }
 
+int pmu_gpio(int gpio, int is_output, int value)
+{
+	int mask;
+
+	if(gpio < 1 || gpio > 3)
+		return -1;
+
+	mask = 1 << (gpio - 1);
+
+	pmu_write_reg(PMU_GPIO1CFG + (gpio - 1), (value == 0) ? 0 : 0x7, 0);
+
+	if(is_output)
+		pmu_write_reg(PMU_GPIOCTL, pmu_get_reg(PMU_GPIOCTL) & ~mask, 0);
+	else
+		pmu_write_reg(PMU_GPIOCTL, pmu_get_reg(PMU_GPIOCTL) | mask, 0);
+
+	return 0;
+}

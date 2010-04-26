@@ -197,6 +197,8 @@ static EnvironmentVar* loadEnvironment(NVRamAtom* atoms) {
 				curVar = curVar->next;
 			}
 
+			curVar->next = NULL;
+
 			curVar->name = (char*) malloc(nameLen + 1);
 			memcpy(curVar->name, name, nameLen);
 			curVar->name[nameLen] = '\0';
