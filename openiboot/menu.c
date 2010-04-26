@@ -20,6 +20,7 @@
 #include "radio.h"
 #include "hfs/fs.h"
 #include "ftl.h"
+#include "scripting.h"
 
 int globalFtlHasBeenRestored = 0; /* global variable to tell wether a ftl_restore has been done*/
 
@@ -164,7 +165,7 @@ int menu_setup(int timeout) {
 				}
 
 				pmu_set_iboot_stage(0);
-
+				startScripting("linux"); //start script mode if there is a script file
 				boot_linux_from_files();
 			}
 

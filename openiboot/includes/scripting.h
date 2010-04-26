@@ -5,6 +5,6 @@
 
 void startScripting();
 
-static void processCommand(char*);
+//static void processCommand(char*);
 
 #endif

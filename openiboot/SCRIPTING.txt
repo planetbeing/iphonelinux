@@ -1,0 +1,61 @@
+scripting support in openiboot
+script can be launched before openiboot launch the shell or load the kernel (for automatic boot).
+scripting uses 4 environment variables (NVRAM values) and a file in the NAND.
+NVRAM values:
+- partition-script :
+	tells in which partition the file script is stored (openiboot format, so currently 0 corresponds to / and 1 to /private/var in iPhoneOS)
+- file-script :
+	tells the path to the file script from the root of the partition (for a file like /private/var/script in iPhoneOS, set partition-script to 1 and file-script to /script )
+- scripting-openiboot :
+	tells if the script is launched before droping the openiboot shell. Accepted values are true or 1 , anything else is considered as false.
+-scripting-linux :
+	tells if the script is launched before lauching the linux kernel in automated boot. Accepted values are true or 1 , anything else is considered as false.
+ATTENTION : after setting NVRAM values, you need to commit the changes by using the command saveenv
+
+How to change NVRAM values?
+it can be done either with iboot or openiboot with the same syntax :
+setenv variableName VariableValue
+And to commit the changes : simply saveenv   (the variable will be erased after next reboot, or if you load an image, so save it!)
+
+script file:
+it is a text file (ASCII), the separation of lines are new lines. Don't add extras lines.
+It handle \n end-of-line (and should also handle the windows \r\n end-of-line as \r is ignored)
+
+What instructions works?
+all internal openiboot command line.
+Communication with computer doesn't work (so don't try to send or receive a file). oibc need changes to receive instructions from USB.
+
+example of script for updating openiboot automatically.
+3 files stored in /private/var :
+- openiboot.bin (in binary format, not packed as img3)
+- update-openiboot-part1
+- update-openiboot-part2
+
+the content of these texts files:
+update-openiboot-part1 :
+uninstall
+setenv file-script /update-openiboot-part2
+setenv opib-hide-menu true
+saveenv
+fs_extract 1 /openiboot.bin 0x09000000
+go
+
+
+update-openiboot-part2 :
+install
+setenv opib-hide-menu false
+setenv scripting-openiboot false
+setenv scripting-linux false			(chose one of these 2 lines depending how the script was launched it the first place)
+saveenv
+reboot
+
+
+Note : you can install your script/kernel/images (if not too big) with openiboot.
+The command tu use is fs_add:
+usage: fs_add <partition> <file> <location> <size>
+First step upload the file to openiboot :
+!myFile
+openiboot will tell you the size of the file. The address is by default 0x09000000 unless you specifed something different.
+you now have the location (address) and the size of the file.
+the file is the path to the on the device from the root of the partition.
+partition is which partition to use.

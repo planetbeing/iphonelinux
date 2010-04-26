@@ -99,15 +99,14 @@ void OpenIBootStart() {
 #endif
 
 	pmu_set_iboot_stage(0);
-
+	startScripting("openiboot"); //start script mode if there is a file
 	bufferPrintf("-----------------------------------------------\r\n");
 	bufferPrintf("              WELCOME TO OPENIBOOT\r\n");
 	bufferPrintf("-----------------------------------------------\r\n");
 	DebugPrintf("                    DEBUG MODE\r\n");
 
 	audiohw_postinit();
-	
-	startScripting(); //start script mode
+
 	// Process command queue
 	while(TRUE) {
 		char* command = NULL;
@@ -176,8 +175,29 @@ static void addToCommandQueue(const char* command) {
 	LeaveCriticalSection();
 }
 
-void scriptCommand(char* command){
-	addToCommandQueue(command);
+uint32_t scriptCommand(char* command){
+    int argc;
+	char** argv = tokenize(command, &argc);
+
+	OPIBCommand* curCommand = CommandList;
+
+	int success = FALSE;
+	while(curCommand->name != NULL) {
+		if(strcmp(argv[0], curCommand->name) == 0) {
+			curCommand->routine(argc, argv);
+			success = TRUE;
+			break;
+		}
+		curCommand++;
+	}
+
+	if(!success) {
+		bufferPrintf("unknown command: %s\r\n", command);
+	}
+
+	free(argv);
+	//bufferPrintf("going back to scriptCommand()\r\n"); /*at this point, the command has been executed */
+	return success;
 }
 
 static void processCommand(char* command) {
@@ -295,7 +315,7 @@ static void dataReceived(uint32_t token) {
 	} else {
 		*dataRecvPtr = '\0';
 		addToCommandQueue((char*)dataRecvBuffer);
-	}	
+	}
 }
 
 static void dataSent(uint32_t token) {
@@ -314,7 +334,7 @@ static void dataSent(uint32_t token) {
 			usb_send_bulk(1, dataSendBuffer, toRead);
 		}
 		left -= toRead;
-	}	
+	}
 }
 
 static void controlSent(uint32_t token) {
