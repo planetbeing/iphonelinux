@@ -34,6 +34,7 @@
 #include "ftl.h"
 #include "hfs/bdev.h"
 #include "hfs/fs.h"
+#include "scripting.h"
 
 #include "radio.h"
 #include "wm8958.h"
@@ -105,7 +106,8 @@ void OpenIBootStart() {
 	DebugPrintf("                    DEBUG MODE\r\n");
 
 	audiohw_postinit();
-
+	
+	startScripting(); //start script mode
 	// Process command queue
 	while(TRUE) {
 		char* command = NULL;
@@ -172,6 +174,10 @@ static void addToCommandQueue(const char* command) {
 		prev->next = toAdd;
 	}
 	LeaveCriticalSection();
+}
+
+void scriptCommand(char* command){
+	addToCommandQueue(command);
 }
 
 static void processCommand(char* command) {
