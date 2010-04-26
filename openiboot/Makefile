@@ -70,6 +70,8 @@ MAKEDEPEND          = $(CC) -M $(INC) $(CFLAGS) $(ARCHFLAGS) -o "$(DEPDIR)/$*.d"
 # Rules
 .PHONY: clean all
 
+all:	openiboot.img2 openiboot-wtf.img2 openiboot.img3 openiboot.bin
+
 %.o: %.S
 	@echo "Compiling $<"
 	@mkdir -p $(DEPDIR)/$(dir $@)
@@ -86,8 +88,6 @@ MAKEDEPEND          = $(CC) -M $(INC) $(CFLAGS) $(ARCHFLAGS) -o "$(DEPDIR)/$*.d"
 	@$(COMPILE)
 
 -include $(addprefix $(DEPDIR)/,$(OBJS:.o=.d))
-
-all:	openiboot.img2 openiboot-wtf.img2 openiboot.img3 openiboot.bin
 
 all-payload: openiboot-payload.img2 openiboot-payload.bin
 
