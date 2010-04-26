@@ -18,6 +18,8 @@
 		1AD3E6ED118584720059FB49 /* iPhone1,1_3.1_7C144_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1AD3E6EA118584720059FB49 /* iPhone1,1_3.1_7C144_Restore.ipsw.plist */; };
 		1ADB8F821185FDBC005141D3 /* iPhone2,1_3.1.2_7D11_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1ADB8F801185FDBC005141D3 /* iPhone2,1_3.1.2_7D11_Restore.ipsw.plist */; };
 		1ADB8F831185FDBC005141D3 /* iPhone2,1_3.1.3_7E18_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1ADB8F811185FDBC005141D3 /* iPhone2,1_3.1.3_7E18_Restore.ipsw.plist */; };
+		1ADB8FAA11862DF2005141D3 /* iPhone1,2_3.1_2_7D11_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1ADB8FA811862DF2005141D3 /* iPhone1,2_3.1_2_7D11_Restore.ipsw.plist */; };
+		1ADB8FAB11862DF2005141D3 /* iPhone1,2_3.1.3_7E18_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1ADB8FA911862DF2005141D3 /* iPhone1,2_3.1.3_7E18_Restore.ipsw.plist */; };
 		1DDD58160DA1D0A300B32029 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1DDD58140DA1D0A300B32029 /* MainMenu.xib */; };
 		256AC3DA0F4B6AC300CF3369 /* DripwnAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 256AC3D90F4B6AC300CF3369 /* DripwnAppDelegate.m */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
@@ -55,6 +57,8 @@
 		1AD3E6EA118584720059FB49 /* iPhone1,1_3.1_7C144_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone1,1_3.1_7C144_Restore.ipsw.plist"; sourceTree = "<group>"; };
 		1ADB8F801185FDBC005141D3 /* iPhone2,1_3.1.2_7D11_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone2,1_3.1.2_7D11_Restore.ipsw.plist"; sourceTree = "<group>"; };
 		1ADB8F811185FDBC005141D3 /* iPhone2,1_3.1.3_7E18_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone2,1_3.1.3_7E18_Restore.ipsw.plist"; sourceTree = "<group>"; };
+		1ADB8FA811862DF2005141D3 /* iPhone1,2_3.1_2_7D11_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone1,2_3.1_2_7D11_Restore.ipsw.plist"; sourceTree = "<group>"; };
+		1ADB8FA911862DF2005141D3 /* iPhone1,2_3.1.3_7E18_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone1,2_3.1.3_7E18_Restore.ipsw.plist"; sourceTree = "<group>"; };
 		1DDD58150DA1D0A300B32029 /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		256AC3D80F4B6AC300CF3369 /* DripwnAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DripwnAppDelegate.h; sourceTree = "<group>"; };
 		256AC3D90F4B6AC300CF3369 /* DripwnAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DripwnAppDelegate.m; sourceTree = "<group>"; };
@@ -119,6 +123,8 @@
 		1AD3E6E7118584720059FB49 /* Firmwares */ = {
 			isa = PBXGroup;
 			children = (
+				1ADB8FA811862DF2005141D3 /* iPhone1,2_3.1_2_7D11_Restore.ipsw.plist */,
+				1ADB8FA911862DF2005141D3 /* iPhone1,2_3.1.3_7E18_Restore.ipsw.plist */,
 				1ADB8F801185FDBC005141D3 /* iPhone2,1_3.1.2_7D11_Restore.ipsw.plist */,
 				1ADB8F811185FDBC005141D3 /* iPhone2,1_3.1.3_7E18_Restore.ipsw.plist */,
 				1AD3E6E8118584720059FB49 /* iPhone1,1_3.1.2_7D11_Restore.ipsw.plist */,
@@ -229,6 +235,8 @@
 				1AD3E6ED118584720059FB49 /* iPhone1,1_3.1_7C144_Restore.ipsw.plist in Resources */,
 				1ADB8F821185FDBC005141D3 /* iPhone2,1_3.1.2_7D11_Restore.ipsw.plist in Resources */,
 				1ADB8F831185FDBC005141D3 /* iPhone2,1_3.1.3_7E18_Restore.ipsw.plist in Resources */,
+				1ADB8FAA11862DF2005141D3 /* iPhone1,2_3.1_2_7D11_Restore.ipsw.plist in Resources */,
+				1ADB8FAB11862DF2005141D3 /* iPhone1,2_3.1.3_7E18_Restore.ipsw.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

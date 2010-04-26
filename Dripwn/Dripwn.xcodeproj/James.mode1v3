@@ -271,7 +271,7 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>9</integer>
+									<integer>4</integer>
 									<integer>3</integer>
 									<integer>0</integer>
 								</array>
@@ -324,7 +324,7 @@
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>1ADB8F971185FE4D005141D3</string>
+										<string>1ADB8FB011862DFE005141D3</string>
 										<key>history</key>
 										<array>
 											<string>1A2973341184D1C600BFB38E</string>
@@ -341,7 +341,7 @@
 											<string>1ADB8F881185FE05005141D3</string>
 											<string>1ADB8F891185FE05005141D3</string>
 											<string>1ADB8F8A1185FE05005141D3</string>
-											<string>1ADB8F8C1185FE05005141D3</string>
+											<string>1ADB8F971185FE4D005141D3</string>
 										</array>
 									</dict>
 									<key>SplitCount</key>
@@ -353,14 +353,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 0}, {580, 211}}</string>
+								<string>{{0, 0}, {580, 200}}</string>
 								<key>RubberWindowFrame</key>
 								<string>331 242 788 504 0 0 1280 778 </string>
 							</dict>
 							<key>Module</key>
 							<string>PBXNavigatorGroup</string>
 							<key>Proportion</key>
-							<string>211pt</string>
+							<string>200pt</string>
 						</dict>
 						<dict>
 							<key>BecomeActive</key>
@@ -375,14 +375,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 216}, {580, 247}}</string>
+								<string>{{0, 205}, {580, 258}}</string>
 								<key>RubberWindowFrame</key>
 								<string>331 242 788 504 0 0 1280 778 </string>
 							</dict>
 							<key>Module</key>
 							<string>XCDetailModule</string>
 							<key>Proportion</key>
-							<string>247pt</string>
+							<string>258pt</string>
 						</dict>
 					</array>
 					<key>Proportion</key>
@@ -401,9 +401,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>1ADB8F981185FE4D005141D3</string>
+				<string>1ADB8FB111862DFE005141D3</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>1ADB8F991185FE4D005141D3</string>
+				<string>1ADB8FB211862DFE005141D3</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -541,7 +541,6 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
-		<string>1CD10A99069EF8BA00B06720</string>
 		<string>1AB4220B1182183900CCFBA0</string>
 		<string>/Users/James/iphonelinux/Dripwn/Dripwn.xcodeproj</string>
 	</array>
@@ -623,7 +622,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1AB4220B1182183900CCFBA0</string>
-				<string>1ADB8F9A1185FE4D005141D3</string>
+				<string>1ADB8FB311862DFE005141D3</string>
 				<string>1CD0528F0623707200166675</string>
 				<string>XCMainBuildResultsModuleGUID</string>
 			</array>
