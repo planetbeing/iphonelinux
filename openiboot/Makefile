@@ -1,105 +1,134 @@
-CROSS ?= arm-elf-
-CC = $(CROSS)gcc
-OBJCOPY = $(CROSS)objcopy
-HFS_OBJS = hfs/btree.o hfs/catalog.o hfs/extents.o hfs/fastunicodecompare.o hfs/rawfile.o hfs/utility.o hfs/volume.o hfs/bdev.o hfs/fs.o
-MENU_OBJS = menu.o stb_image.o
+# Standard things
+.SUFFIXES:
+.SUFFIXES:	.c .s .o
+
+# Sources
+SRC_C               = accel.c actions.c aes.c arm.c buttons.c camera.c chipid.c clock.c commands.c dma.c event.c framebuffer.c ftl.c gpio.c i2c.c images.c interrupt.c lcd.c malloc.c miu.c mmu.c multitouch.c nand.c nor.c nvram.c openiboot.c pmu.c power.c printf.c radio.c sdio.c sha1.c spi.c tasks.c timer.c uart.c usb.c util.c wdt.c wlan.c wm8958.c
+SRC_S               = entry.s openiboot-asmhelpers.s
+
+HFS_SRC_C           = hfs/btree.c hfs/catalog.c hfs/extents.c hfs/fastunicodecompare.c hfs/rawfile.c hfs/utility.c hfs/volume.c hfs/bdev.c hfs/fs.c
+
+MENU_SRC_C          = menu.c stb_image.c
+
 ifeq ($(PLATFORM),3G)
-OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o i2c.o images.o sha1.o commands.o pmu.o buttons.o framebuffer.o actions.o nvram.o nand.o ftl.o accel.o sdio.o wdt.o wm8958.o multitouch.o wlan.o radio.o alsISL29003.o camera.o
+	SRC_C          += alsISL29003.c
 else
-OPENIBOOT_OBJS=entry.o openiboot.o arm.o tasks.o openiboot-asmhelpers.o mmu.o miu.o clock.o power.o uart.o interrupt.o timer.o event.o usb.o gpio.o util.o printf.o malloc.o dma.o nor.o aes.o spi.o chipid.o lcd.o i2c.o images.o sha1.o commands.o pmu.o buttons.o framebuffer.o actions.o nvram.o nand.o ftl.o accel.o sdio.o wdt.o wm8958.o multitouch.o wlan.o radio.o als.o camera.o
+	SRC_C          += als.c
 endif
-ARCHFLAGS += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
-LIBRARIES += -lgcc -nostdlib
-INC += -Iincludes
-CFLAGS += -Wall -Werror
 
+# Variables
 ifeq ($(SMALL),YES)
-LOAD ?= 0x22000000
-CFLAGS += -Os -DOpenIBootLoad=$(LOAD) -DNO_HFS -DNO_STBIMAGE -DSMALL
+	LOAD           ?= 0x22000000
+	CFLAGS         += -Os -DOpenIBootLoad=$(LOAD) -DNO_HFS -DNO_STBIMAGE -DSMALL
 else
-LOAD ?= 0x0
-CFLAGS += -O3
-OPENIBOOT_OBJS += $(HFS_OBJS) $(MENU_OBJS)
+	LOAD           ?= 0x0
+	CFLAGS         += -O3
 endif
 
-LDFLAGS += -Ttext=$(LOAD) --nostdlib
+ARCHFLAGS          += -mlittle-endian -mfpu=vfp -mthumb -mthumb-interwork
+LIBRARIES          += -lgcc -nostdlib
+INC                += -Iincludes
+CFLAGS             += -Wall -Werror
+LDFLAGS            += -Ttext=$(LOAD) --nostdlib
+VERSION             = "0.1"
+COMMIT              = $(shell git log | head -n1 | cut -b8-14)
+BUILD               = "$(COMMIT)"
+CFLAGS             += -DOPENIBOOT_VERSION=$(VERSION) -DOPENIBOOT_VERSION_BUILD=$(BUILD)
+DF                  = $(*F)
+DEPDIR              = .deps
+BUILDDIR            = .build
+OBJS                = $(patsubst %.s,%.o,$(SRC_S)) $(patsubst %.c,%.o,$(SRC_C))
 
-CONFIGFLAGS =
-VERSION = "0.1"
-COMMIT = $(shell git log | head -n1 | cut -b8-14)
-BUILD = "$(COMMIT)"
+ifneq ($(SMALL),YES)
+OBJS               += $(patsubst %.c,%.o,$(HFS_SRC_C)) $(patsubst %.c,%.o,$(MENU_SRC_C))
+endif
 
 ifeq ($(PLATFORM),IPOD)
-	CONFIGFLAGS += -DCONFIG_IPOD
-	IMG3TEMPLATE = mk8900image/template-ipod.img3
+	CFLAGS         += -DCONFIG_IPOD
+	IMG3TEMPLATE    = mk8900image/template-ipod.img3
 else
-ifeq ($(PLATFORM),3G)
-	CONFIGFLAGS += -DCONFIG_3G
-	IMG3TEMPLATE = mk8900image/template-3g.img3
-else
-	CONFIGFLAGS += -DCONFIG_IPHONE
-	IMG3TEMPLATE = mk8900image/template.img3
-endif
+	ifeq ($(PLATFORM),3G)
+		CFLAGS     += -DCONFIG_3G
+		IMG3TEMPLATE    = mk8900image/template-3g.img3
+	else
+		CFLAGS     += -DCONFIG_IPHONE
+		IMG3TEMPLATE    = mk8900image/template.img3
+	endif
 endif
 
 ifeq ($(DEBUG),YES)
-	CONFIGFLAGS += -DDEBUG
+	CFLAGS        += -DDEBUG
 endif
 
-CONFIGFLAGS += -DOPENIBOOT_VERSION=$(VERSION) -DOPENIBOOT_VERSION_BUILD=$(BUILD)
+# Tools
+CROSS              ?= arm-elf-
+CC                  = $(CROSS)gcc
+OBJCOPY             = $(CROSS)objcopy
+COMPILE             = $(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
+MAKEDEPEND          = $(CC) -M $(INC) $(CFLAGS) $(ARCHFLAGS) -o "$(DEPDIR)/$*.d" $<
 
-CFLAGS += $(CONFIGFLAGS)
-
-%.o:	%.S
-	$(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
-
-%.o:	%.c
-	$(CC) $(INC) $(CFLAGS) $(ARCHFLAGS) -c $< -o $@
-
+# Rules
+.PHONY: clean all
 
 all:	openiboot.img2 openiboot-wtf.img2 openiboot.img3 openiboot.bin
 
+%.o: %.S
+	@echo "Compiling $<"
+	@mkdir -p $(DEPDIR)/$(dir $@)
+	@touch $(DEPDIR)/$(dir $@)/$(*F).d
+	@$(COMPILE)
+
+%.o: %.c
+	@echo "Compiling $<"
+	@mkdir -p $(DEPDIR)/$(dir $@)
+	@$(MAKEDEPEND)
+#	@cp $(DEPDIR)/$(dir $@)/$(*F).d $(DEPDIR)/$(dir $@)/$(*F).P
+	@sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' -e '/^$$/ d' -e 's/$$/ :/' < $(DEPDIR)/$(dir $@)/$(*F).d >> $(DEPDIR)/$(dir $@)/$(*F).d
+#	@rm -f $(DEPDIR)/$(dir $@)/$(*F).d
+	@$(COMPILE)
+
+-include $(addprefix $(DEPDIR)/,$(OBJS:.o=.d))
+
 all-payload: openiboot-payload.img2 openiboot-payload.bin
 
-openiboot:	$(OPENIBOOT_OBJS)
-	$(CC) $(ARCHFLAGS) $(LDFLAGS) $(OPENIBOOT_OBJS) $(LIBRARIES) -o $@
+openiboot: $(OBJS) $(SUBDIRS)
+	@echo "Building $@"
+	@$(CC) $(ARCHFLAGS) $(LDFLAGS) $(OBJS) $(LIBRARIES) -o $@
 
 payload.o:	payload.bin
 	$(OBJCOPY) -I binary -O elf32-little -B arm $< $@
 
-openiboot-payload: $(OPENIBOOT_OBJS) payload.o
-	$(CC) --no-warn-mismatch $(LDFLAGS) $(OPENIBOOT_OBJS) payload.o $(LIBRARIES) -o $@
+openiboot-payload: $(OBJS) payload.o
+	$(CC) --no-warn-mismatch $(LDFLAGS) $(OBJS) payload.o $(LIBRARIES) -o $@
 
 mk8900image/mk8900image:
 	cd mk8900image/; make
 
 openiboot.bin: openiboot mk8900image/mk8900image
-	mk8900image/mk8900image openiboot openiboot.bin
+	@echo "Creating image $@"
+	@mk8900image/mk8900image openiboot openiboot.bin
 
 openiboot.img2:	openiboot mk8900image/mk8900image
-	mk8900image/mk8900image openiboot openiboot.img2 mk8900image/template.img2 mk8900image/iphonelinux.der
+	@echo "Creating image $@"
+	@mk8900image/mk8900image openiboot openiboot.img2 mk8900image/template.img2 mk8900image/iphonelinux.der
 
 openiboot-wtf.img2:	openiboot mk8900image/mk8900image
-	mk8900image/mk8900image openiboot openiboot-wtf.img2 mk8900image/template-wtf.img2
+	@echo "Creating image $@"
+	@mk8900image/mk8900image openiboot openiboot-wtf.img2 mk8900image/template-wtf.img2
 
 openiboot.img3:	openiboot mk8900image/mk8900image
-	mk8900image/mk8900image openiboot openiboot.img3 $(IMG3TEMPLATE)
+	@echo "Creating image $@"
+	@mk8900image/mk8900image openiboot openiboot.img3 $(IMG3TEMPLATE)
 
 openiboot-payload.bin: openiboot-payload mk8900image/mk8900image
-	mk8900image/mk8900image openiboot-payload openiboot-payload.bin
+	@echo "Creating image $@"
+	@mk8900image/mk8900image openiboot-payload openiboot-payload.bin
 
 openiboot-payload.img2: openiboot-payload mk8900image/mk8900image
-	mk8900image/mk8900image openiboot-payload openiboot-payload.img2 mk8900image/template.img2 mk8900image/iphonelinux.der
+	@echo "Creating image $@"
+	@mk8900image/mk8900image openiboot-payload openiboot-payload.img2 mk8900image/template.img2 mk8900image/iphonelinux.der
 
+#.PHONY: clean
 clean:
-	-rm *.o
-	-rm hfs/*.o
-	-rm openiboot
-	-rm openiboot.img2
-	-rm openiboot-wtf.img2
-	-rm openiboot.img3
-	-rm openiboot.bin
-	-rm openiboot-payload
-	-rm openiboot-payload.img2
-	-rm openiboot-payload.bin
-
+	@rm -rf *.o $(DEPDIR) hfs/*.o openiboot openiboot.img2 openiboot-wtf.img2 openiboot.img3 openiboot-payload.bin openiboot-payload.img2
+	@cd mk8900image/; $(MAKE) clean

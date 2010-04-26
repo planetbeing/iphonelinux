@@ -37,6 +37,8 @@
 #define PMU_GPIO_CHARGER_USB_1000 0x704
 
 #define PMU_OOCSHDWN 0xC
+#define PMU_GPIOCTL 0x13
+#define PMU_GPIO1CFG 0x14
 #define PMU_ADCC3 0x52
 #define PMU_ADCC2 0x53
 #define PMU_ADCC1 0x54

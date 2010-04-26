@@ -5,6 +5,7 @@
 #include "util.h"
 #include "hardware/radio.h"
 #include "uart.h"
+#include "pmu.h"
 
 // For the +XDRV stuff, it's usually device,function,arg1,arg2,arg3,...
 // device 4 seems to be the vibrator, device 0 seems to be the speakers,
@@ -18,11 +19,9 @@ static int RadioAvailable = FALSE;
 #ifdef CONFIG_3G
 int radio_setup_3g()
 {
-	//gpio_pin_output(RADIO_GPIO_DOCK_UART_CTRL, OFF);
+	gpio_pulldown_configure(RADIO_BB_PULLDOWN, GPIOPDDown);
 
-	//gpio_pulldown_configure(RADIO_BB_PULLDOWN, GPIOPDDown);
-
-	//gpio_pin_output(RADIO_GPIO_BB_ON, OFF);
+	pmu_gpio(RADIO_GPIO_BB_ON, TRUE, OFF);
 	udelay(100000);
 	gpio_pin_output(RADIO_GPIO_RADIO_ON, ON);
 	udelay(100000);
@@ -32,31 +31,13 @@ int radio_setup_3g()
 	udelay(100000);
 
 	gpio_pin_use_as_input(RADIO_GPIO_RESET_DETECT);
-	if(gpio_pin_state(RADIO_GPIO_RESET_DETECT) != 0)
+	if(gpio_pin_state(RADIO_GPIO_RESET_DETECT) != 1)
 	{
 		bufferPrintf("radio: comm board not present, powered on, or at+xdrv=10,2 had been issued.\r\n");
 		return -1;
 	}
 
 	bufferPrintf("radio: comm board detected.\r\n");
-
-
-	if(!radio_wait_for_ok(10))
-	{
-		bufferPrintf("radio: no response from baseband!\r\n");
-		return -1;
-	}
-
-
-	bufferPrintf("radio: setting speed to 750000 baud.\r\n");
-
-	radio_write("at+ipr=750000\r\n");
-
-	// wait a millisecond for the command to totally clear uart
-	// I wasn't able to detect this condition with uart registers (looking at FIFO count, transmitter empty)
-	udelay(1000);
-
-	uart_set_baud_rate(RADIO_UART, 750000);
 
 	if(!radio_wait_for_ok(10))
 	{

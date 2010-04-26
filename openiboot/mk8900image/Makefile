@@ -4,12 +4,13 @@ LIBRARIES=-L/usr/lib32 -L/opt/local-universal-10.4/lib -lm -ldl -lpng -lcrypto -
 CFLAGS += -m32
 
 %.o:	%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	@echo "Compiling $@"
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 mk8900image:	$(MKIMAGEOBJS) $(LIBXPWN)
-	$(CC) $(CFLAGS) $(MKIMAGEOBJS) $(LIBXPWN) $(LIBRARIES) -o $@
+	@echo "Building $@"
+	@$(CC) $(CFLAGS) $(MKIMAGEOBJS) $(LIBXPWN) $(LIBRARIES) -o $@
 
 clean:
-	-rm *.o
-	-rm mk8900image
-
+	@rm -f *.o
+	@rm -f mk8900image

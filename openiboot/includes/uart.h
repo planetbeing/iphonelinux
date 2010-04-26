@@ -29,7 +29,7 @@ typedef struct UARTRegisters {
 	uint32_t UTXH;
 	uint32_t URXH;
 	uint32_t UBAUD;
-	uint32_t UINTP;
+	uint32_t UDIVSLOT;
 } UARTRegisters;
 
 int uart_setup();
