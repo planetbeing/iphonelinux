@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Filename</key>
+	<string>iPhone2,1_3.1.3_7E18_Restore.ipsw</string>
+	<key>Name</key>
+	<string>iPhone2,1_3.1.3_7E18</string>
+	<key>RootFilesystem</key>
+	<string>018-6483-022.dmg</string>
+	<key>RootFilesystemKey</key>
+	<string>9B3FD35BAD7D5307D85CE4B38B8E56BD680EF5A72A8F3B615F8D4F16C14BDCF3C3B24C6C</string>
+	<key>RootFilesystemMountVolume</key>
+	<string>SUNorthstarTwo7E18.N88OS</string>
+	<key>SHA1</key>
+	<string>8cb3775e62c6f72059a962bf891b4e145b965052</string>
+</dict>
+</plist>
