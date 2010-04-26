@@ -8,28 +8,32 @@
 
 #import "IPSW.h"
 #import "NSData+Base64.h"
-#import "NSData+MessageDigest.h"
+#import "CocoaCryptoHashing.h"
 
 @implementation IPSW
 
 
-// TODO: Add MD5 hash checking for IPSW
-
 - (BOOL) startExtraction:(id) sender {
-	NSString *correctHash = @"5±Â&ÏinO²KèÓn";
 	NSString *ipsw = [self selectIPSW];
-	
-	if(ipsw == nil)
+	if(!ipsw)
 		return NO;
-	NSData *dta = [NSData dataWithContentsOfFile:ipsw];
-	NSData *digest = [dta messageDigest5];
-	
-	unsigned char bytes[16];
-	[digest getBytes:bytes length:16];
-    NSString *h = [[NSString alloc] initWithBytes:bytes length:16 encoding:NSASCIIStringEncoding];
-	if(![h isEqualToString:correctHash]) {
+	NSString *resourceBundle = [[NSBundle mainBundle] pathForResource:[ipsw lastPathComponent] ofType:@"plist"];
+	if(!resourceBundle) {
 		NSLog(@"Invalid file");
-		NSAlert *alert = [NSAlert alertWithMessageText:@"Invalid file" defaultButton:@"Okay" alternateButton:nil otherButton:nil informativeTextWithFormat:@"Invalid file selected. You must use iPhone1,1_3.1_7C144_Restore.ipsw"];
+		NSAlert *alert = [NSAlert alertWithMessageText:@"Invalid file" defaultButton:@"Okay" alternateButton:nil otherButton:nil informativeTextWithFormat:@"Invalid file selected. You must use an iPhone 2G IPSW firmware version 3.1 or above."];
+		[alert runModal];
+		return NO;
+	}
+	NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:resourceBundle];
+	NSString *sha1key = [dict objectForKey:@"SHA1"];
+	
+	NSData *dta = [NSData dataWithContentsOfFile:ipsw];
+	NSString *digest = [dta sha1HexHash];
+	
+	
+	if(![digest isEqualToString:sha1key]) {
+		NSLog(@"Corrupt file");
+		NSAlert *alert = [NSAlert alertWithMessageText:@"Damage file" defaultButton:@"Okay" alternateButton:nil otherButton:nil informativeTextWithFormat:@"You seem to have the correct filename, but it is damaged. Try to redownload."];
 		[alert runModal];
 		return NO;
 	}
@@ -38,7 +42,7 @@
 		[alert runModal];
 		return NO;
 	}
-	if(![self decryptImage]) {
+	if(![self decryptImage:[dict objectForKey:@"RootFilesystem"] andKey:[dict objectForKey:@"RootFilesystemKey"]]) {
 		NSAlert *alert = [NSAlert alertWithMessageText:@"Error decrypting image" defaultButton:@"Okay" alternateButton:nil otherButton:nil informativeTextWithFormat:@"That's interesting, this shouldn't be possible. Perhaps the wrong architecture."];
 		[alert runModal];
 		return NO;
@@ -48,12 +52,12 @@
 		[alert runModal];
 		return NO;
 	}
-	if(![self decodeFirmware]) {
+	if(![self decodeFirmware:[dict objectForKey:@"RootFilesystemMountVolume"]]) {
 		NSAlert *alert = [NSAlert alertWithMessageText:@"Couldn't decode firmware" defaultButton:@"Okay" alternateButton:nil otherButton:nil informativeTextWithFormat:@"Error decoding base64 firmware files!"];
 		[alert runModal];
 		return NO;
 	}
-	if(![self unmountImage]) {
+	if(![self unmountImage:[dict objectForKey:@"RootFilesystemMountVolume"]]) {
 		NSAlert *alert = [NSAlert alertWithMessageText:@"Error unmounting image." defaultButton:@"Okay" alternateButton:nil otherButton:nil informativeTextWithFormat:@"This isn't too much of a problem, your firmware files should already be created. Reboot to unmount IPSW."];
 		[alert runModal];
 		return NO;
@@ -65,8 +69,8 @@
 	return YES;
 }
 
-- (BOOL) decodeFirmware {
-	NSString *file = [NSString stringWithContentsOfFile:@"/Volumes/Northstar7C144.iPhoneOS/usr/share/firmware/multitouch/iPhone.mtprops" encoding:NSASCIIStringEncoding error:nil];
+- (BOOL) decodeFirmware:(NSString *) mountName {
+	NSString *file = [NSString stringWithContentsOfFile:[NSString stringWithFormat:@"/Volumes/%@/usr/share/firmware/multitouch/iPhone.mtprops", mountName] encoding:NSASCIIStringEncoding error:nil];
 	
 	NSString *curDir = NSHomeDirectory();
 	
@@ -116,11 +120,11 @@
 	return YES;
 }
 
-- (BOOL) decryptImage {
+- (BOOL) decryptImage:(NSString *) imageName andKey:(NSString *)key {
 	NSTask *cmnd=[[NSTask alloc] init];
 	[cmnd setLaunchPath:[[NSBundle mainBundle] pathForResource:@"vfdecrypt" ofType:nil]];
 	[cmnd setArguments:[NSArray arrayWithObjects:
-						@"-i", @"/tmp/ipsw/018-5343-086.dmg", @"-o", @"/tmp/ipsw/decryptedfs.dmg", @"-k", @"DBE476ED0D8C1ECF7CD514463F2CA5A6F71B6F244D98EBAA9203FD527C1ECBF2BB5F143F",nil]];
+						@"-i", [NSString stringWithFormat:@"/tmp/ipsw/%@", imageName], @"-o", @"/tmp/ipsw/decryptedfs.dmg", @"-k", key,nil]];
 	[cmnd launch];
 	[cmnd waitUntilExit];
 	
@@ -155,10 +159,10 @@
 	return YES;
 }
 
-- (BOOL) unmountImage {
+- (BOOL) unmountImage:(NSString *)mountName {
 	NSTask *cmnd=[[NSTask alloc] init];
 	[cmnd setLaunchPath:@"/usr/bin/hdiutil"];
-	[cmnd setArguments:[NSArray arrayWithObjects: @"detach", @"/Volumes/Northstar7C144.iPhoneOS",nil]];
+	[cmnd setArguments:[NSArray arrayWithObjects: @"detach", [NSString stringWithFormat:@"/Volumes/%@", mountName],nil]];
 	[cmnd launch];
 	[cmnd waitUntilExit];
 	

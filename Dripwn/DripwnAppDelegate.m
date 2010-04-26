@@ -14,8 +14,6 @@
 @synthesize window;
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-	NSString *curDir = NSHomeDirectory();
-	NSLog(curDir);
 	// Insert code here to initialize your application 
 }
 
