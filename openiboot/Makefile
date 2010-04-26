@@ -130,4 +130,5 @@ openiboot-payload.img2: openiboot-payload mk8900image/mk8900image
 
 #.PHONY: clean
 clean:
-	rm -rf *.o $(DEPDIR) hfs/*.o
+	@rm -rf *.o $(DEPDIR) hfs/*.o openiboot openiboot.img2 openiboot-wtf.img2 openiboot.img3 openiboot-payload.bin openiboot-payload.img2
+	@cd mk8900image/; $(MAKE) clean
