@@ -1,0 +1,912 @@
+TDripwn
+v7
+r0
+t293930442.799907
+cCheck dependencies
+cProcessInfoPlistFile /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Info.plist Dripwn-Info.plist
+cCopyStringsFile /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources/English.lproj/InfoPlist.strings English.lproj/InfoPlist.strings
+cCompileXIB /Users/James/Projects/Mac/Dripwn/English.lproj/MainMenu.xib
+cCpResource build/Release/Dripwn.app/Contents/Resources/vfdecrypt vfdecrypt
+cCpResource build/Release/Dripwn.app/Contents/Resources/Icon.icns Icon.icns
+cProcessPCH /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch.gch Dripwn_Prefix.pch normal x86_64 objective-c com.apple.compilers.gcc.4_2
+cProcessPCH /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch.gch Dripwn_Prefix.pch normal i386 objective-c com.apple.compilers.gcc.4_2
+cProcessPCH /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch.gch Dripwn_Prefix.pch normal ppc objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/main.o /Users/James/Projects/Mac/Dripwn/main.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/DripwnAppDelegate.o /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/IPSW.o /Users/James/Projects/Mac/Dripwn/IPSW.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/NSData+Base64.o /Users/James/Projects/Mac/Dripwn/NSData+Base64.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/NSData+MessageDigest.o /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/ObjcMessageDigester.o /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/main.o /Users/James/Projects/Mac/Dripwn/main.m normal i386 objective-c com.apple.compilers.gcc.4_2
+cLd /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/Dripwn normal x86_64
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/DripwnAppDelegate.o /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m normal i386 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/IPSW.o /Users/James/Projects/Mac/Dripwn/IPSW.m normal i386 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/NSData+Base64.o /Users/James/Projects/Mac/Dripwn/NSData+Base64.m normal i386 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/NSData+MessageDigest.o /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m normal i386 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/ObjcMessageDigester.o /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m normal i386 objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/main.o /Users/James/Projects/Mac/Dripwn/main.m normal ppc objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/DripwnAppDelegate.o /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m normal ppc objective-c com.apple.compilers.gcc.4_2
+cLd /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/Dripwn normal i386
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/IPSW.o /Users/James/Projects/Mac/Dripwn/IPSW.m normal ppc objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/NSData+Base64.o /Users/James/Projects/Mac/Dripwn/NSData+Base64.m normal ppc objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/NSData+MessageDigest.o /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m normal ppc objective-c com.apple.compilers.gcc.4_2
+cCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/ObjcMessageDigester.o /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m normal ppc objective-c com.apple.compilers.gcc.4_2
+cLd /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/Dripwn normal ppc
+cCreateUniversalBinary /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/MacOS/Dripwn normal "x86_64 i386 ppc"
+cGenerateDSYMFile /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app.dSYM /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/MacOS/Dripwn
+cTouch /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app
+
+N/Developer/SDKs/MacOSX10.6.sdk
+c000000004B99A23900000000000000EE
+t1268359737
+s238
+
+N/Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Cocoa.framework/Headers/Cocoa.h
+c0000000040C4AA6800000000000001E5
+t1086630504
+s485
+
+N/Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h
+c000000004B447F4E00000000000013E6
+t1262780238
+s5094
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/CommonCrypto/CommonDigest.h
+c000000004AC31EC80000000000002407
+t1254301384
+s9223
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/bio.h
+c000000004B68FBA70000000000007866
+t1265171367
+s30822
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/engine.h
+c000000004B68FBA70000000000009687
+t1265171367
+s38535
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/err.h
+c000000004B68FBA70000000000003299
+t1265171367
+s12953
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/evp.h
+c000000004B68FBA700000000000096EA
+t1265171367
+s38634
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/md2.h
+c000000004B68FBA70000000000000F76
+t1265171367
+s3958
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/md4.h
+c000000004B68FBA70000000000001272
+t1265171367
+s4722
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/md5.h
+c000000004B68FBA70000000000001272
+t1265171367
+s4722
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/pem.h
+c000000004B68FBA70000000000006E59
+t1265171367
+s28249
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/rand.h
+c000000004B68FBA70000000000001862
+t1265171367
+s6242
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/ripemd.h
+c000000004B68FBA70000000000001104
+t1265171367
+s4356
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/rsa.h
+c000000004B68FBA70000000000004C73
+t1265171367
+s19571
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/sha.h
+c000000004B68FBA70000000000001CDE
+t1265171367
+s7390
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/openssl/ssl.h
+c000000004B68FBAB0000000000014965
+t1265171371
+s84325
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/stdio.h
+c000000004AC326060000000000004174
+t1254303238
+s16756
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/sys/types.h
+c000000004B56971E0000000000002905
+t1263965982
+s10501
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/include/unistd.h
+c000000004AC32606000000000000563E
+t1254303238
+s22078
+
+N/Developer/SDKs/MacOSX10.6.sdk/usr/lib/libcrypto.dylib
+c000000004B99A236000000000007E1FC
+t1268359734
+s516604
+
+N/System/Library/Frameworks/Cocoa.framework/Cocoa
+c000000004A1F2D63000000000000A5E0
+t1243557219
+s42464
+
+N/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.framework/CocoaCryptoHashing
+c000000004BD484DA0000000000005D34
+t1272218842
+s23860
+
+N/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.framework/Headers/CocoaCryptoHashing.h
+c000000004BD481360000000000000A9F
+t1272217910
+s2719
+i<Foundation/Foundation.h>
+
+N/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.h
+c000000004BD4C1740000000000000708
+t1272234356
+s1800
+i<Foundation/Foundation.h>
+
+N/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m
+c000000004BD4C155000000000000109F
+t1272234325
+s4255
+i"CocoaCryptoHashing.h"
+i<openssl/evp.h>
+i<openssl/md5.h>
+i<stdio.h>
+i<sys/types.h>
+i<unistd.h>
+
+N/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.h
+c000000004BD4801A000000000000017B
+t1272217626
+s379
+i<Cocoa/Cocoa.h>
+i"IPSW.h"
+
+N/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m
+c000000004BD4CDCF000000000000026F
+t1272237519
+s623
+i"DripwnAppDelegate.h"
+i"IPSW.h"
+
+N/Users/James/Projects/Mac/Dripwn/Dripwn_Prefix.pch
+c000000004BD1E0B4000000000000008F
+t1272045748
+s143
+i<Cocoa/Cocoa.h>
+
+N/Users/James/Projects/Mac/Dripwn/English.lproj/InfoPlist.strings
+c000000004BD1E0B4000000000000002D
+t1272045748
+s45
+
+N/Users/James/Projects/Mac/Dripwn/English.lproj/MainMenu.xib
+c000000004BD4B7BD000000000000CA2E
+t1272231869
+s51758
+
+N/Users/James/Projects/Mac/Dripwn/IPSW.h
+c000000004BD4B6600000000000000182
+t1272231520
+s386
+i<Cocoa/Cocoa.h>
+
+N/Users/James/Projects/Mac/Dripwn/IPSW.m
+c000000004BD4CE35000000000000192A
+t1272237621
+s6442
+i"IPSW.h"
+i"NSData+Base64.h"
+i"NSData+MessageDigest.h"
+
+N/Users/James/Projects/Mac/Dripwn/Icon.icns
+c000000004BD4B9F10000000000024ECF
+t1272232433
+s151247
+
+N/Users/James/Projects/Mac/Dripwn/NSData+Base64.h
+c000000004BD4AC090000000000000635
+t1272228873
+s1589
+
+N/Users/James/Projects/Mac/Dripwn/NSData+Base64.m
+c000000004BD4ABE90000000000001714
+t1272228841
+s5908
+i"NSData+Base64.h"
+i<Foundation/Foundation.h>
+
+N/Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.h
+c0000000040BF683E0000000000000066
+t1086285886
+s102
+i<Foundation/Foundation.h>
+
+N/Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m
+c0000000040BF6D4100000000000000C4
+t1086287169
+s196
+i"NSData+MessageDigest.h"
+i"ObjcMessageDigester.h"
+
+N/Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.h
+c000000004BD4C6750000000000000149
+t1272235637
+s329
+i<Foundation/Foundation.h>
+
+N/Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m
+c000000004BD4C6660000000000000546
+t1272235622
+s1350
+i"ObjcMessageDigester.h"
+i<openssl/evp.h>
+
+N/Users/James/Projects/Mac/Dripwn/SSCrypto.framework
+c000000004BD4C21300000000000000CC
+t1272234515
+s204
+
+N/Users/James/Projects/Mac/Dripwn/SSCrypto.framework/Headers/SSCrypto.h
+c000000004BD4C20E0000000000000F0B
+t1272234510
+s3851
+i<Foundation/Foundation.h>
+i<openssl/evp.h>
+i<openssl/rand.h>
+i<openssl/rsa.h>
+i<openssl/engine.h>
+i<openssl/sha.h>
+i<openssl/pem.h>
+i<openssl/bio.h>
+i<openssl/err.h>
+i<openssl/ssl.h>
+i<openssl/md5.h>
+
+N/Users/James/Projects/Mac/Dripwn/SSCrypto.framework/SSCrypto
+c000000004BD4C2130000000000013C84
+t1272234515
+s81028
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/CocoaCryptoHashing.o
+t1272234357
+s10292
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/Dripwn
+t1272237641
+s31476
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/Dripwn.LinkFileList
+c000000004BD4CE3B000000000000028D
+t1272237627
+s653
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/DripwnAppDelegate.o
+t1272237641
+s17492
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/IPSW.o
+t1272237641
+s29360
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/NSData+Base64.o
+t1272237641
+s12788
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/NSData+MessageDigest.o
+t1272237641
+s5836
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/ObjcMessageDigester.o
+t1272237641
+s11804
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/main.o
+t1272237640
+s4832
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/CocoaCryptoHashing.o
+t1272234357
+s10752
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/Dripwn
+t1272237642
+s31132
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/Dripwn.LinkFileList
+c000000004BD4CE3B0000000000000287
+t1272237627
+s647
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/DripwnAppDelegate.o
+t1272237641
+s17756
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/IPSW.o
+t1272237642
+s32672
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/NSData+Base64.o
+t1272237642
+s14200
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/NSData+MessageDigest.o
+t1272237642
+s5888
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/ObjcMessageDigester.o
+t1272237642
+s12584
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/main.o
+t1272237641
+s4860
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/CocoaCryptoHashing.o
+t1272234357
+s12536
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/Dripwn
+t1272237641
+s33528
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/Dripwn.LinkFileList
+c000000004BD4CE3B0000000000000299
+t1272237627
+s665
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/DripwnAppDelegate.o
+t1272237640
+s24412
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/IPSW.o
+t1272237640
+s36676
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/NSData+Base64.o
+t1272237640
+s17324
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/NSData+MessageDigest.o
+t1272237640
+s7116
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/ObjcMessageDigester.o
+t1272237640
+s16976
+
+N/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/main.o
+t1272237640
+s5032
+
+N/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app
+t1272237642
+s102
+
+N/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app.dSYM
+t1272237642
+s102
+
+N/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Frameworks/SSCrypto.framework
+t1272234822
+s204
+
+N/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Info.plist
+t1272237627
+s938
+
+N/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/MacOS/Dripwn
+t1272237642
+s104860
+
+N/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/PkgInfo
+t1272237627
+s8
+
+N/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources/English.lproj/InfoPlist.strings
+t1272237627
+s92
+
+N/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources/English.lproj/MainMenu.nib
+t1272237627
+s8194
+
+N/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources/Icon.icns
+t1272237627
+s151247
+
+N/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources/vfdecrypt
+t1272237627
+s22956
+
+N/Users/James/Projects/Mac/Dripwn/main.m
+c000000004BD1E0B400000000000000F7
+t1272045748
+s247
+i<Cocoa/Cocoa.h>
+
+N/Users/James/Projects/Mac/Dripwn/vfdecrypt
+c000000004711AB0A00000000000059AC
+t1192340234
+s22956
+
+N/var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch.gch
+t1272237639
+s52794960
+
+N/var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch.gch
+t1272237632
+s52922128
+
+N/var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch.gch
+t1272237632
+s55559984
+
+NDripwn-Info.plist
+c000000004BD4BA9800000000000003F1
+t1272232600
+s1009
+
+CCheck dependencies
+r0
+lSLF07#2@18"Check dependencies293930427#293930427#0(0"0(0#1#0"4300911832#0"0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/CocoaCryptoHashing.o /Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m normal i386 objective-c com.apple.compilers.gcc.4_2
+s293927157.016784
+e293927157.331847
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/CocoaCryptoHashing.o
+x/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m
+xnormal
+xi386
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestForFile':
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:98: warning: 'stringWithCString:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:386)
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestToHex':
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:118: warning: 'stringWithCString:length:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:385)
+lSLF07#2@61"Compile /Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m293927157#293927157#0(608"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestForFile':/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:98: warning: 'stringWithCString:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:386)/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestToHex':/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:118: warning: 'stringWithCString:length:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:385)2(22@149"'stringWithCString:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:386)293927157#84#217#0(6@53"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m293927125#98#0#98#0#33"'*' is deprecated (declared at *)0(22@156"'stringWithCString:length:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:385)293927157#383#225#0(6@53"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m293927125#118#0#118#0#33"'*' is deprecated (declared at *)0(0#0#53"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m4300911832#1523"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch i386 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/i386 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/CocoaCryptoHashing.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/DripwnAppDelegate.o /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m normal i386 objective-c com.apple.compilers.gcc.4_2
+s293930440.955312
+e293930441.200682
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/DripwnAppDelegate.o
+x/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m
+xnormal
+xi386
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+o/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m: In function '-[DripwnAppDelegate applicationDidFinishLaunching:]':
+o/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m:18: warning: format not a string literal and no format arguments
+lSLF07#2@60"Compile /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m293930440#293930441#0(239"/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m: In function '-[DripwnAppDelegate applicationDidFinishLaunching:]':/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m:18: warning: format not a string literal and no format arguments1(22@51"Format not a string literal and no format arguments293930441#121#118#0(6@52"/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m293930319#18#0#18#0#51"format not a string literal and no format arguments0(0#0#52"/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m4300911832#1521"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch i386 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/i386 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/DripwnAppDelegate.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/IPSW.o /Users/James/Projects/Mac/Dripwn/IPSW.m normal i386 objective-c com.apple.compilers.gcc.4_2
+s293930441.013084
+e293930441.317845
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/IPSW.o
+x/Users/James/Projects/Mac/Dripwn/IPSW.m
+xnormal
+xi386
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@47"Compile /Users/James/Projects/Mac/Dripwn/IPSW.m293930441#293930441#0(0"0(0#0#39"/Users/James/Projects/Mac/Dripwn/IPSW.m4300911832#1495"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch i386 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/i386 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/IPSW.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/IPSW.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/NSData+Base64.o /Users/James/Projects/Mac/Dripwn/NSData+Base64.m normal i386 objective-c com.apple.compilers.gcc.4_2
+s293930441.200788
+e293930441.513756
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/NSData+Base64.o
+x/Users/James/Projects/Mac/Dripwn/NSData+Base64.m
+xnormal
+xi386
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@56"Compile /Users/James/Projects/Mac/Dripwn/NSData+Base64.m293930441#293930441#0(0"0(0#0#48"/Users/James/Projects/Mac/Dripwn/NSData+Base64.m4300911832#1513"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch i386 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/i386 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/NSData+Base64.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/NSData+Base64.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/NSData+MessageDigest.o /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m normal i386 objective-c com.apple.compilers.gcc.4_2
+s293930441.317956
+e293930441.552556
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/NSData+MessageDigest.o
+x/Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m
+xnormal
+xi386
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@63"Compile /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m293930441#293930441#0(0"0(0#0#55"/Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m4300911832#1527"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch i386 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/i386 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/NSData+MessageDigest.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/ObjcMessageDigester.o /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m normal i386 objective-c com.apple.compilers.gcc.4_2
+s293930441.513932
+e293930441.903498
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/ObjcMessageDigester.o
+x/Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m
+xnormal
+xi386
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@62"Compile /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m293930441#293930441#0(0"0(0#0#54"/Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m4300911832#1525"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch i386 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/i386 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/ObjcMessageDigester.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/main.o /Users/James/Projects/Mac/Dripwn/main.m normal i386 objective-c com.apple.compilers.gcc.4_2
+s293930440.762183
+e293930440.945025
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/main.o
+x/Users/James/Projects/Mac/Dripwn/main.m
+xnormal
+xi386
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@47"Compile /Users/James/Projects/Mac/Dripwn/main.m293930440#293930440#0(0"0(0#0#39"/Users/James/Projects/Mac/Dripwn/main.m4300911832#1495"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch i386 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/i386 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/main.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/main.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/CocoaCryptoHashing.o /Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m normal ppc objective-c com.apple.compilers.gcc.4_2
+s293927157.521666
+e293927157.747509
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/CocoaCryptoHashing.o
+x/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m
+xnormal
+xppc
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestForFile':
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:98: warning: 'stringWithCString:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:386)
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestToHex':
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:118: warning: 'stringWithCString:length:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:385)
+lSLF07#2@61"Compile /Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m293927157#293927157#0(608"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestForFile':/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:98: warning: 'stringWithCString:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:386)/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestToHex':/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:118: warning: 'stringWithCString:length:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:385)2(22@149"'stringWithCString:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:386)293927157#84#217#0(6@53"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m293927125#98#0#98#0#33"'*' is deprecated (declared at *)0(22@156"'stringWithCString:length:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:385)293927157#383#225#0(6@53"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m293927125#118#0#118#0#33"'*' is deprecated (declared at *)0(0#0#53"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m4300911832#1530"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch ppc -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -mtune=G5 -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/ppc -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/CocoaCryptoHashing.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/DripwnAppDelegate.o /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m normal ppc objective-c com.apple.compilers.gcc.4_2
+s293930441.738871
+e293930441.976032
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/DripwnAppDelegate.o
+x/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m
+xnormal
+xppc
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+o/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m: In function '-[DripwnAppDelegate applicationDidFinishLaunching:]':
+o/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m:18: warning: format not a string literal and no format arguments
+lSLF07#2@60"Compile /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m293930441#293930441#0(239"/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m: In function '-[DripwnAppDelegate applicationDidFinishLaunching:]':/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m:18: warning: format not a string literal and no format arguments1(22@51"Format not a string literal and no format arguments293930441#121#118#0(6@52"/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m293930319#18#0#18#0#51"format not a string literal and no format arguments0(0#0#52"/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m4300911832#1528"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch ppc -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -mtune=G5 -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/ppc -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/DripwnAppDelegate.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/IPSW.o /Users/James/Projects/Mac/Dripwn/IPSW.m normal ppc objective-c com.apple.compilers.gcc.4_2
+s293930441.955739
+e293930442.457695
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/IPSW.o
+x/Users/James/Projects/Mac/Dripwn/IPSW.m
+xnormal
+xppc
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@47"Compile /Users/James/Projects/Mac/Dripwn/IPSW.m293930441#293930442#0(0"0(0#0#39"/Users/James/Projects/Mac/Dripwn/IPSW.m4300911832#1502"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch ppc -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -mtune=G5 -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/ppc -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/IPSW.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/IPSW.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/NSData+Base64.o /Users/James/Projects/Mac/Dripwn/NSData+Base64.m normal ppc objective-c com.apple.compilers.gcc.4_2
+s293930441.976138
+e293930442.279346
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/NSData+Base64.o
+x/Users/James/Projects/Mac/Dripwn/NSData+Base64.m
+xnormal
+xppc
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@56"Compile /Users/James/Projects/Mac/Dripwn/NSData+Base64.m293930441#293930442#0(0"0(0#0#48"/Users/James/Projects/Mac/Dripwn/NSData+Base64.m4300911832#1520"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch ppc -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -mtune=G5 -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/ppc -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/NSData+Base64.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/NSData+Base64.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/NSData+MessageDigest.o /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m normal ppc objective-c com.apple.compilers.gcc.4_2
+s293930442.279651
+e293930442.495130
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/NSData+MessageDigest.o
+x/Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m
+xnormal
+xppc
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@63"Compile /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m293930442#293930442#0(0"0(0#0#55"/Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m4300911832#1534"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch ppc -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -mtune=G5 -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/ppc -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/NSData+MessageDigest.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/ObjcMessageDigester.o /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m normal ppc objective-c com.apple.compilers.gcc.4_2
+s293930442.457818
+e293930442.734504
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/ObjcMessageDigester.o
+x/Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m
+xnormal
+xppc
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@62"Compile /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m293930442#293930442#0(0"0(0#0#54"/Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m4300911832#1532"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch ppc -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -mtune=G5 -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/ppc -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/ObjcMessageDigester.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/main.o /Users/James/Projects/Mac/Dripwn/main.m normal ppc objective-c com.apple.compilers.gcc.4_2
+s293930441.552763
+e293930441.738753
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/main.o
+x/Users/James/Projects/Mac/Dripwn/main.m
+xnormal
+xppc
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@47"Compile /Users/James/Projects/Mac/Dripwn/main.m293930441#293930441#0(0"0(0#0#39"/Users/James/Projects/Mac/Dripwn/main.m4300911832#1502"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch ppc -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -mtune=G5 -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/ppc -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/main.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/main.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/CocoaCryptoHashing.o /Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+s293927157.012754
+e293927157.316610
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/CocoaCryptoHashing.o
+x/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m
+xnormal
+xx86_64
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestForFile':
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:98: warning: 'stringWithCString:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:386)
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestToHex':
+o/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:118: warning: 'stringWithCString:length:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:385)
+lSLF07#2@61"Compile /Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m293927157#293927157#0(608"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestForFile':/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:98: warning: 'stringWithCString:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:386)/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m: In function 'digestToHex':/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m:118: warning: 'stringWithCString:length:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:385)2(22@149"'stringWithCString:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:386)293927157#84#217#0(6@53"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m293927125#98#0#98#0#33"'*' is deprecated (declared at *)0(22@156"'stringWithCString:length:' is deprecated (declared at /Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSString.h:385)293927157#383#225#0(6@53"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m293927125#118#0#118#0#33"'*' is deprecated (declared at *)0(0#0#53"/Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m4300911832#1529"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch x86_64 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/x86_64 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/CocoaCryptoHashing.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/CocoaCryptoHashing.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/DripwnAppDelegate.o /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+s293930440.010248
+e293930440.356279
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/DripwnAppDelegate.o
+x/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m
+xnormal
+xx86_64
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+o/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m: In function '-[DripwnAppDelegate applicationDidFinishLaunching:]':
+o/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m:18: warning: format not a string literal and no format arguments
+lSLF07#2@60"Compile /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m293930440#293930440#0(239"/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m: In function '-[DripwnAppDelegate applicationDidFinishLaunching:]':/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m:18: warning: format not a string literal and no format arguments1(22@51"Format not a string literal and no format arguments293930440#121#118#0(6@52"/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m293930319#18#0#18#0#51"format not a string literal and no format arguments0(0#0#52"/Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m4300911832#1527"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch x86_64 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/x86_64 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/DripwnAppDelegate.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/DripwnAppDelegate.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/IPSW.o /Users/James/Projects/Mac/Dripwn/IPSW.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+s293930440.253006
+e293930440.588946
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/IPSW.o
+x/Users/James/Projects/Mac/Dripwn/IPSW.m
+xnormal
+xx86_64
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@47"Compile /Users/James/Projects/Mac/Dripwn/IPSW.m293930440#293930440#0(0"0(0#0#39"/Users/James/Projects/Mac/Dripwn/IPSW.m4300911832#1501"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch x86_64 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/x86_64 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/IPSW.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/IPSW.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/NSData+Base64.o /Users/James/Projects/Mac/Dripwn/NSData+Base64.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+s293930440.356393
+e293930440.602981
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/NSData+Base64.o
+x/Users/James/Projects/Mac/Dripwn/NSData+Base64.m
+xnormal
+xx86_64
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@56"Compile /Users/James/Projects/Mac/Dripwn/NSData+Base64.m293930440#293930440#0(0"0(0#0#48"/Users/James/Projects/Mac/Dripwn/NSData+Base64.m4300911832#1519"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch x86_64 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/x86_64 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/NSData+Base64.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/NSData+Base64.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/NSData+MessageDigest.o /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+s293930440.589064
+e293930440.762070
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/NSData+MessageDigest.o
+x/Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m
+xnormal
+xx86_64
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@63"Compile /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m293930440#293930440#0(0"0(0#0#55"/Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m4300911832#1533"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch x86_64 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/x86_64 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/NSData+MessageDigest.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/NSData+MessageDigest.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/ObjcMessageDigester.o /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+s293930440.603097
+e293930440.938077
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/ObjcMessageDigester.o
+x/Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m
+xnormal
+xx86_64
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@62"Compile /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m293930440#293930440#0(0"0(0#0#54"/Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m4300911832#1531"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch x86_64 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/x86_64 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/ObjcMessageDigester.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/ObjcMessageDigester.o0#
+
+CCompileC build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/main.o /Users/James/Projects/Mac/Dripwn/main.m normal x86_64 objective-c com.apple.compilers.gcc.4_2
+s293930440.009095
+e293930440.252895
+r1
+xCompileC
+xbuild/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/main.o
+x/Users/James/Projects/Mac/Dripwn/main.m
+xnormal
+xx86_64
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@47"Compile /Users/James/Projects/Mac/Dripwn/main.m293930440#293930440#0(0"0(0#0#39"/Users/James/Projects/Mac/Dripwn/main.m4300911832#1501"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c -arch x86_64 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/x86_64 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -include /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch -c /Users/James/Projects/Mac/Dripwn/main.m -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/main.o0#
+
+CCompileXIB /Users/James/Projects/Mac/Dripwn/English.lproj/MainMenu.xib
+s293930427.230105
+e293930427.683536
+r1
+xCompileXIB
+x/Users/James/Projects/Mac/Dripwn/English.lproj/MainMenu.xib
+lSLF07#2@37"CompileXIB English.lproj/MainMenu.xib293930427#293930427#0(0"0(0#0#59"/Users/James/Projects/Mac/Dripwn/English.lproj/MainMenu.xib4300911832#310"    cd /Users/James/Projects/Mac/Dripwn    /Developer/usr/bin/ibtool --errors --warnings --notices --output-format human-readable-text --compile /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources/English.lproj/MainMenu.nib /Users/James/Projects/Mac/Dripwn/English.lproj/MainMenu.xib0#
+
+CCopyStringsFile /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources/English.lproj/InfoPlist.strings English.lproj/InfoPlist.strings
+s293930427.229149
+e293930427.333181
+r1
+xCopyStringsFile
+x/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources/English.lproj/InfoPlist.strings
+xEnglish.lproj/InfoPlist.strings
+lSLF07#2@36"Copy English.lproj/InfoPlist.strings293930427#293930427#0(0"0(0#0#64"/Users/James/Projects/Mac/Dripwn/English.lproj/InfoPlist.strings4300911832#354"    cd /Users/James/Projects/Mac/Dripwn    setenv ICONV /usr/bin/iconv    /Developer/Library/Xcode/Plug-ins/CoreBuildTasks.xcplugin/Contents/Resources/copystrings --validate --inputencoding utf-8 --outputencoding UTF-16 English.lproj/InfoPlist.strings --outdir /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources/English.lproj0#
+
+CCpResource build/Release/Dripwn.app/Contents/Resources/Icon.icns Icon.icns
+s293930427.334082
+e293930427.344727
+r1
+xCpResource
+xbuild/Release/Dripwn.app/Contents/Resources/Icon.icns
+xIcon.icns
+lSLF07#2@14"Copy Icon.icns293930427#293930427#0(0"0(0#0#42"/Users/James/Projects/Mac/Dripwn/Icon.icns4300911832#329"    cd /Users/James/Projects/Mac/Dripwn    /Developer/Library/PrivateFrameworks/DevToolsCore.framework/Resources/pbxcp -exclude .DS_Store -exclude CVS -exclude .svn -strip-debug-symbols -resolve-src-symlinks /Users/James/Projects/Mac/Dripwn/Icon.icns /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources0#
+
+CCpResource build/Release/Dripwn.app/Contents/Resources/vfdecrypt vfdecrypt
+s293930427.333308
+e293930427.348738
+r1
+xCpResource
+xbuild/Release/Dripwn.app/Contents/Resources/vfdecrypt
+xvfdecrypt
+lSLF07#2@14"Copy vfdecrypt293930427#293930427#0(0"0(0#0#42"/Users/James/Projects/Mac/Dripwn/vfdecrypt4300911832#329"    cd /Users/James/Projects/Mac/Dripwn    /Developer/Library/PrivateFrameworks/DevToolsCore.framework/Resources/pbxcp -exclude .DS_Store -exclude CVS -exclude .svn -strip-debug-symbols -resolve-src-symlinks /Users/James/Projects/Mac/Dripwn/vfdecrypt /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Resources0#
+
+CCreateUniversalBinary /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/MacOS/Dripwn normal "x86_64 i386 ppc"
+s293930442.773358
+e293930442.776770
+r1
+xCreateUniversalBinary
+x/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/MacOS/Dripwn
+xnormal
+xx86_64 i386 ppc
+lSLF07#2@93"CreateUniversalBinary build/Release/Dripwn.app/Contents/MacOS/Dripwn normal "x86_64 i386 ppc"293930442#293930442#0(0"0(0#0#48"/Users/James/Projects/Mac/Dripwn/x86_64 i386 ppc4300911832#455"    cd /Users/James/Projects/Mac/Dripwn    /usr/bin/lipo -create /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/Dripwn /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/Dripwn /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/Dripwn -output /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/MacOS/Dripwn0#
+
+CGenerateDSYMFile /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app.dSYM /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/MacOS/Dripwn
+s293930442.776861
+e293930442.795946
+r1
+xGenerateDSYMFile
+x/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app.dSYM
+x/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/MacOS/Dripwn
+lSLF07#2@93"GenerateDSYMFile build/Release/Dripwn.app.dSYM build/Release/Dripwn.app/Contents/MacOS/Dripwn293930442#293930442#0(0"0(0#0#79"/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/MacOS/Dripwn4300911832#218"    cd /Users/James/Projects/Mac/Dripwn    /Developer/usr/bin/dsymutil /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/MacOS/Dripwn -o /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app.dSYM0#
+
+CLd /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/Dripwn normal i386
+s293930441.903598
+e293930441.955621
+r1
+xLd
+x/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/Dripwn
+xnormal
+xi386
+lSLF07#2@104"Link /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/Dripwn293930441#293930441#0(0"0(0#0#0"4300911832#721"    cd /Users/James/Projects/Mac/Dripwn    setenv MACOSX_DEPLOYMENT_TARGET 10.6    /Developer/usr/bin/gcc-4.2 -arch i386 -isysroot /Developer/SDKs/MacOSX10.6.sdk -L/Users/James/Projects/Mac/Dripwn/build/Release -L/Users/James/Projects/Mac/Dripwn/xpwn/idevice/QuicktimeSDK/Libraries -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -filelist /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/Dripwn.LinkFileList -mmacosx-version-min=10.6 -framework Cocoa -lcrypto -lcrypto -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/i386/Dripwn0#
+
+CLd /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/Dripwn normal ppc
+s293930442.734601
+e293930442.773240
+r1
+xLd
+x/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/Dripwn
+xnormal
+xppc
+lSLF07#2@103"Link /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/Dripwn293930442#293930442#0(0"0(0#0#0"4300911832#718"    cd /Users/James/Projects/Mac/Dripwn    setenv MACOSX_DEPLOYMENT_TARGET 10.6    /Developer/usr/bin/gcc-4.2 -arch ppc -isysroot /Developer/SDKs/MacOSX10.6.sdk -L/Users/James/Projects/Mac/Dripwn/build/Release -L/Users/James/Projects/Mac/Dripwn/xpwn/idevice/QuicktimeSDK/Libraries -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -filelist /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/Dripwn.LinkFileList -mmacosx-version-min=10.6 -framework Cocoa -lcrypto -lcrypto -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/ppc/Dripwn0#
+
+CLd /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/Dripwn normal x86_64
+s293930440.938175
+e293930441.012986
+r1
+xLd
+x/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/Dripwn
+xnormal
+xx86_64
+lSLF07#2@106"Link /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/Dripwn293930440#293930441#0(0"0(0#0#0"4300911832#727"    cd /Users/James/Projects/Mac/Dripwn    setenv MACOSX_DEPLOYMENT_TARGET 10.6    /Developer/usr/bin/gcc-4.2 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.6.sdk -L/Users/James/Projects/Mac/Dripwn/build/Release -L/Users/James/Projects/Mac/Dripwn/xpwn/idevice/QuicktimeSDK/Libraries -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -filelist /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/Dripwn.LinkFileList -mmacosx-version-min=10.6 -framework Cocoa -lcrypto -lcrypto -o /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Objects-normal/x86_64/Dripwn0#
+
+CPBXCp build/Release/Dripwn.app/Contents/Frameworks/SSCrypto.framework SSCrypto.framework
+s293927622.614749
+e293927622.692560
+r1
+xPBXCp
+xbuild/Release/Dripwn.app/Contents/Frameworks/SSCrypto.framework
+xSSCrypto.framework
+lSLF07#2@23"Copy SSCrypto.framework293927622#293927622#0(0"0(0#0#51"/Users/James/Projects/Mac/Dripwn/SSCrypto.framework4300911832#339"    cd /Users/James/Projects/Mac/Dripwn    /Developer/Library/PrivateFrameworks/DevToolsCore.framework/Resources/pbxcp -exclude .DS_Store -exclude CVS -exclude .svn -strip-debug-symbols -resolve-src-symlinks /Users/James/Projects/Mac/Dripwn/SSCrypto.framework /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Frameworks0#
+
+CProcessInfoPlistFile /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Info.plist Dripwn-Info.plist
+s293930427.225874
+e293930427.229069
+r1
+xProcessInfoPlistFile
+x/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Info.plist
+xDripwn-Info.plist
+lSLF07#2@25"Process Dripwn-Info.plist293930427#293930427#0(0"0(0#0#50"/Users/James/Projects/Mac/Dripwn/Dripwn-Info.plist4300911832#293"    cd /Users/James/Projects/Mac/Dripwn    builtin-infoPlistUtility Dripwn-Info.plist -genpkginfo /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/PkgInfo -expandbuildsettings -platform macosx -o /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app/Contents/Info.plist0#
+
+CProcessPCH /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch.gch Dripwn_Prefix.pch normal ppc objective-c com.apple.compilers.gcc.4_2
+s293930432.637830
+e293930440.008935
+r1
+xProcessPCH
+x/var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch.gch
+xDripwn_Prefix.pch
+xnormal
+xppc
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@28"Precompile Dripwn_Prefix.pch293930432#293930440#0(0"0(0#0#50"/Users/James/Projects/Mac/Dripwn/Dripwn_Prefix.pch4300911832#1416"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c-header -arch ppc -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -mtune=G5 -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/ppc -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -c /Users/James/Projects/Mac/Dripwn/Dripwn_Prefix.pch -o /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-cnzzkncwnnowamganpzzvpzjiqea/Dripwn_Prefix.pch.gch0#
+
+CProcessPCH /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch.gch Dripwn_Prefix.pch normal x86_64 objective-c com.apple.compilers.gcc.4_2
+s293930427.683711
+e293930432.637671
+r1
+xProcessPCH
+x/var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch.gch
+xDripwn_Prefix.pch
+xnormal
+xx86_64
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@28"Precompile Dripwn_Prefix.pch293930427#293930432#0(0"0(0#0#50"/Users/James/Projects/Mac/Dripwn/Dripwn_Prefix.pch4300911832#1412"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c-header -arch x86_64 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/x86_64 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -c /Users/James/Projects/Mac/Dripwn/Dripwn_Prefix.pch -o /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-csnrbbtxeshnakfriqimmfwhiiig/Dripwn_Prefix.pch.gch0#
+
+CProcessPCH /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch.gch Dripwn_Prefix.pch normal i386 objective-c com.apple.compilers.gcc.4_2
+s293930427.685115
+e293930433.009445
+r1
+xProcessPCH
+x/var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch.gch
+xDripwn_Prefix.pch
+xnormal
+xi386
+xobjective-c
+xcom.apple.compilers.gcc.4_2
+lSLF07#2@28"Precompile Dripwn_Prefix.pch293930427#293930433#0(0"0(0#0#50"/Users/James/Projects/Mac/Dripwn/Dripwn_Prefix.pch4300911832#1408"    cd /Users/James/Projects/Mac/Dripwn    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.2 -x objective-c-header -arch i386 -fmessage-length=0 -pipe -std=gnu99 -Wno-trigraphs -fpascal-strings -fasm-blocks -Os -mdynamic-no-pic -Wreturn-type -Wunused-variable -isysroot /Developer/SDKs/MacOSX10.6.sdk -fvisibility=hidden -mmacosx-version-min=10.6 -gdwarf-2 -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-generated-files.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-own-target-headers.hmap -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-all-target-headers.hmap -iquote /Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/Dripwn-project-headers.hmap -F/Users/James/Projects/Mac/Dripwn/build/Release -F/Developer/SDKs/MacOSX10.6.sdk/System/Library/PrivateFrameworks -F/Users/James/Projects/Mac/Dripwn -I/Users/James/Projects/Mac/Dripwn/build/Release/include -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources/i386 -I/Users/James/Projects/Mac/Dripwn/build/Dripwn.build/Release/Dripwn.build/DerivedSources -c /Users/James/Projects/Mac/Dripwn/Dripwn_Prefix.pch -o /var/folders/-Y/-YDQ8P4JH84yvzMptPWpXU+++TI/-Caches-/com.apple.Xcode.501/SharedPrecompiledHeaders/Dripwn_Prefix-ggjrbzaspeahpvakhshfqwzolhoi/Dripwn_Prefix.pch.gch0#
+
+CTouch /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app
+s293930442.796589
+e293930442.799859
+r1
+xTouch
+x/Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app
+lSLF07#2@63"Touch /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app293930442#293930442#0(0"0(0#0#0"4300911832#120"    cd /Users/James/Projects/Mac/Dripwn    /usr/bin/touch -c /Users/James/Projects/Mac/Dripwn/build/Release/Dripwn.app0#
+
