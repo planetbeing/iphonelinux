@@ -1,7 +1,12 @@
 MKIMAGEOBJS=mk8900image.o
-LIBXPWN=libxpwn.a libcommon.a
-LIBRARIES=-L/usr/lib32 -L/opt/local-universal-10.4/lib -lm -ldl -lpng -lcrypto -lz
-CFLAGS += -m32
+LIBRARIES=-L/usr/lib -L/opt/local-universal-10.4/lib -lm -ldl -lpng -lcrypto -lz
+CFLAiGS +=
+
+ifeq ($(ARCH), x86_64)
+	LIBXPWN=x86_64/libxpwn.a x86_64/libcommon.a
+else
+	LIBXPWN=x86/libxpwn.a x86/libcommon.a
+endif
 
 %.o:	%.c
 	@echo "Compiling $@"
