@@ -76,6 +76,7 @@ static void toggle() {
 	}
 	drawSelectionBox();
 }
+
 int menu_setup(int timeout) {
 	FBWidth = currentWindow->framebuffer.width;
 	FBHeight = currentWindow->framebuffer.height;	
@@ -115,12 +116,30 @@ int menu_setup(int timeout) {
 
 	uint64_t startTime = timer_get_system_microtime();
 	while(TRUE) {
-		if(buttons_is_hold_pushed()) {
+		if(buttons_is_pushed(BUTTONS_HOLD)) {
 			toggle();
 			startTime = timer_get_system_microtime();
 			udelay(200000);
 		}
-		if(buttons_is_home_pushed()) {
+#ifndef CONFIG_IPOD
+		if(!buttons_is_pushed(BUTTONS_VOLUP)) {
+            Selection = MenuSelectioniPhoneOS;
+
+            drawSelectionBox();
+			//toggle();
+			startTime = timer_get_system_microtime();
+			udelay(200000);
+		}
+		if(!buttons_is_pushed(BUTTONS_VOLDOWN)) {
+            Selection = MenuSelectionConsole;
+
+            drawSelectionBox();
+			//toggle();
+			startTime = timer_get_system_microtime();
+			udelay(200000);
+		}
+#endif
+		if(buttons_is_pushed(BUTTONS_HOME)) {
 			break;
 		}
 		if(timeout > 0 && has_elapsed(startTime, (uint64_t)timeout * 1000)) {
@@ -143,7 +162,7 @@ int menu_setup(int timeout) {
 #ifndef NO_HFS
 		startTime = timer_get_system_microtime();
 		while(TRUE) {
-			if(!buttons_is_home_pushed())
+			if(!buttons_is_pushed(BUTTONS_HOME))
 				break;
 
 			if(has_elapsed(startTime, (uint64_t)2000 * 1000)) {

@@ -2,8 +2,8 @@
 #define BUTTONS_H
 
 #include "openiboot.h"
+#include "hardware/buttons.h"
 
-int buttons_is_home_pushed();
-int buttons_is_hold_pushed();
+int buttons_is_pushed(int);
 
 #endif
