@@ -26,7 +26,6 @@
 extern void* _start;
 extern void* OpenIBootEnd;
 extern int received_file_size;
-uint32_t scriptCommand(char* command);
 
 typedef enum Boolean {
 	FALSE = 0,

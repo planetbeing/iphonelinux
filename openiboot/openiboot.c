@@ -175,31 +175,6 @@ static void addToCommandQueue(const char* command) {
 	LeaveCriticalSection();
 }
 
-uint32_t scriptCommand(char* command){
-    int argc;
-	char** argv = tokenize(command, &argc);
-
-	OPIBCommand* curCommand = CommandList;
-
-	int success = FALSE;
-	while(curCommand->name != NULL) {
-		if(strcmp(argv[0], curCommand->name) == 0) {
-			curCommand->routine(argc, argv);
-			success = TRUE;
-			break;
-		}
-		curCommand++;
-	}
-
-	if(!success) {
-		bufferPrintf("unknown command: %s\r\n", command);
-	}
-
-	free(argv);
-	//bufferPrintf("going back to scriptCommand()\r\n"); /*at this point, the command has been executed */
-	return success;
-}
-
 static void processCommand(char* command) {
 	int argc;
 	char** argv = tokenize(command, &argc);
