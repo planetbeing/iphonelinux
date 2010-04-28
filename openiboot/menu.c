@@ -123,18 +123,16 @@ int menu_setup(int timeout) {
 		}
 #ifndef CONFIG_IPOD
 		if(!buttons_is_pushed(BUTTONS_VOLUP)) {
-            Selection = MenuSelectioniPhoneOS;
+			Selection = MenuSelectioniPhoneOS;
 
-            drawSelectionBox();
-			//toggle();
+			drawSelectionBox();
 			startTime = timer_get_system_microtime();
 			udelay(200000);
 		}
 		if(!buttons_is_pushed(BUTTONS_VOLDOWN)) {
-            Selection = MenuSelectionConsole;
+			Selection = MenuSelectionConsole;
 
-            drawSelectionBox();
-			//toggle();
+			drawSelectionBox();
 			startTime = timer_get_system_microtime();
 			udelay(200000);
 		}

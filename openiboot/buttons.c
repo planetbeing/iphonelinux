@@ -5,9 +5,8 @@
 #include "gpio.h"
 
 int buttons_is_pushed(int which) {
-    if(gpio_pin_state(which) && pmu_get_reg(BUTTONS_IIC_STATE))
-        return TRUE;
-    else
-        return FALSE;
+	if(gpio_pin_state(which) && pmu_get_reg(BUTTONS_IIC_STATE))
+		return TRUE;
+	else
+		return FALSE;
 }
-
