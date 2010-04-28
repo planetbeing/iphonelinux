@@ -14,11 +14,6 @@
 }
 
 - (BOOL) startExtraction:(id) sender;
-- (BOOL) decodeFirmware:(NSString *) mountName;
-- (BOOL) unzipIPSW:(NSString *) path;
-- (BOOL) mountImage;
-- (BOOL) decryptImage:(NSString *) imageName andKey:(NSString *)key;
-- (BOOL) unmountImage:(NSString *)mountName;
 - (NSString *) selectIPSW;
 
 @end

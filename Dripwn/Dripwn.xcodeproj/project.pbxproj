@@ -9,15 +9,17 @@
 /* Begin PBXBuildFile section */
 		1A0755CB1184FD9C00636616 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A0755CA1184FD9C00636616 /* libcrypto.dylib */; };
 		1A296CBB1184B5CC00BFB38E /* IPSW.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A296CBA1184B5CC00BFB38E /* IPSW.m */; };
-		1A2972F81184C99E00BFB38E /* vfdecrypt in Resources */ = {isa = PBXBuildFile; fileRef = 1A2972F71184C99E00BFB38E /* vfdecrypt */; };
 		1A2973BE1184E2D700BFB38E /* NSData+Base64.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A2973BD1184E2D700BFB38E /* NSData+Base64.m */; };
 		1A2974771184F1D800BFB38E /* Icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1A2974761184F1D800BFB38E /* Icon.icns */; };
+		1AA9B7C31187A80000DA1E28 /* dripwn in Resources */ = {isa = PBXBuildFile; fileRef = 1AA9B7C21187A80000DA1E28 /* dripwn */; };
 		1AD3E69B11857D290059FB49 /* CocoaCryptoHashing.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AD3E69A11857D290059FB49 /* CocoaCryptoHashing.m */; };
 		1AD3E6EB118584720059FB49 /* iPhone1,1_3.1.2_7D11_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1AD3E6E8118584720059FB49 /* iPhone1,1_3.1.2_7D11_Restore.ipsw.plist */; };
 		1AD3E6EC118584720059FB49 /* iPhone1,1_3.1.3_7E18_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1AD3E6E9118584720059FB49 /* iPhone1,1_3.1.3_7E18_Restore.ipsw.plist */; };
 		1AD3E6ED118584720059FB49 /* iPhone1,1_3.1_7C144_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1AD3E6EA118584720059FB49 /* iPhone1,1_3.1_7C144_Restore.ipsw.plist */; };
 		1ADB8F821185FDBC005141D3 /* iPhone2,1_3.1.2_7D11_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1ADB8F801185FDBC005141D3 /* iPhone2,1_3.1.2_7D11_Restore.ipsw.plist */; };
 		1ADB8F831185FDBC005141D3 /* iPhone2,1_3.1.3_7E18_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1ADB8F811185FDBC005141D3 /* iPhone2,1_3.1.3_7E18_Restore.ipsw.plist */; };
+		1ADB8FAA11862DF2005141D3 /* iPhone1,2_3.1_2_7D11_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1ADB8FA811862DF2005141D3 /* iPhone1,2_3.1_2_7D11_Restore.ipsw.plist */; };
+		1ADB8FAB11862DF2005141D3 /* iPhone1,2_3.1.3_7E18_Restore.ipsw.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1ADB8FA911862DF2005141D3 /* iPhone1,2_3.1.3_7E18_Restore.ipsw.plist */; };
 		1DDD58160DA1D0A300B32029 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1DDD58140DA1D0A300B32029 /* MainMenu.xib */; };
 		256AC3DA0F4B6AC300CF3369 /* DripwnAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 256AC3D90F4B6AC300CF3369 /* DripwnAppDelegate.m */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
@@ -44,10 +46,10 @@
 		1A0755CA1184FD9C00636616 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
 		1A296CB91184B5CC00BFB38E /* IPSW.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IPSW.h; sourceTree = "<group>"; };
 		1A296CBA1184B5CC00BFB38E /* IPSW.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IPSW.m; sourceTree = "<group>"; };
-		1A2972F71184C99E00BFB38E /* vfdecrypt */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = vfdecrypt; sourceTree = "<group>"; };
 		1A2973BC1184E2D700BFB38E /* NSData+Base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSData+Base64.h"; sourceTree = "<group>"; };
 		1A2973BD1184E2D700BFB38E /* NSData+Base64.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSData+Base64.m"; sourceTree = "<group>"; };
 		1A2974761184F1D800BFB38E /* Icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Icon.icns; sourceTree = "<group>"; };
+		1AA9B7C21187A80000DA1E28 /* dripwn */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = dripwn; sourceTree = "<group>"; };
 		1AD3E69911857D290059FB49 /* CocoaCryptoHashing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CocoaCryptoHashing.h; sourceTree = "<group>"; };
 		1AD3E69A11857D290059FB49 /* CocoaCryptoHashing.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CocoaCryptoHashing.m; sourceTree = "<group>"; };
 		1AD3E6E8118584720059FB49 /* iPhone1,1_3.1.2_7D11_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone1,1_3.1.2_7D11_Restore.ipsw.plist"; sourceTree = "<group>"; };
@@ -55,6 +57,8 @@
 		1AD3E6EA118584720059FB49 /* iPhone1,1_3.1_7C144_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone1,1_3.1_7C144_Restore.ipsw.plist"; sourceTree = "<group>"; };
 		1ADB8F801185FDBC005141D3 /* iPhone2,1_3.1.2_7D11_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone2,1_3.1.2_7D11_Restore.ipsw.plist"; sourceTree = "<group>"; };
 		1ADB8F811185FDBC005141D3 /* iPhone2,1_3.1.3_7E18_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone2,1_3.1.3_7E18_Restore.ipsw.plist"; sourceTree = "<group>"; };
+		1ADB8FA811862DF2005141D3 /* iPhone1,2_3.1_2_7D11_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone1,2_3.1_2_7D11_Restore.ipsw.plist"; sourceTree = "<group>"; };
+		1ADB8FA911862DF2005141D3 /* iPhone1,2_3.1.3_7E18_Restore.ipsw.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iPhone1,2_3.1.3_7E18_Restore.ipsw.plist"; sourceTree = "<group>"; };
 		1DDD58150DA1D0A300B32029 /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		256AC3D80F4B6AC300CF3369 /* DripwnAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DripwnAppDelegate.h; sourceTree = "<group>"; };
 		256AC3D90F4B6AC300CF3369 /* DripwnAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DripwnAppDelegate.m; sourceTree = "<group>"; };
@@ -119,6 +123,8 @@
 		1AD3E6E7118584720059FB49 /* Firmwares */ = {
 			isa = PBXGroup;
 			children = (
+				1ADB8FA811862DF2005141D3 /* iPhone1,2_3.1_2_7D11_Restore.ipsw.plist */,
+				1ADB8FA911862DF2005141D3 /* iPhone1,2_3.1.3_7E18_Restore.ipsw.plist */,
 				1ADB8F801185FDBC005141D3 /* iPhone2,1_3.1.2_7D11_Restore.ipsw.plist */,
 				1ADB8F811185FDBC005141D3 /* iPhone2,1_3.1.3_7E18_Restore.ipsw.plist */,
 				1AD3E6E8118584720059FB49 /* iPhone1,1_3.1.2_7D11_Restore.ipsw.plist */,
@@ -157,9 +163,9 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				1AA9B7C21187A80000DA1E28 /* dripwn */,
 				1AD3E6E7118584720059FB49 /* Firmwares */,
 				1A2974761184F1D800BFB38E /* Icon.icns */,
-				1A2972F71184C99E00BFB38E /* vfdecrypt */,
 				8D1107310486CEB800E47090 /* Dripwn-Info.plist */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
 				1DDD58140DA1D0A300B32029 /* MainMenu.xib */,
@@ -222,13 +228,15 @@
 			files = (
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				1DDD58160DA1D0A300B32029 /* MainMenu.xib in Resources */,
-				1A2972F81184C99E00BFB38E /* vfdecrypt in Resources */,
 				1A2974771184F1D800BFB38E /* Icon.icns in Resources */,
 				1AD3E6EB118584720059FB49 /* iPhone1,1_3.1.2_7D11_Restore.ipsw.plist in Resources */,
 				1AD3E6EC118584720059FB49 /* iPhone1,1_3.1.3_7E18_Restore.ipsw.plist in Resources */,
 				1AD3E6ED118584720059FB49 /* iPhone1,1_3.1_7C144_Restore.ipsw.plist in Resources */,
 				1ADB8F821185FDBC005141D3 /* iPhone2,1_3.1.2_7D11_Restore.ipsw.plist in Resources */,
 				1ADB8F831185FDBC005141D3 /* iPhone2,1_3.1.3_7E18_Restore.ipsw.plist in Resources */,
+				1ADB8FAA11862DF2005141D3 /* iPhone1,2_3.1_2_7D11_Restore.ipsw.plist in Resources */,
+				1ADB8FAB11862DF2005141D3 /* iPhone1,2_3.1.3_7E18_Restore.ipsw.plist in Resources */,
+				1AA9B7C31187A80000DA1E28 /* dripwn in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
