@@ -7,7 +7,7 @@
 
 #########  Setup Variables  ###########
 MYDIR="$PWD/`dirname $0`"
-
+declare -i CPU="$(cat /proc/cpuinfo | grep processor | wc -l) + 1"
 # Package URL
 PKG_MIRROR="http://www.gnuarm.com"
 
@@ -171,14 +171,14 @@ stage_binutils_configure() {
 stage_binutils_build() {
 	echo "- Building binutils"
 	cd $TOOLCHAIN_PATH/binutils-build
-	log make all
+	log make -j$CPU all
 	checkRet "Failed to build binutils"
 }
 
 stage_binutils_install() {
 	echo "- Installing binutils"
 	cd $TOOLCHAIN_PATH/binutils-build
-	log make install
+	log make -j$CPU install
 	checkRet "Failed to install binutils"
 }
 
@@ -216,14 +216,14 @@ stage_gcc_configure() {
 stage_gcc_build() {
 	echo "- Building GCC part 1"
 	cd $TOOLCHAIN_PATH/gcc-build
-	log make all-gcc
+	log make -j$CPU all-gcc
 	checkRet "Failed to build GCC part 1"
 }
 
 stage_gcc_install() {
 	echo "- Installing GCC part 1"
 	cd $TOOLCHAIN_PATH/gcc-build
-	log make install-gcc
+	log make -j$CPU install-gcc
 	checkRet "Failed to install GCC part 1"
 }
 
@@ -252,28 +252,28 @@ stage_makesymlink() {
 stage_newlib_build() {
 	echo "- Building Newlib"
 	cd $TOOLCHAIN_PATH/newlib-build
-	log make all
+	log make -j$CPU all
 	checkRet "Failed to build newlib"
 }
 
 stage_newlib_install() {
 	echo "- Installing NewLib"
 	cd $TOOLCHAIN_PATH/newlib-build
-	log make install
+	log make -j$CPU install
 	checkRet "Failed to install newlib"
 }
 
 stage_gcc_build2() {
 	echo "- Building GCC part 2"
 	cd $TOOLCHAIN_PATH/gcc-build
-	log make all
+	log make -j$CPU all
 	checkRet "Failed to build GCC part 2"
 }
 
 stage_gcc_install2() {
 	echo "- Installing GCC part 2"
 	cd $TOOLCHAIN_PATH/gcc-build
-	log make install
+	log make -j$CPU install
 	checkRet "Failed to install GCC part 2"
 }
 
