@@ -574,7 +574,7 @@ void images_uninstall() {
 		free(cur);
 	}
 
-	bufferPrintf("Done with installation!\r\n");
+	bufferPrintf("Done with uninstallation!\r\n");
 
 	images_release();
 	images_setup();
