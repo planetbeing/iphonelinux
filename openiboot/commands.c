@@ -907,6 +907,21 @@ void cmd_audiohw_speaker_vol(int argc, char** argv)
 	}
 }
 
+#ifdef CONFIG_3G
+void cmd_multitouch_setup(int argc, char** argv)
+{
+	if(argc < 3)
+	{
+		bufferPrintf("%s <constructed fw> <constructed fw len>\r\n", argv[0]);
+		return;
+	}
+
+	uint8_t* constructedFW = (uint8_t*) parseNumber(argv[1]);
+	uint32_t constructedFWLen = parseNumber(argv[2]);
+
+	multitouch_setup(constructedFW, constructedFWLen);
+}
+#else
 void cmd_multitouch_setup(int argc, char** argv)
 {
 	if(argc < 5)
@@ -922,6 +937,7 @@ void cmd_multitouch_setup(int argc, char** argv)
 
 	multitouch_setup(aspeedFW, aspeedFWLen, mainFW, mainFWLen);
 }
+#endif
 
 void cmd_wlan_prog_helper(int argc, char** argv) {
 	if(argc < 3) {

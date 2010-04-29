@@ -44,7 +44,12 @@ typedef struct FingerData
 	uint16_t unk_1A;
 } FingerData;
 
+#ifdef CONFIG_3G
+int multitouch_setup(const uint8_t* constructedFirmware, int constructedFirmwareLen);
+#else
 int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const uint8_t* mainFirmware, int mainFirmwareLen);
+#endif
+
 void multitouch_on();
 
 #endif
