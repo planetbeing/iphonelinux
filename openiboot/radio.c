@@ -203,7 +203,7 @@ void radio_nvram_list()
 				break;
 
 			default:
-				bufferPrintf("Unknown entry %d  : <%d bytes>\r\n", type, size - 4);
+				bufferPrintf("Unknown entry %d  : <%d bytes @ 0x%p>\r\n", type, size - 4, data);
 		}
 
 		cursor += size;

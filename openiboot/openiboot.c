@@ -20,6 +20,7 @@
 #include "lcd.h"
 #include "tasks.h"
 #include "images.h"
+#include "syscfg.h"
 #include "nvram.h"
 #include "accel.h"
 #include "sdio.h"
@@ -396,6 +397,7 @@ static int setup_openiboot() {
 	aes_setup();
 
 	nor_setup();
+	syscfg_setup();
 	images_setup();
 	nvram_setup();
 
