@@ -42,7 +42,7 @@ typedef struct MTSPISetting
 } MTSPISetting;
 
 const MTSPISetting MTNormalSpeed = {83000, 5000, 10000};
-const MTSPISetting MTFastSpeed= {4000000, 0, 10000};
+const MTSPISetting MTFastSpeed= {4500000, 0, 10000};
 
 #define NORMAL_SPEED (&MTNormalSpeed)
 #define FAST_SPEED (&MTFastSpeed)
@@ -71,6 +71,9 @@ static uint16_t performHBPPATN_ACK()
 	uint8_t tx[2];
 	uint8_t rx[2];
 
+	while(GotATN == 0);
+	--GotATN;
+
 	tx[0] = 0x1A;
 	tx[1] = 0xA1;
 
@@ -83,6 +86,9 @@ static uint32_t performHBPPLongATN_ACK()
 {
 	uint8_t tx[8];
 	uint8_t rx[8];
+
+	while(GotATN == 0);
+	--GotATN;
 
 	tx[0] = 0x1A;
 	tx[1] = 0xA1;
@@ -152,9 +158,9 @@ static int loadConstructedFirmware(const uint8_t* firmware, int len)
 	for(try = 0; try < 5; ++try)
 	{
 		bufferPrintf("multitouch: uploading data packet\r\n");
-		mt_spi_tx(FAST_SPEED, firmware, len);
 
-		udelay(300);
+		GotATN = 0;
+		mt_spi_tx(FAST_SPEED, firmware, len);
 
 		if(performHBPPATN_ACK() == 0x4BC1)
 			return TRUE;
@@ -184,9 +190,9 @@ static int loadProxCal(const uint8_t* firmware, int len)
 		for(try = 0; try < 5; ++try)
 		{
 			bufferPrintf("multitouch: uploading prox calibration data packet\r\n");
-			mt_spi_tx(FAST_SPEED, OutputPacket, toUpload + 0x10);
 
-			udelay(300);
+			GotATN = 0;
+			mt_spi_tx(FAST_SPEED, OutputPacket, toUpload + 0x10);
 
 			if(performHBPPATN_ACK() == 0x4BC1)
 				break;
@@ -224,9 +230,9 @@ static int loadCal(const uint8_t* firmware, int len)
 		for(try = 0; try < 5; ++try)
 		{
 			bufferPrintf("multitouch: uploading calibration data packet\r\n");
-			mt_spi_tx(FAST_SPEED, OutputPacket, toUpload + 0x10);
 
-			udelay(300);
+			GotATN = 0;
+			mt_spi_tx(FAST_SPEED, OutputPacket, toUpload + 0x10);
 
 			if(performHBPPATN_ACK() == 0x4BC1)
 				break;
@@ -264,9 +270,8 @@ static uint32_t readRegister(uint32_t address)
 	tx[6] = (checksum >> 8) & 0xFF;
 	tx[7] = checksum & 0xFF;
 
+	GotATN = 0;
 	mt_spi_txrx(NORMAL_SPEED, tx, sizeof(tx), rx, sizeof(rx));
-
-	udelay(300);
 
 	return performHBPPLongATN_ACK();
 }
@@ -300,9 +305,8 @@ static uint32_t writeRegister(uint32_t address, uint32_t value, uint32_t mask)
 	tx[14] = (checksum >> 8) & 0xFF;
 	tx[15] = checksum & 0xFF;
 
+	GotATN = 0;
 	mt_spi_txrx(NORMAL_SPEED, tx, sizeof(tx), rx, sizeof(rx));
-
-	udelay(300);
 
 	if(performHBPPATN_ACK() == 0x4AD1)
 		return TRUE;
@@ -332,19 +336,19 @@ static int calibrate()
 
 		if(!writeRegister(0x10001C08, 0x840000, 0xFF0000))
 		{
-			bufferPrintf("multitouch: error writing to register 0x10001C04\r\n");
+			bufferPrintf("multitouch: error writing to register 0x10001C08\r\n");
 			return FALSE;
 		}
 
 		if(!writeRegister(0x10001C0C, 0x05, 0x85))
 		{
-			bufferPrintf("multitouch: error writing to register 0x10001C04\r\n");
+			bufferPrintf("multitouch: error writing to register 0x10001C0C\r\n");
 			return FALSE;
 		}
 
 		if(!writeRegister(0x1000304C, 0x20, 0xFFFFFFFF))
 		{
-			bufferPrintf("multitouch: error writing to register 0x10001C04\r\n");
+			bufferPrintf("multitouch: error writing to register 0x1000304C\r\n");
 			return FALSE;
 		}
 
@@ -356,6 +360,7 @@ static int calibrate()
 
 	bufferPrintf("multitouch: requesting calibration...\r\n");
 
+	GotATN = 0;
 	mt_spi_txrx(NORMAL_SPEED, tx, sizeof(tx), rx, sizeof(rx));
 
 	udelay(65000);
