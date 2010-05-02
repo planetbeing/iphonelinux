@@ -16,6 +16,7 @@
 #define LACKS_STRINGS_H
 #define LACKS_ERRNO_H
 #define LACKS_STDLIB_H
+#define LACKS_SYS_TYPES_H
 #define USE_LOCKS 1
 
 static void* CurBreakValue = NULL;
@@ -1184,8 +1185,6 @@ int mspace_mallopt(int, int);
 #ifdef WIN32
 #pragma warning( disable : 4146 ) /* no "unsigned" warnings */
 #endif /* WIN32 */
-
-#include <stdio.h>       /* for printing in malloc_stats */
 
 #ifndef LACKS_ERRNO_H
 #include <errno.h>       /* for MALLOC_FAILURE_ACTION */

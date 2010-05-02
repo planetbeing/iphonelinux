@@ -3,7 +3,6 @@
 
 #include "openiboot.h"
 #include <stdarg.h>
-#include <stdlib.h>
 
 #ifdef DEBUG
 #define DebugPrintf bufferPrintf
@@ -13,6 +12,7 @@
 
 void panic();
 
+void __assert(const char* file, int line, const char* m);
 void* memset(void* x, int fill, uint32_t size);
 void* memcpy(void* dest, const void* src, uint32_t size);
 int strcmp(const char* s1, const char* s2);

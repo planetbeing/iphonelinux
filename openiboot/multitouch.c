@@ -207,8 +207,8 @@ int multitouch_setup(const uint8_t* ASpeedFirmware, int ASpeedFirmwareLen, const
 		return -1;
 	}
 
-	SensorWidth = *((uint32_t*)&reportBuffer[0]);
-	SensorHeight = *((uint32_t*)&reportBuffer[4]);
+	SensorWidth = reportBuffer[0] | (reportBuffer[1] >> 8) | (reportBuffer[2] >> 16) | (reportBuffer[3] >> 24);
+	SensorHeight = reportBuffer[4] | (reportBuffer[5] >> 8) | (reportBuffer[6] >> 16) | (reportBuffer[7] >> 24);
 
 	int i;
 
