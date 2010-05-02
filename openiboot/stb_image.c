@@ -81,7 +81,14 @@
 #endif
 # define assert(expr) ((expr) ? 0 : __assert (__FILE__, __LINE__, #expr))
 
-#define abs(x) (((x) < 0) ? (-x) : (x))
+static int abs(int x)
+{
+	if(x < 0)
+		return -x;
+	else
+		return x;
+}
+
 #include <stdarg.h>
 
 #ifndef _MSC_VER

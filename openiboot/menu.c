@@ -9,8 +9,10 @@
 #include "timer.h"
 #include "images/ConsolePNG.h"
 #include "images/iPhoneOSPNG.h"
+#include "images/AndroidOSPNG.h"
 #include "images/ConsoleSelectedPNG.h"
 #include "images/iPhoneOSSelectedPNG.h"
+#include "images/AndroidOSSelectedPNG.h"
 #include "images/HeaderPNG.h"
 #include "images.h"
 #include "actions.h"
@@ -40,8 +42,15 @@ static int imgConsoleHeight;
 static int imgConsoleX;
 static int imgConsoleY;
 
+static uint32_t* imgAndroidOS;
+static int imgAndroidOSWidth;
+static int imgAndroidOSHeight;
+static int imgAndroidOSX;
+static int imgAndroidOSY;
+
 static uint32_t* imgiPhoneOSSelected;
 static uint32_t* imgConsoleSelected;
+static uint32_t* imgAndroidOSSelected;
 
 static uint32_t* imgHeader;
 static int imgHeaderWidth;
@@ -51,7 +60,8 @@ static int imgHeaderY;
 
 typedef enum MenuSelection {
 	MenuSelectioniPhoneOS,
-	MenuSelectionConsole
+	MenuSelectionConsole,
+	MenuSelectionAndroidOS
 } MenuSelection;
 
 static MenuSelection Selection;
@@ -60,20 +70,41 @@ static void drawSelectionBox() {
 	if(Selection == MenuSelectioniPhoneOS) {
 		framebuffer_draw_image(imgiPhoneOSSelected, imgiPhoneOSX, imgiPhoneOSY, imgiPhoneOSWidth, imgiPhoneOSHeight);
 		framebuffer_draw_image(imgConsole, imgConsoleX, imgConsoleY, imgConsoleWidth, imgConsoleHeight);
+		framebuffer_draw_image(imgAndroidOS, imgAndroidOSX, imgAndroidOSY, imgAndroidOSWidth, imgAndroidOSHeight);
 	}
 
 	if(Selection == MenuSelectionConsole) {
 		framebuffer_draw_image(imgiPhoneOS, imgiPhoneOSX, imgiPhoneOSY, imgiPhoneOSWidth, imgiPhoneOSHeight);
 		framebuffer_draw_image(imgConsoleSelected, imgConsoleX, imgConsoleY, imgConsoleWidth, imgConsoleHeight);
+		framebuffer_draw_image(imgAndroidOS, imgAndroidOSX, imgAndroidOSY, imgAndroidOSWidth, imgAndroidOSHeight);
+	}
+
+	if(Selection == MenuSelectionAndroidOS) {
+		framebuffer_draw_image(imgiPhoneOS, imgiPhoneOSX, imgiPhoneOSY, imgiPhoneOSWidth, imgiPhoneOSHeight);
+		framebuffer_draw_image(imgConsole, imgConsoleX, imgConsoleY, imgConsoleWidth, imgConsoleHeight);
+		framebuffer_draw_image(imgAndroidOSSelected, imgAndroidOSX, imgAndroidOSY, imgAndroidOSWidth, imgAndroidOSHeight);
 	}
 }
 
-static void toggle() {
-	if(Selection == MenuSelectioniPhoneOS) {
-		Selection = MenuSelectionConsole;
-	} else if(Selection == MenuSelectionConsole) {
-		Selection = MenuSelectioniPhoneOS;
+static void toggle(int forward) {
+	if(forward)
+	{
+		if(Selection == MenuSelectioniPhoneOS)
+			Selection = MenuSelectionConsole;
+		else if(Selection == MenuSelectionConsole)
+			Selection = MenuSelectionAndroidOS;
+		else if(Selection == MenuSelectionAndroidOS)
+			Selection = MenuSelectioniPhoneOS;
+	} else
+	{
+		if(Selection == MenuSelectioniPhoneOS)
+			Selection = MenuSelectionAndroidOS;
+		else if(Selection == MenuSelectionAndroidOS)
+			Selection = MenuSelectionConsole;
+		else if(Selection == MenuSelectionConsole)
+			Selection = MenuSelectioniPhoneOS;
 	}
+
 	drawSelectionBox();
 }
 
@@ -85,21 +116,27 @@ int menu_setup(int timeout) {
 	imgiPhoneOSSelected = framebuffer_load_image(dataiPhoneOSSelectedPNG, dataiPhoneOSSelectedPNG_size, &imgiPhoneOSWidth, &imgiPhoneOSHeight, TRUE);
 	imgConsole = framebuffer_load_image(dataConsolePNG, dataConsolePNG_size, &imgConsoleWidth, &imgConsoleHeight, TRUE);
 	imgConsoleSelected = framebuffer_load_image(dataConsoleSelectedPNG, dataConsoleSelectedPNG_size, &imgConsoleWidth, &imgConsoleHeight, TRUE);
+	imgAndroidOS = framebuffer_load_image(dataAndroidOSPNG, dataAndroidOSPNG_size, &imgAndroidOSWidth, &imgAndroidOSHeight, TRUE);
+	imgAndroidOSSelected = framebuffer_load_image(dataAndroidOSSelectedPNG, dataAndroidOSSelectedPNG_size, &imgAndroidOSWidth, &imgAndroidOSHeight, TRUE);
 	imgHeader = framebuffer_load_image(dataHeaderPNG, dataHeaderPNG_size, &imgHeaderWidth, &imgHeaderHeight, TRUE);
 
 	bufferPrintf("menu: images loaded\r\n");
 
 	imgiPhoneOSX = (FBWidth - imgiPhoneOSWidth) / 2;
-	imgiPhoneOSY = 106;
+	imgiPhoneOSY = 84;
 
 	imgConsoleX = (FBWidth - imgConsoleWidth) / 2;
-	imgConsoleY = 246;
+	imgConsoleY = 207;
+
+	imgAndroidOSX = (FBWidth - imgAndroidOSWidth) / 2;
+	imgAndroidOSY = 330;
 
 	imgHeaderX = (FBWidth - imgHeaderWidth) / 2;
-	imgHeaderY = 30;
+	imgHeaderY = 17;
 
 	framebuffer_draw_image(imgHeader, imgHeaderX, imgHeaderY, imgHeaderWidth, imgHeaderHeight);
-	framebuffer_draw_rect_hgradient(0, 90, 0, 378, FBWidth, (FBHeight - 12) - 378);
+	framebuffer_draw_rect_hgradient(0, 42, 0, 358, FBWidth, (FBHeight - 24) - 358);
+	framebuffer_draw_rect_hgradient(42, 42, 0, FBHeight - 24, FBWidth, 24 - 12);
 	framebuffer_draw_rect_hgradient(0x22, 0x22, 0, FBHeight - 12, FBWidth, 12);
 
 	framebuffer_setloc(0, 47);
@@ -117,22 +154,18 @@ int menu_setup(int timeout) {
 	uint64_t startTime = timer_get_system_microtime();
 	while(TRUE) {
 		if(buttons_is_pushed(BUTTONS_HOLD)) {
-			toggle();
+			toggle(TRUE);
 			startTime = timer_get_system_microtime();
 			udelay(200000);
 		}
 #ifndef CONFIG_IPOD
 		if(!buttons_is_pushed(BUTTONS_VOLUP)) {
-			Selection = MenuSelectioniPhoneOS;
-
-			drawSelectionBox();
+			toggle(FALSE);
 			startTime = timer_get_system_microtime();
 			udelay(200000);
 		}
 		if(!buttons_is_pushed(BUTTONS_VOLDOWN)) {
-			Selection = MenuSelectionConsole;
-
-			drawSelectionBox();
+			toggle(TRUE);
 			startTime = timer_get_system_microtime();
 			udelay(200000);
 		}
@@ -157,41 +190,34 @@ int menu_setup(int timeout) {
 	}
 
 	if(Selection == MenuSelectionConsole) {
-#ifndef NO_HFS
-		startTime = timer_get_system_microtime();
-		while(TRUE) {
-			if(!buttons_is_pushed(BUTTONS_HOME))
-				break;
-
-			if(has_elapsed(startTime, (uint64_t)2000 * 1000)) {
-				framebuffer_setdisplaytext(TRUE);
-				framebuffer_clear();
-				radio_setup();
-				nand_setup();
-				fs_setup();
-				if(globalFtlHasBeenRestored) /* if ftl has been restored, sync it, so kernel doesn't have to do a ftl_restore again */
-				{
-					if(ftl_sync())
-					{
-						bufferPrintf("ftl synced successfully");
-					}
-					else
-					{
-						bufferPrintf("error syncing ftl");
-					}
-				}
-
-				pmu_set_iboot_stage(0);
-				startScripting("linux"); //start script mode if there is a script file
-				boot_linux_from_files();
-			}
-
-			udelay(10000);
-		}
-#endif
-
 		framebuffer_setdisplaytext(TRUE);
 		framebuffer_clear();
+	}
+
+	if(Selection == MenuSelectionAndroidOS) {
+		framebuffer_setdisplaytext(TRUE);
+		framebuffer_clear();
+
+#ifndef NO_HFS
+		radio_setup();
+		nand_setup();
+		fs_setup();
+		if(globalFtlHasBeenRestored) /* if ftl has been restored, sync it, so kernel doesn't have to do a ftl_restore again */
+		{
+			if(ftl_sync())
+			{
+				bufferPrintf("ftl synced successfully");
+			}
+			else
+			{
+				bufferPrintf("error syncing ftl");
+			}
+		}
+
+		pmu_set_iboot_stage(0);
+		startScripting("linux"); //start script mode if there is a script file
+		boot_linux_from_files();
+#endif
 	}
 
 	return 0;
