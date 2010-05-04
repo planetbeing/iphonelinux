@@ -70,11 +70,13 @@ extern uint32_t LCDPanelID;
 
 extern Window* currentWindow;
 extern volatile uint32_t* CurFramebuffer;
+extern uint32_t NextFramebuffer;
 
 int lcd_setup();
 void lcd_fill(uint32_t color);
 void lcd_shutdown();
 void lcd_set_backlight_level(int level);
+void lcd_window_address(int window, uint32_t framebuffer);
 
 #endif
 

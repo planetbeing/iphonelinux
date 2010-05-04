@@ -19,8 +19,12 @@ static int DisplayText = FALSE;
 static uint32_t BackgroundColor;
 static uint32_t ForegroundColor;
 
-#define RGB16(x) (((((x >> 16) & 0xFF) >> 3) << 11) | ((((x >> 8) & 0xFF) >> 2) << 5) | ((x & 0xFF) >> 3))
-#define RGB32(x) (((((x >> 11) & 0x1F) << 3) << 16) | ((((x >> 5) & 0x3F) << 2) << 8) | ((x & 0x1F) << 3))
+#define BGR16(x) ((((((x) >> 16) & 0xFF) >> 3) << 11) | (((((x) >> 8) & 0xFF) >> 2) << 5) | (((x) & 0xFF) >> 3))
+#define BGR32(x) ((((((x) >> 11) & 0x1F) << 3) << 16) | (((((x) >> 5) & 0x3F) << 2) << 8) | (((x) & 0x1F) << 3))
+
+#define RGB16(x) (((((x) & 0xFF) >> 3) << 11) | (((((x) >> 8) & 0xFF) >> 2) << 5) | ((((x) >> 16) & 0xFF) >> 3))
+
+#define RGBA2BGR(x) ((((x) >> 16) & 0xFF) | ((((x) >> 8) & 0xFF) << 8) | (((x) & 0xFF) << 16))
 
 inline int getCharPixel(OpenIBootFont* font, int ch, int x, int y) {
 	register int bitIndex = ((font->width * font->height) * ch) + (font->width * y) + x;
@@ -120,7 +124,7 @@ static void scrollup565() {
 	register volatile uint16_t* newFirstLine = PixelFromCoords565(0, Font->height);
 	register volatile uint16_t* oldFirstLine = PixelFromCoords565(0, 0);
 	register volatile uint16_t* end = oldFirstLine + (FBWidth * FBHeight);
-	uint16_t bgcolor = RGB16(BackgroundColor);
+	uint16_t bgcolor = BGR16(BackgroundColor);
 	while(newFirstLine < end) {
 		*(oldFirstLine++) = *(newFirstLine++);
 	}
@@ -163,8 +167,8 @@ void framebuffer_putc888(int c) {
 }
 
 void framebuffer_putc565(int c) {
-	uint16_t fgcolor = RGB16(ForegroundColor);
-	uint16_t bgcolor = RGB16(BackgroundColor);
+	uint16_t fgcolor = BGR16(ForegroundColor);
+	uint16_t bgcolor = BGR16(BackgroundColor);
 
 	if(c == '\r') {
 		X = 0;
@@ -210,7 +214,7 @@ static void framebuffer_draw_image888(uint32_t* image, int x, int y, int width, 
 	register uint32_t sy;
 	for(sy = 0; sy < height; sy++) {
 		for(sx = 0; sx < width; sx++) {
-			*(PixelFromCoords(sx + x, sy + y)) = image[(sy * width) + sx];
+			*(PixelFromCoords(sx + x, sy + y)) = RGBA2BGR(image[(sy * width) + sx]);
 		}
 	}
 }
@@ -248,7 +252,7 @@ static void framebuffer_capture_image565(uint32_t* image, int x, int y, int widt
 	register uint32_t sy;
 	for(sy = 0; sy < height; sy++) {
 		for(sx = 0; sx < width; sx++) {
-			image[(sy * width) + sx] = RGB32(*(PixelFromCoords565(sx + x, sy + y)));
+			image[(sy * width) + sx] = BGR32(*(PixelFromCoords565(sx + x, sy + y)));
 		}
 	}
 }
@@ -292,9 +296,9 @@ void framebuffer_blend_image(uint32_t* dst, int dstWidth, int dstHeight, uint32_
 			register uint32_t* dstPixel = &dst[((sy + y) * dstWidth) + (sx + x)];
 			register uint32_t* srcPixel = &src[(sy * srcWidth) + sx];
 			*dstPixel =
-				(((((*dstPixel >> 16) & 0xFF) * (0xFF - (*srcPixel >> 24))) >> 8) + ((((*srcPixel >> 16) & 0xFF) * (*srcPixel >> 24)) >> 8)) << 16
-				| (((((*dstPixel >> 8) & 0xFF) * (0xFF - (*srcPixel >> 24))) >> 8) + ((((*srcPixel >> 8) & 0xFF) * (*srcPixel >> 24)) >> 8)) << 8
-				| ((((*dstPixel & 0xFF) * (0xFF - (*srcPixel >> 24))) >> 8) + (((*srcPixel & 0xFF) * (*srcPixel >> 24)) >> 8));
+				((((*dstPixel & 0xFF) * (0x100 - (*srcPixel >> 24))) >> 8) + ((((*srcPixel >> 16) & 0xFF) * ((*srcPixel >> 24) + 1)) >> 8)) << 16
+				| (((((*dstPixel >> 8) & 0xFF) * (0x100 - (*srcPixel >> 24))) >> 8) + ((((*srcPixel >> 8) & 0xFF) * ((*srcPixel >> 24) + 1)) >> 8)) << 8
+				| (((((*dstPixel >> 16) & 0xFF) * (0x100 - (*srcPixel >> 24))) >> 8) + (((*srcPixel & 0xFF) * ((*srcPixel >> 24) + 1)) >> 8));
 		}
 	}
 }	

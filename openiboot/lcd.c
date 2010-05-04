@@ -24,7 +24,7 @@ Window* currentWindow;
 volatile uint32_t* CurFramebuffer;
 
 static int numWindows = 0;
-static uint32_t nextFramebuffer = 0;
+uint32_t NextFramebuffer = 0;
 
 int LCDInitRegisterCount;
 const uint16_t* LCDInitRegisters;
@@ -182,7 +182,7 @@ static void syrah_quiesce();
 int lcd_setup() {
 	int backlightLevel = 0;
 
-	nextFramebuffer = 0x0fd00000;
+	NextFramebuffer = 0x0fd00000;
 	numWindows = 2;
 
 	if(!lcd_has_init) {
@@ -401,9 +401,9 @@ static Window* createWindow(int zero0, int zero1, int width, int height, ColorSp
 
 	newWindow->lineBytes = lineBytes;
 
-	uint32_t currentFramebuffer = nextFramebuffer;
+	uint32_t currentFramebuffer = NextFramebuffer;
 
-	nextFramebuffer = (currentFramebuffer
+	NextFramebuffer = (currentFramebuffer
 		+ (lineBytes * height)	// size we need
 		+ 0xFFF)		// round up
 		& 0xFFFFF000;		// align
@@ -498,6 +498,31 @@ static void setWindow(int window, int wordSetting, int zero1, ColorSpace colorSp
 	SET_REG(windowBase + 12, size);
 	SET_REG(windowBase, hspan);
 	SET_REG(windowBase + 16, qlen);
+}
+
+void lcd_window_address(int window, uint32_t framebuffer) {
+	uint32_t windowBase;
+	switch(window) {
+		case 1:
+			windowBase = LCD + 0x58;
+			break;
+		case 2:
+			windowBase = LCD + 0x70;
+			break;
+		case 3:
+			windowBase = LCD + 0x88;
+			break;
+		case 4:
+			windowBase = LCD + 0xA0;
+			break;
+		case 5:
+			windowBase = LCD + 0xB8;
+			break;
+		default:
+			return;
+	}
+
+	SET_REG(windowBase + 8, framebuffer);
 }
 
 static void setLayer(int window, int zero0, int zero1) {

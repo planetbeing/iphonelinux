@@ -2,8 +2,7 @@ openiboot image resources
 -------------------------
 
 Images currently used by openiboot are grayscale PNGs linked into the binary
-via bin2c. The graphics are provided by poorlad (licensing information
-pending). 
+via bin2c. The graphics are provided by poorlad and modified by galiaxy.
 
 The Apple logo is a trademark of Apple Inc., and is included for proper
 identification of Apple software on the device, and is believed to be
