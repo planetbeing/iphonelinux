@@ -18,6 +18,8 @@ static int Prepared = 0;
 static int WritePrepared = FALSE;
 #endif
 
+static int NORVendor;
+
 static void nor_prepare() {
 #ifdef CONFIG_3G
 	if(Prepared == 0) {
@@ -69,6 +71,8 @@ static NorInfo* probeNOR() {
 	GET_REG16(NOR);
 	GET_REG16(NOR);
 #endif
+
+	NORVendor = vendor;
 
 	bufferPrintf("NOR vendor=%x, device=%x\r\n", (uint32_t) vendor, (uint32_t) device);
 
@@ -180,25 +184,63 @@ static int nor_serial_prepare_write(uint32_t offset, uint16_t data) {
 
 #endif
 
+#ifdef CONFIG_3G
+
+static int nor_serial_write_byte(uint32_t offset, uint8_t data) {
+	nor_prepare();
+
+	if(nor_wait_for_ready(100) != 0) {
+		nor_unprepare();
+		return -1;
+	}
+
+	nor_write_enable();
+
+	uint8_t command[5];
+	command[0] = NOR_SPI_PRGM;
+	command[1] = (offset >> 16) & 0xFF;
+	command[2] = (offset >> 8) & 0xFF;
+	command[3] = offset & 0xFF;
+	command[4] = data & 0xFF;
+
+	gpio_pin_output(GPIO_SPI0_CS0, 0);
+	spi_tx(0, command, sizeof(command), TRUE, 0);
+	gpio_pin_output(GPIO_SPI0_CS0, 1);
+
+	nor_unprepare();
+
+	return 0;
+}
+
+#endif
+
 int nor_write_word(uint32_t offset, uint16_t data) {
 	nor_prepare();
 #ifdef CONFIG_3G
-	if(!WritePrepared) {
-		nor_serial_prepare_write(offset, data);
-	} else {
-		if(nor_wait_for_ready(100) != 0) {
-			nor_unprepare();
-			return -1;
+	if(NORVendor == 0xBF)
+	{
+		// SST has the auto-increment program opcode that lets programming happen more quickly
+		if(!WritePrepared) {
+			nor_serial_prepare_write(offset, data);
+		} else {
+			if(nor_wait_for_ready(100) != 0) {
+				nor_unprepare();
+				return -1;
+			}
+
+			uint8_t command[3];
+			command[0] = NOR_SPI_AIPG;
+			command[1] = data & 0xFF;
+			command[2] = (data >> 8) & 0xFF;
+
+			gpio_pin_output(GPIO_SPI0_CS0, 0);
+			spi_tx(0, command, sizeof(command), TRUE, 0);
+			gpio_pin_output(GPIO_SPI0_CS0, 1);
 		}
-
-		uint8_t command[3];
-		command[0] = NOR_SPI_AIPG;
-		command[1] = data & 0xFF;
-		command[2] = (data >> 8) & 0xFF;
-
-		gpio_pin_output(GPIO_SPI0_CS0, 0);
-		spi_tx(0, command, sizeof(command), TRUE, 0);
-		gpio_pin_output(GPIO_SPI0_CS0, 1);
+	} else
+	{
+		nor_serial_write_byte(offset, data & 0xFF);
+		nor_serial_write_byte(offset + 1, (data >> 8) & 0xFF);
 	}
 #else
 	SET_REG16(NOR + COMMAND, COMMAND_UNLOCK);
