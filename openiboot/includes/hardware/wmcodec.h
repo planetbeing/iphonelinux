@@ -15,7 +15,7 @@
 
 #ifdef CONFIG_3G
 #define WMCODEC_I2C 0
-#define WMCODEC_I2C_SLAVE_ADDR 0x1B
+#define WMCODEC_I2C_SLAVE_ADDR 0x36
 #endif
 
 #endif

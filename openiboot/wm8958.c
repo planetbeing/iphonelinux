@@ -18,9 +18,9 @@
  ****************************************************************************/
 
 #include "i2c.h"
-#include "wm8958.h"
+#include "wmcodec.h"
 #include "hardware/i2s.h"
-#include "hardware/wm8958.h"
+#include "hardware/wmcodec.h"
 #include "clock.h"
 #include "dma.h"
 #include "util.h"

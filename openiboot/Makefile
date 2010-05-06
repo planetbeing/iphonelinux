@@ -3,7 +3,7 @@
 .SUFFIXES:	.c .s .o
 
 # Sources
-SRC_C               = accel.c aes.c arm.c buttons.c camera.c chipid.c clock.c commands.c dma.c event.c framebuffer.c ftl.c gpio.c i2c.c images.c interrupt.c lcd.c malloc.c miu.c mmu.c nand.c nor.c nvram.c openiboot.c pmu.c power.c printf.c radio.c sdio.c sha1.c spi.c tasks.c timer.c uart.c usb.c util.c wdt.c wlan.c wm8958.c scripting.c syscfg.c actions.c
+SRC_C               = accel.c aes.c arm.c buttons.c camera.c chipid.c clock.c commands.c dma.c event.c framebuffer.c ftl.c gpio.c i2c.c images.c interrupt.c lcd.c malloc.c miu.c mmu.c nand.c nor.c nvram.c openiboot.c pmu.c power.c printf.c radio.c sdio.c sha1.c spi.c tasks.c timer.c uart.c usb.c util.c wdt.c wlan.c scripting.c syscfg.c actions.c
 SRC_S               = entry.s openiboot-asmhelpers.s
 
 HFS_SRC_C           = hfs/btree.c hfs/catalog.c hfs/extents.c hfs/fastunicodecompare.c hfs/rawfile.c hfs/utility.c hfs/volume.c hfs/bdev.c hfs/fs.c
@@ -11,9 +11,9 @@ HFS_SRC_C           = hfs/btree.c hfs/catalog.c hfs/extents.c hfs/fastunicodecom
 MENU_SRC_C          = menu.c stb_image.c
 
 ifeq ($(PLATFORM),3G)
-	SRC_C          += alsISL29003.c multitouch-z2.c
+	SRC_C          += alsISL29003.c multitouch-z2.c wm8991.c 
 else
-	SRC_C          += als.c multitouch.c
+	SRC_C          += als.c multitouch.c wm8958.c
 endif
 
 # Variables

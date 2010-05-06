@@ -35,5 +35,11 @@ void audiohw_pause();
 void audiohw_resume();
 uint32_t audiohw_get_position();
 uint32_t audiohw_get_total();
+void audiohw_mute(int mute);
+
+#ifdef CONFIG_3G
+void audiohw_set_speaker_vol(int vol);
+#endif
+
 
 extern const struct sound_settings_info audiohw_settings[];

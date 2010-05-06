@@ -22,7 +22,7 @@
 #include "accel.h"
 #include "sdio.h"
 #include "wdt.h"
-#include "wm8958.h"
+#include "wmcodec.h"
 #include "multitouch.h"
 #include "wlan.h"
 #include "radio.h"
@@ -888,12 +888,20 @@ void cmd_audiohw_speaker_vol(int argc, char** argv)
 {
 	if(argc < 2)
 	{
+#ifdef CONFIG_3G
+		bufferPrintf("%s <loudspeaker volume> (between 0 and 100)\r\n", argv[0]);
+#else
 		bufferPrintf("%s <loudspeaker volume> [speaker volume] (between 0 and 100... 'speaker' is the one next to your ear)\r\n", argv[0]);
+#endif
 		return;
 	}
 
 	int vol = parseNumber(argv[1]);
-	
+
+#ifdef CONFIG_3G
+	audiohw_set_speaker_vol(vol);
+	bufferPrintf("Set speaker volume to: %d\r\n", vol);
+#else
 	loudspeaker_vol(vol);
 
 	bufferPrintf("Set loudspeaker volume to: %d\r\n", vol);
@@ -905,6 +913,7 @@ void cmd_audiohw_speaker_vol(int argc, char** argv)
 
 		bufferPrintf("Set speaker volume to: %d\r\n", vol);
 	}
+#endif
 }
 
 #ifdef CONFIG_3G
