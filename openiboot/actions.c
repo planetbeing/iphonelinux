@@ -9,6 +9,7 @@
 #include "wdt.h"
 #include "dma.h"
 #include "radio.h"
+#include "syscfg.h"
 
 #define MACH_APPLE_IPHONE 1506
 
@@ -25,9 +26,10 @@
 #define ATAG_REVISION   0x54410007
 #define ATAG_VIDEOLFB   0x54410008
 #define ATAG_CMDLINE    0x54410009
-#define ATAG_IPHONE_NAND    0x54411001
-#define ATAG_IPHONE_WIFI    0x54411002
-#define ATAG_IPHONE_TYPE    0x54411003
+#define ATAG_IPHONE_NAND       0x54411001
+#define ATAG_IPHONE_WIFI       0x54411002
+#define ATAG_IPHONE_PROX_CAL   0x54411004
+#define ATAG_IPHONE_MT_CAL     0x54411005
 
 /* structures for each atag */
 struct atag_header {
@@ -116,25 +118,26 @@ struct atag_iphone_wifi {
 	uint8_t		cal[];
 };
 
-struct atag_iphone_type {
-	uint32_t	type;
+struct atag_iphone_cal_data {
+	uint32_t	size;
+	uint8_t		data[];
 };
 
 struct atag {
 	struct atag_header hdr;
 	union {
-		struct atag_core         core;
-		struct atag_mem          mem;
-		struct atag_videotext    videotext;
-		struct atag_ramdisk      ramdisk;
-		struct atag_initrd2      initrd2;
-		struct atag_serialnr     serialnr;
-		struct atag_revision     revision;
-		struct atag_videolfb     videolfb;
-		struct atag_cmdline      cmdline;
-		struct atag_iphone_nand  nand;
-		struct atag_iphone_wifi  wifi;
-		struct atag_iphone_type  iphone_type;
+		struct atag_core             core;
+		struct atag_mem              mem;
+		struct atag_videotext        videotext;
+		struct atag_ramdisk          ramdisk;
+		struct atag_initrd2          initrd2;
+		struct atag_serialnr         serialnr;
+		struct atag_revision         revision;
+		struct atag_videolfb         videolfb;
+		struct atag_cmdline          cmdline;
+		struct atag_iphone_nand      nand;
+		struct atag_iphone_wifi      wifi;
+		struct atag_iphone_cal_data  mt_cal;
 	} u;
 };
 
@@ -234,22 +237,43 @@ static void setup_wifi_tags()
 	params = tag_next(params);              /* move pointer to next tag */
 }
 
-static void setup_type_tag()
+static void setup_mt_tags()
 {
-	params->hdr.tag = ATAG_IPHONE_TYPE;
-	params->hdr.size = tag_size(atag_iphone_type);
+#ifndef CONFIG_IPHONE
+	uint8_t* prox_cal;
+	int prox_cal_size;
 
-#ifdef CONFIG_IPHONE
-	params->u.iphone_type.type = ATAG_IPHONE_WIFI_TYPE_2G;
-#endif
-#ifdef CONFIG_3G
-	params->u.iphone_type.type = ATAG_IPHONE_WIFI_TYPE_3G;
-#endif
-#ifdef CONFIG_IPOD
-	params->u.iphone_type.type = ATAG_IPHONE_WIFI_TYPE_IPOD;
-#endif
+	uint8_t* cal;
+	int cal_size;
 
+	prox_cal = syscfg_get_entry(SCFG_PxCl, &prox_cal_size);
+	if(!prox_cal)
+	{
+		return;
+	}
+
+	cal = syscfg_get_entry(SCFG_MtCl, &cal_size);
+	if(!cal)
+	{
+		return;
+	}
+
+	params->u.mt_cal.size = prox_cal_size;
+	memcpy(params->u.mt_cal.data, prox_cal, prox_cal_size);
+
+	params->hdr.tag = ATAG_IPHONE_PROX_CAL;
+	params->hdr.size = (sizeof(struct atag_header) + sizeof(struct atag_iphone_cal_data) + prox_cal_size + 4) >> 2;
 	params = tag_next(params);              /* move pointer to next tag */
+
+	params->u.mt_cal.size = cal_size;
+	memcpy(params->u.mt_cal.data, cal, cal_size);
+
+	params->hdr.tag = ATAG_IPHONE_MT_CAL;
+	params->hdr.size = (sizeof(struct atag_header) + sizeof(struct atag_iphone_cal_data) + cal_size + 4) >> 2;
+	params = tag_next(params);              /* move pointer to next tag */
+
+	bufferPrintf("Multi-touch calibration data installed.\r\n");
+#endif
 }
 
 static int rootfs_partition = 0;
@@ -334,7 +358,7 @@ static void setup_tags(struct atag* parameters, const char* commandLine)
 		setup_initrd2_tag(INITRD_LOAD, ramdiskSize);
 	}
 	setup_cmdline_tag(commandLine);
-	setup_type_tag();
+	setup_mt_tags();
 	setup_wifi_tags();
 #ifndef NO_HFS
 	setup_iphone_nand_tag();
