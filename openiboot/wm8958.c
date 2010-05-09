@@ -345,6 +345,10 @@ void audiohw_preinit(void)
     wmcodec_write(WMREG_3E, 0x8c90);
 }
 
+void audiohw_switch_normal_call(int in_call)
+{
+}
+
 void audiohw_mute(int mute)
 {
     if (mute)

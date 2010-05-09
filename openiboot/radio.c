@@ -6,6 +6,7 @@
 #include "hardware/radio.h"
 #include "uart.h"
 #include "pmu.h"
+#include "wmcodec.h"
 
 // For the +XDRV stuff, it's usually device,function,arg1,arg2,arg3,...
 // device 4 seems to be the vibrator, device 0 seems to be the speakers,
@@ -415,10 +416,11 @@ static int radio_nvram_read_all(char** res)
 
 int speaker_setup()
 {
-	bufferPrintf("radio: enabling internal speaker\r\n");
-
 	// something set at the very beginning
 	radio_cmd("at+xdrv=0,41,25\r\n", 10);
+
+#ifdef CONFIG_IPHONE
+	bufferPrintf("radio: enabling internal speaker\r\n");
 
 	// mute everything?
 	radio_cmd("at+xdrv=0,1,0,0\r\n", 10);
@@ -448,6 +450,7 @@ int speaker_setup()
 	radio_cmd("at+xdrv=0,3,0\r\n", 10);
 
 	bufferPrintf("radio: internal speaker enabled\r\n");
+#endif
 	return 0;
 }
 
@@ -495,8 +498,14 @@ void radio_call(const char* number)
 
 	bufferPrintf("radio: Setting up audio\r\n");
 
+	audiohw_switch_normal_call(TRUE);
+
+#ifdef CONFIG_3G
+	radio_cmd("at+xdrv=0,8,0,0\r\n", 10);
+#else
 	radio_cmd("at+xdrv=0,4\r\n", 10);
 	radio_cmd("at+xdrv=0,20,0\r\n", 10);
+#endif
 
 	// mute everything?
 	radio_cmd("at+xdrv=0,1,0,0\r\n", 10);
@@ -514,6 +523,11 @@ void radio_call(const char* number)
 	radio_cmd("at+xdrv=0,1,100,1\r\n", 10);
 
 	loudspeaker_vol(40);
+
+#ifdef CONFIG_3G
+	radio_cmd("at+xdrv=0,8,1,0\r\n", 10);
+#endif
+
 	speaker_vol(68);
 
 	// clock
@@ -540,11 +554,13 @@ void radio_call(const char* number)
 	radio_cmd(buf, 10);
 	radio_cmd("at+cmut=0\r\n", 10);
 
+#ifndef CONFIG_3G
 	radio_cmd("at+xdrv=4,0,0,0,0,0\r\n", 10);
 
 	speaker_vol(68);
 
 	radio_cmd("at+xdrv=4,0,0,0,0,0\r\n", 10);
+#endif
 
 	// we now need to wait for +XCALLSTAT to indicate 0 or active status. This code is less
 	// complex than it seems. The whole point is just to wait until we have a line that says
@@ -587,8 +603,10 @@ void radio_call(const char* number)
 			break;
 	}
 
+#ifndef CONFIG_3G
 	// do the rest
 	radio_cmd("at+xdrv=4,0,0,0,0,0\r\n", 10);
+#endif
 
 	// why the same thing again?
 	radio_cmd("at+xdrv=0,4\r\n", 10);
@@ -601,6 +619,7 @@ void radio_hangup()
 {
 	radio_cmd("at+chld=1\r\n", 10);
 	radio_cmd("at+xctms=0\r\n", 10);
+	audiohw_switch_normal_call(FALSE);
 	speaker_setup();
 }
 

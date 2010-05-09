@@ -37,6 +37,8 @@ uint32_t audiohw_get_position();
 uint32_t audiohw_get_total();
 void audiohw_mute(int mute);
 
+void audiohw_switch_normal_call(int in_call);
+
 #ifdef CONFIG_3G
 void audiohw_set_speaker_vol(int vol);
 #endif

@@ -54,6 +54,8 @@ void wmcodec_write(int reg, int data)
 	buffer[2] = data & 0xFF;
 
 	i2c_tx(WMCODEC_I2C, WMCODEC_I2C_SLAVE_ADDR, buffer, sizeof(buffer));
+
+	((uint16_t*)(0x09000000 - 0x1000))[reg] = (uint16_t) data;
 }
 
 int wmcodec_read(int reg)
@@ -480,3 +482,78 @@ static void switch_hp_speakers(int use_speakers)
 
 }
 
+void audiohw_switch_normal_call(int in_call)
+{
+	// the basic idea is to route LIN4 to OUT3, RIN4 to OUT4 and LIN1 and LIN2 to ROP and RON.
+	// one route connects microphone to baseband, the other connects the baseband with the headset speaker.
+	if(in_call)
+	{
+		// speaker disable, out3 and out4 enable. Bit 5 enable
+		wmcodec_write(PWRMGMT1, 0x0c23);
+
+		// PLL disable, LIN12 input PGA enable
+		wmcodec_write(PWRMGMT2, 0x6040);
+
+		// enable RON and ROP, disable left DAC and right DAC
+		wmcodec_write(PWRMGMT3, 0x0c00);
+	} else
+	{
+		wmcodec_write(PWRMGMT1, 0x1003);
+		wmcodec_write(PWRMGMT2, 0xe000);
+		wmcodec_write(PWRMGMT3, 0x0003);
+	}
+
+	if(in_call)
+		wmcodec_write(DACCTRL, 0x5);	// dac mute and dacr_datinv
+	else
+		wmcodec_write(DACCTRL, 0x0);
+
+	if(in_call)
+		wmcodec_write(LIN12PGAVOL, 0x114);	// LI12MUTE off, (update volume), LIN12 volume i crease
+	else
+		wmcodec_write(LIN12PGAVOL, 0x8b);
+
+	if(in_call)
+	{
+		// RON unmute, ROP unmute
+		wmcodec_write(LINEOUTVOL, 0x60);
+
+		// OUT3 unmute, OUT4 unmute
+		wmcodec_write(OUT34VOL, 0x0);
+	} else
+	{
+		wmcodec_write(LINEOUTVOL, 0x0066);
+		wmcodec_write(OUT34VOL, 0x0022);
+	}
+
+	if(in_call)
+		wmcodec_write(SPKATTN, 0x3);	// mute speakers
+	else
+		wmcodec_write(SPKATTN, 0x0);
+
+	if(in_call)
+		wmcodec_write(INPUTMIX2, 0x0030);	// LIN1 and LIN2 connected to PGA.
+	else
+		wmcodec_write(INPUTMIX2, 0x0000);
+
+	if(in_call)
+		wmcodec_write(OUT34MIX, 0x01b3);	// LIN4/RXN pin to OUT3MIX unmute, LOPGA to OUT3MIX umute, RIN4/RXP Pin to OUT4MIX unmute, ROPGA to OUT4MIX unmute
+	else
+		wmcodec_write(OUT34MIX, 0x180);
+
+	if(in_call)
+		wmcodec_write(LINEOUTMIX2, 0x14);	// ROP output to RONMIX unmute, LIN12 PGA to ROPMIX unmute
+	else
+		wmcodec_write(LINEOUTMIX2, 0x0);
+
+	if(in_call)
+		wmcodec_write(SPKMIX, 0x0);		// disable spekaers
+	else
+		wmcodec_write(SPKMIX, 0x3);
+
+	if(in_call)
+		wmcodec_write(MICBIAS, 0x40);		// MICBIAS short circuit current detect threshold to 120 microamps.
+	else
+		wmcodec_write(MICBIAS, 0x0);
+
+}
