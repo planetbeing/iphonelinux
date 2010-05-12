@@ -18,4 +18,7 @@
 #define WMCODEC_I2C_SLAVE_ADDR 0x36
 #endif
 
+#define WMCODEC_INT 0x2c
+#define WMCODEC_INT_GPIO 0x1604
+
 #endif

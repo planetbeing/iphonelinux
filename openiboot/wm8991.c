@@ -25,6 +25,7 @@
 #include "dma.h"
 #include "util.h"
 #include "openiboot-asmhelpers.h"
+#include "gpio.h"
 
 const void* pcm_buffer;
 uint32_t pcm_buffer_size;
@@ -39,11 +40,14 @@ volatile static int stopTransfers;
 void audiohw_preinit();
 static void switch_hp_speakers(int use_speakers);
 
+static uint16_t regcache[0x3F];
+
 void audiohw_init()
 {
 	clock_gate_switch(I2S0_CLOCK, ON);
 	clock_gate_switch(I2S1_CLOCK, ON);
 	audiohw_preinit();
+	memset(regcache, 0, sizeof(regcache));
 }
 
 void wmcodec_write(int reg, int data)
@@ -54,18 +58,22 @@ void wmcodec_write(int reg, int data)
 	buffer[2] = data & 0xFF;
 
 	i2c_tx(WMCODEC_I2C, WMCODEC_I2C_SLAVE_ADDR, buffer, sizeof(buffer));
+	regcache[reg] = data;
 }
 
 int wmcodec_read(int reg)
 {
 	uint8_t registers[1];
 	uint8_t out[2];
+	uint16_t data;
 
 	registers[0] = reg;
 
 	i2c_rx(WMCODEC_I2C, WMCODEC_I2C_SLAVE_ADDR, registers, 1, out, 2);
+	data = (out[0] << 8) | out[1];
 
-	return (out[0] << 8) | out[1];
+	regcache[reg] = data;
+	return data;
 }
 
 static void iis_transfer_done(int status, int controller, int channel)
@@ -254,6 +262,34 @@ const struct sound_settings_info audiohw_settings[] = {
 #define PLL2		0x3D
 #define PLL3		0x3E
 
+void wm8991_int(uint32_t token)
+{
+	if(gpio_pin_state(WMCODEC_INT_GPIO) == 1)
+	{
+		uint16_t status = wmcodec_read(GPIOCTRL1);
+		if(status & (1 << 4))
+		{
+			// GPIO5 is triggered
+			int polarity = wmcodec_read(GPIOCTRL2);
+			int polarity_gpio5 = polarity & (1 << 4);
+
+			if(polarity_gpio5)
+			{
+				// We previously sent an IRQ if GPIO5 was low, now let's send one if GPIO5 goes high.
+				polarity = polarity & ~(1 << 4);
+				bufferPrintf("audio: headphones removed.\r\n");
+			} else
+			{
+				// We previously sent an IRQ if GPIO5 was high, now let's send one if GPIO5 goes low.
+				polarity = polarity | (1 << 4);
+				bufferPrintf("audio: headphones plugged in.\r\n");
+			}
+			wmcodec_write(GPIOCTRL2, polarity);
+			wmcodec_write(GPIOCTRL1, status);
+		}
+	}
+}
+
 /* Silently enable / disable audio output */
 void audiohw_preinit(void)
 {
@@ -395,6 +431,11 @@ void audiohw_preinit(void)
 	wmcodec_write(PLL3, 0x00fc);
 
 	// R = 7.523376465
+
+	gpio_pin_use_as_input(WMCODEC_INT_GPIO);
+	gpio_register_interrupt(WMCODEC_INT, TRUE, TRUE, FALSE, wm8991_int, 0);
+	gpio_interrupt_enable(WMCODEC_INT);
+
 }
 
 void audiohw_mute(int mute)
