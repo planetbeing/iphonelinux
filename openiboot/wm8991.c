@@ -40,7 +40,7 @@ volatile static int stopTransfers;
 void audiohw_preinit();
 static void switch_hp_speakers(int use_speakers);
 
-static uint16_t regcache[0x3F];
+static uint16_t regcache[0x40];
 
 void audiohw_init()
 {
