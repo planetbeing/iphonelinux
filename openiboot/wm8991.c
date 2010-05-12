@@ -54,8 +54,6 @@ void wmcodec_write(int reg, int data)
 	buffer[2] = data & 0xFF;
 
 	i2c_tx(WMCODEC_I2C, WMCODEC_I2C_SLAVE_ADDR, buffer, sizeof(buffer));
-
-	((uint16_t*)(0x09000000 - 0x1000))[reg] = (uint16_t) data;
 }
 
 int wmcodec_read(int reg)
