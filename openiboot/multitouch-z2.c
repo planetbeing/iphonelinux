@@ -71,8 +71,21 @@ static uint16_t performHBPPATN_ACK()
 	uint8_t tx[2];
 	uint8_t rx[2];
 
-	while(GotATN == 0);
-	--GotATN;
+	uint64_t startTime = timer_get_system_microtime();
+	while(TRUE)
+	{
+		EnterCriticalSection();
+		if(GotATN > 0)
+		{
+			--GotATN;
+			LeaveCriticalSection();
+			break;
+		}
+		LeaveCriticalSection();
+		if(has_elapsed(startTime, 1000)) {
+			return 0xFFFF;
+		}
+	}
 
 	tx[0] = 0x1A;
 	tx[1] = 0xA1;
@@ -169,6 +182,7 @@ static int loadConstructedFirmware(const uint8_t* firmware, int len)
 	return FALSE;
 }
 
+#ifndef CONFIG_IPOD
 static int loadProxCal(const uint8_t* firmware, int len)
 {
 	uint32_t address = 0x400180;
@@ -208,6 +222,7 @@ static int loadProxCal(const uint8_t* firmware, int len)
 
 	return TRUE;
 }
+#endif
 
 static int loadCal(const uint8_t* firmware, int len)
 {
@@ -796,18 +811,22 @@ int multitouch_setup(const uint8_t* constructedFirmware, int constructedFirmware
 	int reportLen;
 	int i;
 
+#ifndef CONFIG_IPOD
 	uint8_t* prox_cal;
 	int prox_cal_size;
+#endif
 
 	uint8_t* cal;
 	int cal_size;
 
+#ifndef CONFIG_IPOD
 	prox_cal = syscfg_get_entry(SCFG_PxCl, &prox_cal_size);
 	if(!prox_cal)
 	{
 		bufferPrintf("multitouch: could not find proximity calibration data\r\n");
 		return -1;
 	}
+#endif
 
 	cal = syscfg_get_entry(SCFG_MtCl, &cal_size);
 	if(!cal)
@@ -826,14 +845,20 @@ int multitouch_setup(const uint8_t* constructedFirmware, int constructedFirmware
 
 	multitouch_on();
 
-	gpio_pin_output(0x606, 0);
-	udelay(200000);
-	gpio_pin_output(0x606, 1);
-	udelay(15000);
+	for(i = 0; i < 4; ++i)
+	{
+		gpio_pin_output(0x606, 0);
+		udelay(200000);
+		gpio_pin_output(0x606, 1);
+		udelay(15000);
 
-	performHBPPATN_ACK();
+		while(performHBPPATN_ACK() != 0xFFFF);
 
-	if(!loadConstructedFirmware(constructedFirmware, constructedFirmwareLen))
+		if(loadConstructedFirmware(constructedFirmware, constructedFirmwareLen))
+			break;
+	}
+
+	if(i == 4)
 	{
 		bufferPrintf("multitouch: could not load preconstructed firmware\r\n");
 		err = -1;
@@ -842,6 +867,7 @@ int multitouch_setup(const uint8_t* constructedFirmware, int constructedFirmware
 
 	bufferPrintf("multitouch: loaded %d byte preconstructed firmware\r\n", constructedFirmwareLen);
 
+#ifndef CONFIG_IPOD
 	if(!loadProxCal(prox_cal, prox_cal_size))
 	{
 		bufferPrintf("multitouch: could not load proximity calibration data\r\n");
@@ -850,6 +876,7 @@ int multitouch_setup(const uint8_t* constructedFirmware, int constructedFirmware
 	}
 
 	bufferPrintf("multitouch: loaded %d byte proximity calibration data\r\n", prox_cal_size);
+#endif
 
 	if(!loadCal(cal, cal_size))
 	{

@@ -133,22 +133,10 @@ void audiohw_play_pcm(const void* addr_in, uint32_t size, int use_speaker)
 	uint32_t i2sController;
 	uint32_t dma;
 
-#ifdef CONFIG_3G
 	switch_hp_speakers(use_speaker);
+
 	i2sController = WM_I2S;
 	dma = DMA_WM_I2S_TX;
-#else
-	if(use_speaker)
-	{
-		i2sController = BB_I2S;
-		dma = DMA_BB_I2S_TX;
-	}
-	else
-	{
-		i2sController = WM_I2S;
-		dma = DMA_WM_I2S_TX;
-	}
-#endif
 
 	SET_REG(i2sController + I2S_TXCON,
 			(1 << 24) |  /* undocumented */
@@ -298,7 +286,9 @@ void audiohw_preinit(void)
 		bufferPrintf("wm8991: error, device id mismatch.\r\n");
 		return;
 	}
-	
+
+	bufferPrintf("wm8991: starting init.\r\n");
+
 	audiohw_mute(1);
 
 	// speaker enabled, VREF bias enabled, Vmid to 2 * 50kOhm (normal mode) 
@@ -435,6 +425,8 @@ void audiohw_preinit(void)
 	gpio_pin_use_as_input(WMCODEC_INT_GPIO);
 	gpio_register_interrupt(WMCODEC_INT, TRUE, TRUE, FALSE, wm8991_int, 0);
 	gpio_interrupt_enable(WMCODEC_INT);
+
+	bufferPrintf("wm8991: init complete.\r\n");
 
 }
 

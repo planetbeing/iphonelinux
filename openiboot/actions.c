@@ -222,11 +222,15 @@ static void setup_wifi_tags()
 	uint32_t calSize;
 	uint8_t* cal;
 
+#ifdef CONFIG_IPOD
+	return;
+#else
 	if(radio_nvram_get(2, &mac) < 0)
 		return;
 
 	if((calSize = radio_nvram_get(1, &cal)) < 0)
 		return;
+#endif
 
 	memcpy(&params->u.wifi.mac, mac, 6);
 	params->u.wifi.calSize = calSize;

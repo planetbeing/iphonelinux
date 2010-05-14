@@ -241,7 +241,9 @@ int menu_setup(int timeout) {
 		framebuffer_clear();
 
 #ifndef NO_HFS
+#ifndef CONFIG_IPOD
 		radio_setup();
+#endif
 		nand_setup();
 		fs_setup();
 		if(globalFtlHasBeenRestored) /* if ftl has been restored, sync it, so kernel doesn't have to do a ftl_restore again */
