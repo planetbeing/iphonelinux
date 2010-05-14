@@ -1,9 +1,11 @@
 #include "openiboot.h"
+#include "openiboot-asmhelpers.h"
 #include "spi.h"
 #include "hardware/spi.h"
 #include "util.h"
 #include "clock.h"
 #include "chipid.h"
+#include "timer.h"
 #include "interrupt.h"
 
 static const SPIRegister SPIRegs[NUM_SPIPORTS] = {
@@ -100,8 +102,19 @@ int spi_rx(int port, uint8_t* buffer, int len, int block, int noTransmitJunk) {
 	SET_REG(SPIRegs[port].control, 1);
 
 	if(block) {
+		uint64_t startTime = timer_get_system_microtime();
 		while(!spi_info[port].rxDone) {
 			// yield
+			if(has_elapsed(startTime, 1000)) {
+				EnterCriticalSection();
+				spi_info[port].rxDone = TRUE;
+				spi_info[port].rxBuffer = NULL;
+				LeaveCriticalSection();
+				if(noTransmitJunk == 0) {
+					SET_REG(SPIRegs[port].setup, GET_REG(SPIRegs[port].setup) & ~1);
+				}
+				return -1;
+			}
 		}
 		if(noTransmitJunk == 0) {
 			SET_REG(SPIRegs[port].setup, GET_REG(SPIRegs[port].setup) & ~1);

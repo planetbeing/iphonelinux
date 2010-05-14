@@ -351,7 +351,11 @@ void nor_read(void* buffer, int offset, int len) {
 
 		gpio_pin_output(GPIO_SPI0_CS0, 0);
 		spi_tx(0, command, sizeof(command), TRUE, 0);
-		spi_rx(0, data, toRead, TRUE, 0);
+		if(spi_rx(0, data, toRead, TRUE, 0) < 0)
+		{
+			gpio_pin_output(GPIO_SPI0_CS0, 1);
+			continue;
+		}
 		gpio_pin_output(GPIO_SPI0_CS0, 1);
 
 		len -= toRead;
