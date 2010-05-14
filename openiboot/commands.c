@@ -27,6 +27,7 @@
 #include "wlan.h"
 #include "radio.h"
 #include "als.h"
+#include "piezo.h"
 
 void cmd_reboot(int argc, char** argv) {
 	Reboot();
@@ -1063,6 +1064,28 @@ void cmd_vibrator_off(int argc, char** argv)
 }
 #endif
 
+#ifdef CONFIG_IPOD
+void cmd_piezo_buzz(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <frequency in hertz> [duration in milliseconds]\r\n", argv[0]);
+		return;
+	}
+
+	int frequency = parseNumber(argv[1]);
+	unsigned int duration;
+
+	if(argc > 2)
+		duration = parseNumber(argv[2]) * 1000;
+	else
+		duration = 1000 * 1000;
+
+	piezo_buzz(frequency, duration);
+
+	bufferPrintf("%d hz for %u microseconds: done.\r\n", frequency, duration);
+}
+
+#endif
+
 void cmd_help(int argc, char** argv) {
 	OPIBCommand* curCommand = CommandList;
 	while(curCommand->name != NULL) {
@@ -1165,6 +1188,7 @@ OPIBCommand CommandList[] =
 		{"audiohw_position", "print the playback position", cmd_audiohw_position},
 		{"audiohw_pause", "pause playback", cmd_audiohw_pause},
 		{"audiohw_resume", "resume playback", cmd_audiohw_resume},
+		{"buzz", "use the piezo buzzer", cmd_piezo_buzz},
 		{"multitouch_setup", "setup the multitouch chip", cmd_multitouch_setup},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}

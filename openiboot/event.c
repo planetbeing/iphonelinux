@@ -20,7 +20,7 @@ int event_setup() {
 
 	// Initialize the timer hardware for something that goes off once every 100 Hz.
 	// The handler for the timer will reset it so it's periodic
-	timer_init(EventTimer, TicksPerSec/100, 0, 0, FALSE, FALSE, FALSE);
+	timer_init(EventTimer, TicksPerSec/100, 0, 0, 0, FALSE, FALSE, FALSE, TRUE);
 
 	// Turn the timer on
 	timer_on_off(EventTimer, ON);

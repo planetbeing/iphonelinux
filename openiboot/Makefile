@@ -19,7 +19,7 @@ ifeq ($(PLATFORM),3G)
 endif
 
 ifeq ($(PLATFORM),IPOD)
-	SRC_C          += multitouch-z2.c wm8958.c
+	SRC_C          += multitouch-z2.c wm8958.c piezo.c
 endif
 
 # Variables

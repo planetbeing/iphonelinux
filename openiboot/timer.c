@@ -6,19 +6,19 @@
 
 const TimerRegisters HWTimers[] = {
 		{	TIMER + TIMER_0 + TIMER_CONFIG, TIMER + TIMER_0 + TIMER_STATE, TIMER + TIMER_0 + TIMER_COUNT_BUFFER, 
-			TIMER + TIMER_0 + TIMER_UNKNOWN1, TIMER + TIMER_0 + TIMER_UNKNOWN2, TIMER + TIMER_0 + TIMER_UNKNOWN3 },
+			TIMER + TIMER_0 + TIMER_COUNT_BUFFER2, TIMER + TIMER_0 + TIMER_UNKNOWN2, TIMER + TIMER_0 + TIMER_UNKNOWN3 },
 		{	TIMER + TIMER_1 + TIMER_CONFIG, TIMER + TIMER_1 + TIMER_STATE, TIMER + TIMER_1 + TIMER_COUNT_BUFFER,
-			TIMER + TIMER_1 + TIMER_UNKNOWN1, TIMER + TIMER_1 + TIMER_UNKNOWN2, TIMER + TIMER_1 + TIMER_UNKNOWN3 },
+			TIMER + TIMER_1 + TIMER_COUNT_BUFFER2, TIMER + TIMER_1 + TIMER_UNKNOWN2, TIMER + TIMER_1 + TIMER_UNKNOWN3 },
 		{	TIMER + TIMER_2 + TIMER_CONFIG, TIMER + TIMER_2 + TIMER_STATE, TIMER + TIMER_2 + TIMER_COUNT_BUFFER,
-			TIMER + TIMER_2 + TIMER_UNKNOWN1, TIMER + TIMER_2 + TIMER_UNKNOWN2, TIMER + TIMER_2 + TIMER_UNKNOWN3 },
+			TIMER + TIMER_2 + TIMER_COUNT_BUFFER2, TIMER + TIMER_2 + TIMER_UNKNOWN2, TIMER + TIMER_2 + TIMER_UNKNOWN3 },
 		{	TIMER + TIMER_3 + TIMER_CONFIG, TIMER + TIMER_3 + TIMER_STATE, TIMER + TIMER_3 + TIMER_COUNT_BUFFER,
-			TIMER + TIMER_3 + TIMER_UNKNOWN1, TIMER + TIMER_3 + TIMER_UNKNOWN2, TIMER + TIMER_3 + TIMER_UNKNOWN3 },
+			TIMER + TIMER_3 + TIMER_COUNT_BUFFER2, TIMER + TIMER_3 + TIMER_UNKNOWN2, TIMER + TIMER_3 + TIMER_UNKNOWN3 },
 		{	TIMER + TIMER_4 + TIMER_CONFIG, TIMER + TIMER_4 + TIMER_STATE, TIMER + TIMER_4 + TIMER_COUNT_BUFFER,
-			TIMER + TIMER_4 + TIMER_UNKNOWN1, TIMER + TIMER_4 + TIMER_UNKNOWN2, TIMER + TIMER_4 + TIMER_UNKNOWN3 },
+			TIMER + TIMER_4 + TIMER_COUNT_BUFFER2, TIMER + TIMER_4 + TIMER_UNKNOWN2, TIMER + TIMER_4 + TIMER_UNKNOWN3 },
 		{	TIMER + TIMER_5 + TIMER_CONFIG, TIMER + TIMER_5 + TIMER_STATE, TIMER + TIMER_5 + TIMER_COUNT_BUFFER,
-			TIMER + TIMER_5 + TIMER_UNKNOWN1, TIMER + TIMER_5 + TIMER_UNKNOWN2, TIMER + TIMER_5 + TIMER_UNKNOWN3 },
+			TIMER + TIMER_5 + TIMER_COUNT_BUFFER2, TIMER + TIMER_5 + TIMER_UNKNOWN2, TIMER + TIMER_5 + TIMER_UNKNOWN3 },
 		{	TIMER + TIMER_6 + TIMER_CONFIG, TIMER + TIMER_6 + TIMER_STATE, TIMER + TIMER_6 + TIMER_COUNT_BUFFER,
-			TIMER + TIMER_6 + TIMER_UNKNOWN1, TIMER + TIMER_6 + TIMER_UNKNOWN2, TIMER + TIMER_6 + TIMER_UNKNOWN3 }
+			TIMER + TIMER_6 + TIMER_COUNT_BUFFER2, TIMER + TIMER_6 + TIMER_UNKNOWN2, TIMER + TIMER_6 + TIMER_UNKNOWN3 }
 	};
 
 TimerInfo Timers[7];
@@ -63,7 +63,7 @@ int timer_setup() {
 	return 0;
 }
 
-int timer_init(int timer_id, uint32_t interval, uint32_t unknown2, uint32_t z, Boolean option24, Boolean option28, Boolean option11) {
+int timer_init(int timer_id, uint32_t interval, uint32_t interval2, uint32_t unknown2, uint32_t z, Boolean option24, Boolean option28, Boolean option11, Boolean interrupts) {
 	if(timer_id >= NUM_TIMERS || timer_id < 0) {
 		return -1;
 	}
@@ -71,7 +71,12 @@ int timer_init(int timer_id, uint32_t interval, uint32_t unknown2, uint32_t z, B
 	/* need to turn it off, since we're messing with the settings */
 	timer_on_off(timer_id, OFF);
 
-	uint32_t config = 0x7000; /* set bits 12, 13, 14 */
+	uint32_t config;
+
+	if(interrupts)
+		config = 0x7000; /* set bits INT0_EN, INT1_EN, OVF_EN */
+	else
+		config = 0;
 
 	/* these two options are only supported on timers 4, 5, 6 */
 	if(timer_id >= TIMER_Separator) {
@@ -86,7 +91,7 @@ int timer_init(int timer_id, uint32_t interval, uint32_t unknown2, uint32_t z, B
 
 	SET_REG(HWTimers[timer_id].config, config);
 	SET_REG(HWTimers[timer_id].count_buffer, interval);
-	SET_REG(HWTimers[timer_id].unknown1, Timers[timer_id].unknown1);
+	SET_REG(HWTimers[timer_id].count_buffer2, interval2);
 	SET_REG(HWTimers[timer_id].unknown2, unknown2);
 
 	// apply the settings

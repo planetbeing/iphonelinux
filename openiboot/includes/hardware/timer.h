@@ -5,6 +5,7 @@
 
 // Constants
 #define EventTimer 4
+#define PiezoTimer 1
 
 // Devices
 
@@ -22,7 +23,7 @@
 #define TIMER_CONFIG 0
 #define TIMER_STATE 0x4
 #define TIMER_COUNT_BUFFER 0x8
-#define TIMER_UNKNOWN1 0xC
+#define TIMER_COUNT_BUFFER2 0xC
 #define TIMER_UNKNOWN2 0x10
 #define TIMER_UNKNOWN3 0x14
 #define TIMER_TICKSHIGH 0x80
