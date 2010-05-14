@@ -1188,7 +1188,9 @@ OPIBCommand CommandList[] =
 		{"audiohw_position", "print the playback position", cmd_audiohw_position},
 		{"audiohw_pause", "pause playback", cmd_audiohw_pause},
 		{"audiohw_resume", "resume playback", cmd_audiohw_resume},
+#ifndef CONFIG_IPOD
 		{"buzz", "use the piezo buzzer", cmd_piezo_buzz},
+#endif
 		{"multitouch_setup", "setup the multitouch chip", cmd_multitouch_setup},
 		{"help", "list the available commands", cmd_help},
 		{NULL, NULL}
