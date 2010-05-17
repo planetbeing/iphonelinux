@@ -61,7 +61,12 @@ int uart_setup() {
 	uart_set_flow_control(1, ON);
 	uart_set_flow_control(2, ON);
 	uart_set_flow_control(3, ON);
+
+#ifdef CONFIG_3G
+	uart_set_flow_control(4, ON);
+#else
 	uart_set_flow_control(4, OFF);
+#endif
 
 	// Reset and enable fifo
 	for(i = 0; i < NUM_UARTS; i++) {

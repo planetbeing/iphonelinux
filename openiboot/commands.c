@@ -987,17 +987,19 @@ void cmd_radio_send(int argc, char** argv) {
 	radio_write(argv[1]);
 	radio_write("\r\n");
 	
-	char buf[100];
-	int c = radio_read(buf, sizeof(buf));
+	char* buf = malloc(0x1000);
+	int c = radio_read(buf, 0x1000);
 	printf("radio reply: %s", buf);
 
-	while(c == (sizeof(buf) - 1))
+	while(c == (0x1000 - 1))
 	{
-		c = radio_read(buf, sizeof(buf));
+		c = radio_read(buf, 0x1000);
 		printf("%s", buf);
 	}
 
 	printf("\n");
+
+	free(buf);
 }
 
 void cmd_radio_nvram_list(int argc, char** argv) {

@@ -17,9 +17,14 @@ static char* radio_nvram = NULL;
 static int radio_nvram_len;
 static int RadioAvailable = FALSE;
 
+static char* response_buf;
+#define RESPONSE_BUF_SIZE 0x1000
+
 #ifdef CONFIG_3G
 int radio_setup_3g()
 {
+	response_buf = malloc(RESPONSE_BUF_SIZE);
+
 	gpio_pulldown_configure(RADIO_BB_PULLDOWN, GPIOPDDown);
 
 	pmu_gpio(RADIO_GPIO_BB_ON, TRUE, OFF);
@@ -57,6 +62,8 @@ int radio_setup_3g()
 #else
 int radio_setup_2g()
 {
+	response_buf = malloc(RESPONSE_BUF_SIZE);
+
 	gpio_pin_output(RADIO_GPIO_BB_MUX_SEL, OFF);
 
 	gpio_pulldown_configure(RADIO_BB_PULLDOWN, GPIOPDDown);
@@ -254,40 +261,41 @@ int radio_write(const char* str)
 
 int radio_read(char* buf, int len)
 {
-	char b;
 	int i = 0;
 	char* curLine = buf;
 
 	while(i < (len - 1))
 	{
+		int n = 0;
 		uint64_t startTime = timer_get_system_microtime();
-	       	while(uart_read(RADIO_UART, &b, 1, 0) == 0)
+		while(n == 0)
 		{
-			if(has_elapsed(startTime,  500000)) {
+			n = uart_read(RADIO_UART, buf + i, (len - 1) - i, 10000);
+			if(n == 0 && has_elapsed(startTime,  500000))
+			{
 				return i;
 			}
 		}
 
-		if(b == 0)
-			continue;
+		i += n;
 
-		buf[i] = b;
-		buf[i + 1] = '\0';
+		buf[i] = '\0';
 
 		if(strstr(curLine, "OK\r") != NULL)
 		{
-			++i;
 			break;
 		} else if(strstr(curLine, "ERROR\r") != NULL)
 		{
-			++i;
 			break;
-		} else if(b == '\r')
-			curLine = &buf[i + 1];
-		else if(b == '\n')
-			curLine = &buf[i + 1];
+		} else {
+			char* x = strchr(curLine, '\r');
+			if(x != NULL)
+				curLine = x;
 
-		++i;
+			x = strchr(curLine, '\n');
+			if(x != NULL)
+				curLine = x;
+		}
 	}
 
 	return i;
@@ -303,19 +311,18 @@ int radio_cmd(const char* cmd, int tries)
 	int i;
 	for(i = 0; i < tries; ++i)
 	{
-		char buf[200];
 		int n;
 
 		radio_write(cmd);
 
-		n = radio_read(buf, sizeof(buf) - 1);
+		n = radio_read(response_buf, RESPONSE_BUF_SIZE - 1);
 
 		if(n == 0)
 			continue;
 
-		if(strstr(buf, "\nOK\r") != NULL)
+		if(strstr(response_buf, "\nOK\r") != NULL)
 			break;
-		else if(strstr(buf, "\rOK\r") != NULL)
+		else if(strstr(response_buf, "\rOK\r") != NULL)
 			break;
 	}
 
