@@ -45,6 +45,19 @@ int strcmp(const char* s1, const char* s2) {
 	return (*(const unsigned char *)s1 - *(const unsigned char *)(s2 - 1));
 }
 
+char* strchr(const char* s1, int s2)
+{
+	while(*s1)
+	{
+		if(*s1 == s2)
+			return ((char*) s1);
+
+		++s1;
+	}
+
+	return NULL;
+}
+
 char* strstr(const char* s1, const char* s2)
 {
 	while(*s1)
@@ -242,31 +255,47 @@ void bytesToHex(const uint8_t* buffer, int bytes) {
 }
 
 char** tokenize(char* commandline, int* argc) {
+	char* pos;
 	char** arguments;
 	int curArg = 1;
 	int inQuote = FALSE;
+	int inEscape = TRUE;
+
+	pos = commandline;
 	arguments = (char**) malloc(sizeof(char*) * 10);
 	arguments[0] = commandline;
 	while(*commandline != '\0') {
-		if(*commandline == '\"') {
+		if(pos != commandline)
+		{
+			*pos = *commandline;
+		}
+
+		if(inEscape)
+			inEscape = FALSE;
+		else if(*commandline == '\"') {
 		       	if(inQuote) {
 				inQuote = FALSE;
-				*commandline = '\0';
+				*pos = '\0';
 			} else {
 				inQuote = TRUE;
 			}
 		} else if(*commandline == ' ' && inQuote == FALSE) {
-			*commandline = '\0';
-			arguments[curArg] = commandline + 1;
-			if(*arguments[curArg] == '\"')
+			*pos = '\0';
+			arguments[curArg] = pos + 1;
+			if(*(commandline + 1) == '\"')
 				arguments[curArg]++;
 
 			curArg++;
 		} else if(*commandline == '\r' || *commandline =='\n') {
-			*commandline = '\0';
+			*pos = '\0';
 			break;
+		} else if(*commandline == '\\') {
+			pos--;
+			inEscape = TRUE;
 		}
+
 		commandline++;
+		pos++;
 	}
 
 	*argc = curArg;
