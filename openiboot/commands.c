@@ -1084,6 +1084,20 @@ void cmd_piezo_buzz(int argc, char** argv) {
 	bufferPrintf("%d hz for %u microseconds: done.\r\n", frequency, duration);
 }
 
+void cmd_piezo_play(int argc, char** argv) {
+	if(argc < 2) {
+		bufferPrintf("Usage: %s <frequency in hertz> [duration in milliseconds]\r\n", argv[0]);
+		return;
+	}
+
+	bufferPrintf("playing string \"%s\"\r\n", argv[1]);
+
+	piezo_play(argv[1]);
+
+	bufferPrintf("done\r\n");
+
+}
+
 #endif
 
 void cmd_help(int argc, char** argv) {
@@ -1190,6 +1204,7 @@ OPIBCommand CommandList[] =
 		{"audiohw_resume", "resume playback", cmd_audiohw_resume},
 #ifdef CONFIG_IPOD
 		{"buzz", "use the piezo buzzer", cmd_piezo_buzz},
+		{"play", "play notes using piezo bytes", cmd_piezo_play},
 #endif
 		{"multitouch_setup", "setup the multitouch chip", cmd_multitouch_setup},
 		{"help", "list the available commands", cmd_help},
