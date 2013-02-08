@@ -25,24 +25,24 @@ void dumpImg3Header(const Img3* header)
 	printf("Header size: %d\n", sizeof(*header));
 
 	printf("Magic:       0x%x (%s)\n", header->magic, str_magic(header->magic));
-	printf("Length:      %ld\n", header->dataLenPad);
-	printf("Unknown:     %ld\n", header->u1);
-	printf("Cert Offset: %ld\n", header->certOffset);
+	printf("Length:      %u\n", header->dataLenPad);
+	printf("Unknown:     %u\n", header->u1);
+	printf("Cert Offset: %u\n", header->certOffset);
 	printf("Name:        0x%x (%s)\n", header->name, str_magic(header->name));
 	printf("Type:        0x%x (%s)\n", header->type, str_magic(header->type));
-	printf("nameOffset:  %ld\n", header->nameOffset);
-	printf("dataLen:     %ld\n", header->dataLen);
+	printf("nameOffset:  %u\n", header->nameOffset);
+	printf("dataLen:     %u\n", header->dataLen);
 }
 void dumpImg3Footer(const Img3_footer2* footer)
 {
 	printf("=======================================\n");
 	printf("Footer size: %d\n", sizeof(*footer));
 
-	printf("Block Size: %ld bytes\n", footer->blockSize);
-	printf("Signature:  %ld bytes\n", footer->sigLen);
+	printf("Block Size: %u bytes\n", footer->blockSize);
+	printf("Signature:  %u bytes\n", footer->sigLen);
 	printf("Cert Head:  0x%x (%s)\n", footer->cert_magic, str_magic(footer->cert_magic));
-	printf("Cert Size:  %ld\n", footer->cert_size);
-	printf("Certficate: %ld bytes\n", sizeof(footer->cert));
+	printf("Cert Size:  %u\n", footer->cert_size);
+	printf("Certficate: %u bytes\n", sizeof(footer->cert));
 
 }
 int main(int argc, char *argv[]) {
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 		offSet = sizeof(*dF);
     while(offSet < pHeaderImg3->dataLenPad) {
     	printf("Flag:        0x%x (%s)\n", dF->name, str_magic(dF->name));
-			printf("Offset:      %ld\n", offSet);
+			printf("Offset:      %d\n", offSet);
       if(dF->name == END_FLAG_HSHS) {
 				offSet += - 16;
 				memcpy(pFooterImg3_2, (fBuf + sizeof(Img3) + pHeaderImg3->nameOffset) - 12 + offSet, sizeof(*pFooterImg3_2));
